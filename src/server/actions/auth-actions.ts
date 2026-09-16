@@ -2,7 +2,12 @@
 
 import { redirect } from "next/navigation";
 import { z } from "zod";
-import { AuthError, authenticateCustomer, registerCustomer } from "@/server/services/auth-service";
+import {
+  AuthError,
+  authenticateAdmin,
+  authenticateCustomer,
+  registerCustomer,
+} from "@/server/services/auth-service";
 import { setSessionCookie, clearSessionCookie } from "@/lib/session";
 
 export type AuthActionState = {
@@ -63,4 +68,29 @@ export async function loginAction(
 export async function logoutAction() {
   await clearSessionCookie();
   redirect("/login");
+}
+
+export async function adminLoginAction(
+  _prevState: AuthActionState,
+  formData: FormData,
+): Promise<AuthActionState> {
+  const parsed = loginSchema.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? "Datos inválidos." };
+  }
+
+  try {
+    const user = await authenticateAdmin(parsed.data);
+    await setSessionCookie({ userId: user.id, role: user.role, name: user.name });
+  } catch (error) {
+    if (error instanceof AuthError) return { error: error.message };
+    throw error;
+  }
+
+  redirect("/admin");
+}
+
+export async function adminLogoutAction() {
+  await clearSessionCookie();
+  redirect("/acceso-admin");
 }

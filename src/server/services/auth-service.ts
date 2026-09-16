@@ -29,14 +29,22 @@ export async function registerCustomer(input: RegisterInput) {
   });
 }
 
-export async function authenticateCustomer(input: LoginInput) {
+async function authenticateByRole(input: LoginInput, role: "cliente" | "administrador") {
   const user = await prisma.user.findUnique({ where: { email: input.email } });
   if (!user) throw new AuthError("Correo o contraseña incorrectos.");
 
   const validPassword = await verifyPassword(input.password, user.passwordHash);
   if (!validPassword) throw new AuthError("Correo o contraseña incorrectos.");
 
-  if (user.role !== "cliente") throw new AuthError("Correo o contraseña incorrectos.");
+  if (user.role !== role) throw new AuthError("Correo o contraseña incorrectos.");
 
   return user;
+}
+
+export function authenticateCustomer(input: LoginInput) {
+  return authenticateByRole(input, "cliente");
+}
+
+export function authenticateAdmin(input: LoginInput) {
+  return authenticateByRole(input, "administrador");
 }

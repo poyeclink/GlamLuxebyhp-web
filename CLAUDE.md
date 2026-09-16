@@ -28,6 +28,13 @@ Stack obligatorio: Next.js (App Router) + TypeScript + React + Prisma + Supabase
 - Prisma 7 requiere **driver adapters** (no hay motor de query engine binario): usamos `@prisma/adapter-pg` + `pg`. El cliente generado no vive en `node_modules`, sino en `src/generated/prisma` (gitignored) — se importa como `@/generated/prisma/client` (el archivo `client.ts`, la carpeta no tiene `index`).
 - Correr `pnpm db:generate` después de cualquier cambio en `prisma/schema.prisma`.
 
+## Autenticación
+
+- Sesión propia: JWT (librería `jose`, edge-safe) en cookie httpOnly (`src/lib/session.ts`), sin tabla de sesiones en DB. Contraseñas con `bcryptjs` (`src/lib/password.ts`).
+- Cliente y administrador comparten el modelo `User` (`role`), pero tienen flujos y rutas completamente separados: `/login` + `/registro` (cliente, con auto-registro) vs. `/acceso-admin` (admin, sin auto-registro — se crea vía `pnpm db:seed` con `ADMIN_EMAIL`/`ADMIN_PASSWORD` en `.env`).
+- `src/proxy.ts` protege `/admin/:path*` (requiere `role administrador`, si no redirige a `/acceso-admin`). En Next.js 16 el archivo se llama `proxy.ts` y la función `proxy`, no `middleware.ts`/`middleware` — ese nombre está deprecado desde v16. Corre en runtime Node.js por defecto (ya no Edge).
+- Los Server Actions de auth siempre devuelven el mismo mensaje genérico ("Correo o contraseña incorrectos") sin importar si el correo no existe, la contraseña es incorrecta, o el usuario tiene el rol equivocado para ese formulario — evita filtrar qué cuentas existen o son admin.
+
 ## Referencia rápida de reglas de negocio (fuente: PDF de análisis)
 
 - Precio mayorista automático a partir de 6 artículos en el carrito (umbral configurable, no hardcodear el número 6 dos veces).
