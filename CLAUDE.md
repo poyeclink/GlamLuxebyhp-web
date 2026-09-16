@@ -19,6 +19,15 @@ Stack obligatorio: Next.js (App Router) + TypeScript + React + Prisma + Supabase
 - Server Components por defecto; Client Components solo donde hay interactividad real (carrito, checkout, formularios admin, Stripe Elements).
 - Lógica de negocio (pricing mayorista, envío por tramos, máquina de estados de pedido) vive en `src/server/services/`, pura y testeable, no en Server Actions ni componentes.
 
+## Base de datos (Prisma 7 + Supabase)
+
+- Prisma pinneado a `7.10.0` (versión estable) a propósito — el tag `latest` de npm apunta a un release candidate de Prisma 8, no usarlo hasta que sea estable.
+- Config del CLI en `prisma7.config.ts` (ese es el nombre que esta versión de Prisma detecta automáticamente, no `prisma.config.ts`). Ahí solo vive `DIRECT_URL` porque el CLI (migrate/db push/studio) la necesita.
+- `DIRECT_URL` usa el **Session pooler** de Supabase (`aws-0-<region>.pooler.supabase.com:5432`), no el host de conexión directa real (`db.<project-ref>.supabase.co:5432`) — ese host solo resuelve por IPv6 y da `ETIMEDOUT` en redes/entornos sin salida IPv6 (verificado en desarrollo). El Session pooler soporta prepared statements igual que una conexión directa, así que sirve para migraciones sin ese problema.
+- La app en runtime (`src/lib/prisma.ts`) usa `DATABASE_URL` (conexión pooled vía Supavisor/PgBouncer) directamente en el `PrismaPg` adapter — **no** pasa por `prisma7.config.ts`. El tipo `Datasource` de esta versión no tiene campo `directUrl`, por eso están separados así.
+- Prisma 7 requiere **driver adapters** (no hay motor de query engine binario): usamos `@prisma/adapter-pg` + `pg`. El cliente generado no vive en `node_modules`, sino en `src/generated/prisma` (gitignored) — se importa como `@/generated/prisma/client` (el archivo `client.ts`, la carpeta no tiene `index`).
+- Correr `pnpm db:generate` después de cualquier cambio en `prisma/schema.prisma`.
+
 ## Referencia rápida de reglas de negocio (fuente: PDF de análisis)
 
 - Precio mayorista automático a partir de 6 artículos en el carrito (umbral configurable, no hardcodear el número 6 dos veces).

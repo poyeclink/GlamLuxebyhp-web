@@ -1,3 +1,10 @@
 .next
 node_modules
 pnpm-lock.yaml
+src/generated
+
+# Skills de terceros instaladas por `prisma init` — no reformatear contenido vendored.
+.agents/skills
+.claude/skills
+.windsurf/skills
+skills-lock.json
