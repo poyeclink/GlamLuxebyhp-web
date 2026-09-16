@@ -11,3 +11,41 @@ generator client {
 datasource db {
   provider = "postgresql"
 }
+
+enum UserRole {
+  cliente
+  administrador
+}
+
+enum AddressType {
+  casa
+  apartamento
+}
+
+model User {
+  id           String    @id @default(uuid()) @db.Uuid
+  name         String
+  email        String    @unique
+  passwordHash String
+  role         UserRole
+  whatsapp     String?
+  createdAt    DateTime  @default(now())
+  addresses    Address[]
+}
+
+model Address {
+  id          String      @id @default(uuid()) @db.Uuid
+  userId      String?     @db.Uuid
+  user        User?       @relation(fields: [userId], references: [id])
+  fullName    String
+  whatsapp    String
+  email       String
+  addressLine String
+  addressType AddressType
+  city        String
+  state       String
+  zip         String
+  notes       String?
+
+  @@index([userId])
+}
