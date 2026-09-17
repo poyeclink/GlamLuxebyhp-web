@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Card, CardContent } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
+import { AddressSummary } from "@/components/account/AddressSummary";
 import { DeleteAddressButton } from "@/components/account/DeleteAddressButton";
 import { requireCustomer } from "@/lib/session";
 import { listAddresses } from "@/server/services/address-service";
@@ -31,16 +32,7 @@ export default async function PerfilPage() {
             {addresses.map((address) => (
               <Card key={address.id}>
                 <CardContent className="flex items-start justify-between gap-4 p-4">
-                  <div className="flex flex-col gap-0.5 text-sm">
-                    <span className="font-medium text-foreground">{address.fullName}</span>
-                    <span className="text-muted-foreground">{address.addressLine}</span>
-                    <span className="text-muted-foreground">
-                      {address.city}, {address.state} {address.zip}
-                    </span>
-                    <span className="text-muted-foreground">
-                      {address.addressType === "casa" ? "Casa" : "Apartamento"} · {address.whatsapp}
-                    </span>
-                  </div>
+                  <AddressSummary address={address} />
                   <div className="flex flex-col items-end gap-1">
                     <Link href={`/perfil/direcciones/${address.id}/editar`}>
                       <Button variant="outline" size="sm">

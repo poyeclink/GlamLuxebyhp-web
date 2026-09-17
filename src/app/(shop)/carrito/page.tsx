@@ -1,13 +1,16 @@
 import Link from "next/link";
 import { CartItemRow } from "@/components/shop/CartItemRow";
 import { WholesaleProgress } from "@/components/shop/WholesaleProgress";
+import { Button } from "@/components/ui/Button";
 import { WHOLESALE_ITEM_THRESHOLD, getCartWithPricing } from "@/server/services/cart-service";
 import { resolveCartOwnerForRead } from "@/lib/cart-session";
+import { getSession } from "@/lib/session";
 import { r2PublicUrl } from "@/lib/r2";
 import { formatCurrency } from "@/lib/utils";
 
 export default async function CarritoPage() {
-  const owner = await resolveCartOwnerForRead();
+  const [session, owner] = await Promise.all([getSession(), resolveCartOwnerForRead()]);
+  const isCustomer = session?.role === "cliente";
   const cart = owner ? await getCartWithPricing(owner) : null;
 
   if (!cart || cart.items.length === 0) {
@@ -60,6 +63,11 @@ export default async function CarritoPage() {
           <span>Total estimado</span>
           <span>{formatCurrency(cart.subtotal + (cart.shippingEstimate ?? 0))}</span>
         </div>
+        <Link href={isCustomer ? "/checkout/direccion" : "/login"} className="mt-2">
+          <Button className="w-full sm:w-auto">
+            {isCustomer ? "Continuar con la compra" : "Inicia sesión para continuar"}
+          </Button>
+        </Link>
       </div>
     </div>
   );
