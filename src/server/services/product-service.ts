@@ -5,6 +5,28 @@ import type { ProductCardItem } from "@/components/shop/ProductCard";
 
 export class ProductError extends Error {}
 
+// Sizes are a free-text column (no enum), so Prisma's `orderBy: { size: "asc" }`
+// sorts lexicographically ("L" < "M" < "S", "10" < "2") — wrong for both letter
+// and numeric sizes. Standard letter sizes get a known order; anything else
+// falls back to numeric, then alphabetical.
+const LETTER_SIZE_ORDER = ["XS", "S", "M", "L", "XL", "XXL", "XXXL"];
+
+function compareSizes(a: string, b: string) {
+  const letterA = LETTER_SIZE_ORDER.indexOf(a.toUpperCase());
+  const letterB = LETTER_SIZE_ORDER.indexOf(b.toUpperCase());
+  if (letterA !== -1 && letterB !== -1) return letterA - letterB;
+
+  const numA = Number(a);
+  const numB = Number(b);
+  if (!Number.isNaN(numA) && !Number.isNaN(numB)) return numA - numB;
+
+  return a.localeCompare(b);
+}
+
+function sortVariantsBySize<T extends { size: string }>(variants: T[]) {
+  return [...variants].sort((a, b) => compareSizes(a.size, b.size));
+}
+
 export function listProducts() {
   return prisma.product.findMany({
     orderBy: { name: "asc" },
@@ -58,8 +80,21 @@ export function toProductCardItem(product: ProductForCard): ProductCardItem {
   };
 }
 
-export function getProduct(id: string) {
-  return prisma.product.findUnique({
+export async function getProductBySlug(slug: string) {
+  const product = await prisma.product.findFirst({
+    where: { slug, active: true },
+    include: {
+      images: { orderBy: { position: "asc" } },
+      variants: { orderBy: { size: "asc" } },
+      category: true,
+    },
+  });
+  if (!product) return null;
+  return { ...product, variants: sortVariantsBySize(product.variants) };
+}
+
+export async function getProduct(id: string) {
+  const product = await prisma.product.findUnique({
     where: { id },
     include: {
       images: { orderBy: { position: "asc" } },
@@ -67,6 +102,8 @@ export function getProduct(id: string) {
       category: true,
     },
   });
+  if (!product) return null;
+  return { ...product, variants: sortVariantsBySize(product.variants) };
 }
 
 type ProductInput = {
