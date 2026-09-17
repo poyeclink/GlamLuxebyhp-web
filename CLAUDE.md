@@ -55,6 +55,8 @@ Stack obligatorio: Next.js (App Router) + TypeScript + React + Prisma + Supabase
 - Las subidas son siempre **server-side** (Server Actions del panel admin, ticket #11) usando `PutObjectCommand` directo — no se usan URLs firmadas ni upload desde el cliente, así que no hace falta configurar CORS en el bucket.
 - `R2_PUBLIC_URL` es el dominio público desde el que se sirven los objetos (custom domain o `*.r2.dev`) — `r2PublicUrl(key)` arma la URL final; nunca se construye a mano en los componentes.
 - Estructura de keys (a definir en el ticket #11): `products/{productId}/{uuid}-{filename}`.
+- `ProductImage` guarda solo `key` (no `url`) — la URL pública siempre se deriva con `r2PublicUrl(key)` al leer, nunca se persiste. Así, si cambia `R2_PUBLIC_URL` (ej. de `*.r2.dev` a un dominio propio), no hay que migrar datos.
+- Una sola `isPrimary: true` por producto no está forzado a nivel de base de datos (requeriría un índice único parcial que Prisma no modela bien) — se garantiza en el service layer del ticket #11 (al marcar una imagen como primaria, desmarcar las demás del mismo producto en la misma operación).
 
 ## Referencia rápida de reglas de negocio (fuente: PDF de análisis)
 
