@@ -10,6 +10,18 @@ export function listProducts() {
   });
 }
 
+export function listFeaturedProducts(limit = 8) {
+  return prisma.product.findMany({
+    where: { active: true },
+    orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+    take: limit,
+    include: {
+      category: true,
+      images: { where: { isPrimary: true }, take: 1 },
+    },
+  });
+}
+
 export function getProduct(id: string) {
   return prisma.product.findUnique({
     where: { id },

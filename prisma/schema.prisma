@@ -69,6 +69,7 @@ model Product {
   boxed           Boolean          @default(false)
   hasVariants     Boolean          @default(false)
   active          Boolean          @default(true)
+  createdAt       DateTime         @default(now())
   variants        ProductVariant[]
   images          ProductImage[]
 

@@ -75,6 +75,13 @@ Stack obligatorio: Next.js (App Router) + TypeScript + React + Prisma + Supabase
 - `VariantManager` (ticket #14, en la página de editar producto) gestiona tallas/stock con una fila por variante, cada una con su propio `useActionState` (patrón `VariantRow`, igual que `ProductImageCard` del ticket #11) — permite editar stock/talla o borrar sin afectar el estado de las demás filas. La gestión de variantes se muestra **siempre** en la página de editar, sin importar si el checkbox "Tiene variantes de talla" está marcado — ese flag es solo informativo para el storefront (tickets #17/#19), no condiciona si el admin puede cargar tallas.
 - Duplicar una talla para el mismo producto se bloquea con mensaje claro (`assertSizeAvailable` en `product-variant-service.ts`), mismo patrón de pre-validación que categorías/productos en vez de dejar reventar el `@@unique([productId, size])`.
 
+## Tienda pública (`src/app/(shop)/`)
+
+- Home (ticket #15) muestra "categorías destacadas" y "productos destacados" sin curación manual todavía: `listFeaturedCategories` (`category-service.ts`) = categorías con productos activos ordenadas por cantidad de productos activos (desc) y nombre como desempate; `listFeaturedProducts` (`product-service.ts`) = productos activos más recientes (`createdAt` desc, `id` desc como desempate). Si más adelante se necesita curación real (ej. un checkbox "destacar" en el admin), se agrega un campo explícito — no inferir featured de otra señal.
+- `Product.createdAt` (`@default(now())`) se agregó en el ticket #15 solo para poder ordenar "más reciente primero"; los productos creados antes de esa migración comparten el mismo timestamp de backfill, por eso el `orderBy` tiene `id` como desempate.
+- `listFeaturedCategories` no puede pedirle a Prisma que ordene por un `_count` ya filtrado (activo únicamente) a nivel de base de datos — Prisma solo soporta `orderBy` sobre el conteo total de la relación — así que trae un lote acotado (`take: Math.max(limit * 5, 50)`) y ordena/recorta en JS. No "simplificar" esto a un `orderBy: { products: { _count: 'desc' } }` en Prisma: cambiaría el criterio a "más productos totales" en vez de "más productos activos".
+- `src/components/shop/CategoryCard.tsx` y `ProductCard.tsx` enlazan a `/tienda` y `/producto/[slug]`, que aún no existen (tickets #16/#17) — 404 esperado hasta que esos tickets se completen, mismo patrón de referencia hacia adelante que `VariantManager` con #17/#19.
+
 ## Referencia rápida de reglas de negocio (fuente: PDF de análisis)
 
 - Precio mayorista automático a partir de 6 artículos en el carrito (umbral configurable, no hardcodear el número 6 dos veces).

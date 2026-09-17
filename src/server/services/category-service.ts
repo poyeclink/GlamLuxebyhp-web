@@ -13,6 +13,25 @@ export function getCategory(id: string) {
   return prisma.category.findUnique({ where: { id } });
 }
 
+// Counts only active products, unlike listCategories (which counts all of
+// them for the admin list) — the two intentionally differ, don't merge them.
+export async function listFeaturedCategories(limit = 6) {
+  // Prisma can't combine a filtered `_count` (active products only) with an
+  // `orderBy` on that same filtered count, so the ranking happens in JS.
+  // `take` caps the candidate set fetched, not the final result — kept
+  // generous relative to `limit` so the top categories are never cut off
+  // before sorting.
+  const categories = await prisma.category.findMany({
+    where: { products: { some: { active: true } } },
+    include: { _count: { select: { products: { where: { active: true } } } } },
+    take: Math.max(limit * 5, 50),
+  });
+
+  return categories
+    .sort((a, b) => b._count.products - a._count.products || a.name.localeCompare(b.name))
+    .slice(0, limit);
+}
+
 type CategoryInput = {
   name: string;
   slug: string;
