@@ -1,9 +1,13 @@
 import { Prisma } from "@/generated/prisma/client";
 import { prisma } from "@/lib/prisma";
+import { resolveShippingCost } from "@/server/services/shipping-service";
 
 export class CartError extends Error {}
 
-// Del PDF: umbral que activa precio mayorista automático en el carrito.
+// Del PDF: umbral que activa precio mayorista automático en el carrito. Los
+// ShippingRate del tier "individual" (prisma/seed.ts) deben cubrir hasta
+// threshold-1 — si este número sube sin extender esas tarifas, el hueco
+// resuelve a null ("se coordina aparte") en vez de dar un precio real.
 const WHOLESALE_ITEM_THRESHOLD = 6;
 
 function isUniqueConstraintError(error: unknown) {
@@ -144,15 +148,10 @@ export async function getCartWithPricing(userId: string) {
 
   const subtotal = items.reduce((sum, item) => sum + item.lineTotal, 0);
 
-  // Tramos de envío solo documentados a nivel individual (1-5 artículos);
-  // a partir del umbral mayorista el envío se coordina aparte.
-  const shippingEstimate = useWholesalePrice
-    ? null
-    : totalQuantity === 0
+  const shippingEstimate =
+    totalQuantity === 0
       ? 0
-      : totalQuantity <= 2
-        ? 10
-        : 35;
+      : await resolveShippingCost(useWholesalePrice ? "mayorista" : "individual", totalQuantity);
 
   return { items, totalQuantity, useWholesalePrice, subtotal, shippingEstimate };
 }

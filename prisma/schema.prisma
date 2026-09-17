@@ -22,6 +22,11 @@ enum AddressType {
   apartamento
 }
 
+enum PricingTier {
+  individual
+  mayorista
+}
+
 model User {
   id           String    @id @default(uuid()) @db.Uuid
   name         String
@@ -125,4 +130,14 @@ model CartItem {
   // donde el stock limitado sí importa) — ver addToCart en cart-service.ts.
   @@unique([cartId, productId, variantId])
   @@index([productId])
+}
+
+model ShippingRate {
+  id          String      @id @default(uuid()) @db.Uuid
+  tier        PricingTier
+  minQuantity Int
+  maxQuantity Int?
+  price       Decimal     @db.Decimal(10, 2)
+
+  @@unique([tier, minQuantity])
 }
