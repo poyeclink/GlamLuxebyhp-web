@@ -47,6 +47,7 @@ model Address {
   state       String
   zip         String
   notes       String?
+  createdAt   DateTime    @default(now())
 
   @@index([userId])
 }
