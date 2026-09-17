@@ -27,6 +27,21 @@ enum PricingTier {
   mayorista
 }
 
+enum OrderStatus {
+  reservado
+  confirmado
+  enviado
+  cancelado
+  vencido
+}
+
+enum PaymentMethod {
+  tarjeta
+  zelle
+  cashapp
+  paypal
+}
+
 model User {
   id           String    @id @default(uuid()) @db.Uuid
   name         String
@@ -37,6 +52,7 @@ model User {
   createdAt    DateTime  @default(now())
   addresses    Address[]
   cart         Cart?
+  orders       Order[]
 }
 
 model Address {
@@ -80,6 +96,7 @@ model Product {
   variants        ProductVariant[]
   images          ProductImage[]
   cartItems       CartItem[]
+  orderItems      OrderItem[]
 
   @@index([categoryId])
 }
@@ -150,4 +167,77 @@ model ShippingRate {
   price       Decimal     @db.Decimal(10, 2)
 
   @@unique([tier, minQuantity])
+}
+
+model Order {
+  id     String      @id @default(uuid()) @db.Uuid
+  // Opcional igual que Address.userId: pensado para checkout de invitado a
+  // futuro (el carrito ya lo admite desde el ticket #22), no explotado todavía.
+  userId String?     @db.Uuid
+  user   User?       @relation(fields: [userId], references: [id])
+  status OrderStatus @default(reservado)
+
+  // Tier de precio aplicado a TODAS las líneas al momento de comprar
+  // (cart-service.ts calcula esto en vivo; aquí se congela porque un pedido
+  // ya confirmado no debe cambiar si después cambia el umbral mayorista).
+  pricingTier   PricingTier
+  paymentMethod PaymentMethod
+
+  // Igual que pricingTier: montos fijados al confirmar el pedido, no
+  // recalculados — no deben moverse si después cambian ShippingRate o los
+  // precios de los productos. shippingCost es null en el tier mayorista
+  // ("se coordina aparte", igual que shippingEstimate en el carrito); total
+  // en ese caso se guarda igual a subtotal (el envío se factura aparte, no
+  // se asume $0 ni se deja total en null).
+  subtotal     Decimal  @db.Decimal(10, 2)
+  shippingCost Decimal? @db.Decimal(10, 2)
+  total        Decimal  @db.Decimal(10, 2)
+
+  // Snapshot de la dirección de envío (ticket #24 copia estos campos desde el
+  // Address elegido), no una relación — un pedido ya creado no debe cambiar
+  // si el cliente edita o borra esa dirección guardada después. Sin FK de
+  // referencia tipo OrderItem.productId a propósito: a diferencia de un
+  // Product (que un admin borra deliberadamente y rara vez), el punto mismo
+  // de snapshottear es que nadie deba "ver la versión actual" de la
+  // dirección de un pedido ya hecho.
+  fullName    String
+  whatsapp    String
+  email       String
+  addressLine String
+  addressType AddressType
+  city        String
+  state       String
+  zip         String
+
+  termsAcceptedAt DateTime
+  // 3 días desde la creación (regla de negocio) — el cron del ticket #28
+  // marca `vencido` los pedidos `reservado` que pasan este momento sin pago.
+  reservedUntil   DateTime
+  createdAt       DateTime    @default(now())
+  items           OrderItem[]
+
+  @@index([userId])
+  // (status, reservedUntil) en vez de solo status: sirve directo la consulta
+  // del cron #28 (status = reservado AND reservedUntil < now()).
+  @@index([status, reservedUntil])
+}
+
+model OrderItem {
+  id      String @id @default(uuid()) @db.Uuid
+  orderId String @db.Uuid
+  order   Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  // FK opcional solo de referencia/admin — la fuente de verdad para mostrar
+  // o facturar un pedido ya hecho es el snapshot de abajo, no el Product
+  // actual (que puede cambiar de precio, desactivarse o borrarse después).
+  productId String?  @db.Uuid
+  product   Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
+
+  productName String
+  variantSize String?
+  unitPrice   Decimal @db.Decimal(10, 2)
+  quantity    Int
+
+  @@index([orderId])
+  @@index([productId])
 }
