@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { CartItemRow } from "@/components/shop/CartItemRow";
-import { getCartWithPricing } from "@/server/services/cart-service";
+import { WholesaleProgress } from "@/components/shop/WholesaleProgress";
+import { WHOLESALE_ITEM_THRESHOLD, getCartWithPricing } from "@/server/services/cart-service";
 import { requireCustomer } from "@/lib/session";
 import { r2PublicUrl } from "@/lib/r2";
 import { formatCurrency } from "@/lib/utils";
@@ -24,11 +25,11 @@ export default async function CarritoPage() {
     <div className="mx-auto flex max-w-4xl flex-col gap-8 px-4 py-16">
       <h1 className="text-2xl font-semibold text-foreground">Tu carrito</h1>
 
-      {cart.useWholesalePrice ? (
-        <p className="text-sm text-muted-foreground">
-          Tienes {cart.totalQuantity} artículos: se aplicó el precio mayorista a todo el carrito.
-        </p>
-      ) : null}
+      <WholesaleProgress
+        totalQuantity={cart.totalQuantity}
+        threshold={WHOLESALE_ITEM_THRESHOLD}
+        reached={cart.useWholesalePrice}
+      />
 
       <div className="flex flex-col">
         {cart.items.map((item) => (

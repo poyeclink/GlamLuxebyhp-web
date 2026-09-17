@@ -8,7 +8,6 @@ import {
   type CartActionState,
 } from "@/server/actions/cart-actions";
 import { Input } from "@/components/ui/Input";
-import { Button } from "@/components/ui/Button";
 import { SubmitButton } from "@/components/ui/SubmitButton";
 import { FormError } from "@/components/ui/FormError";
 import { formatCurrency } from "@/lib/utils";
@@ -30,6 +29,10 @@ export function CartItemRow({ item }: { item: CartLineItem }) {
     updateCartItemQuantityAction.bind(null, item.id),
     initialState,
   );
+  const [removeState, removeAction] = useActionState(
+    removeCartItemAction.bind(null, item.id),
+    initialState,
+  );
 
   return (
     <div className="flex flex-col gap-3 border-b border-border py-4 sm:flex-row sm:items-center sm:gap-4">
@@ -46,6 +49,7 @@ export function CartItemRow({ item }: { item: CartLineItem }) {
         ) : null}
         <span className="text-sm text-muted-foreground">{formatCurrency(item.unitPrice)} c/u</span>
         <FormError message={state.error} />
+        <FormError message={removeState.error} />
       </div>
 
       <div className="flex items-center gap-2">
@@ -62,10 +66,10 @@ export function CartItemRow({ item }: { item: CartLineItem }) {
             Actualizar
           </SubmitButton>
         </form>
-        <form action={removeCartItemAction.bind(null, item.id)}>
-          <Button type="submit" variant="ghost" size="sm">
+        <form action={removeAction}>
+          <SubmitButton variant="ghost" size="sm" className="w-auto">
             Eliminar
-          </Button>
+          </SubmitButton>
         </form>
       </div>
 

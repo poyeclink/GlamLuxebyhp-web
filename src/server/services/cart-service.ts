@@ -8,7 +8,7 @@ export class CartError extends Error {}
 // ShippingRate del tier "individual" (prisma/seed.ts) deben cubrir hasta
 // threshold-1 — si este número sube sin extender esas tarifas, el hueco
 // resuelve a null ("se coordina aparte") en vez de dar un precio real.
-const WHOLESALE_ITEM_THRESHOLD = 6;
+export const WHOLESALE_ITEM_THRESHOLD = 6;
 
 function isUniqueConstraintError(error: unknown) {
   return error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002";

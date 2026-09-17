@@ -78,8 +78,19 @@ export async function updateCartItemQuantityAction(
   return {};
 }
 
-export async function removeCartItemAction(itemId: string) {
+export async function removeCartItemAction(
+  itemId: string,
+  _prevState: CartActionState,
+): Promise<CartActionState> {
   const session = await requireCustomer();
-  await removeCartItem(session.userId, itemId);
+
+  try {
+    await removeCartItem(session.userId, itemId);
+  } catch (error) {
+    if (error instanceof CartError) return { error: error.message };
+    throw error;
+  }
+
   revalidatePath("/carrito");
+  return {};
 }
