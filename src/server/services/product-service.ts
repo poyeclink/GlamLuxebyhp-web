@@ -13,7 +13,11 @@ export function listProducts() {
 export function getProduct(id: string) {
   return prisma.product.findUnique({
     where: { id },
-    include: { images: { orderBy: { position: "asc" } }, category: true },
+    include: {
+      images: { orderBy: { position: "asc" } },
+      variants: { orderBy: { size: "asc" } },
+      category: true,
+    },
   });
 }
 

@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { ProductForm } from "@/components/admin/ProductForm";
 import { ProductImageUploader } from "@/components/admin/ProductImageUploader";
+import { VariantManager } from "@/components/admin/VariantManager";
 import { getProduct } from "@/server/services/product-service";
 import { updateProductAction } from "@/server/actions/product-actions";
 import { listCategories } from "@/server/services/category-service";
@@ -45,6 +46,11 @@ export default async function EditProductPage({
       <div className="flex flex-col gap-4">
         <h2 className="text-lg font-semibold text-foreground">Imágenes</h2>
         <ProductImageUploader productId={product.id} images={images} />
+      </div>
+
+      <div className="flex flex-col gap-4">
+        <h2 className="text-lg font-semibold text-foreground">Tallas y stock</h2>
+        <VariantManager productId={product.id} variants={product.variants} />
       </div>
     </div>
   );
