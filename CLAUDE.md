@@ -49,6 +49,13 @@ Stack obligatorio: Next.js (App Router) + TypeScript + React + Prisma + Supabase
 - Como el header depende de `getSession()` (usa `cookies()`), todas las rutas bajo `(shop)` son dinámicas (`ƒ` en el build), no estáticas — esperado, no es un bug.
 - Contacto de WhatsApp en el footer es opcional vía `NEXT_PUBLIC_WHATSAPP_NUMBER`: si no está configurado, el link simplemente no se renderiza (no hay número real todavía).
 
+## Cloudflare R2 (imágenes de producto)
+
+- Cliente S3-compatible en `src/lib/r2.ts` (`@aws-sdk/client-s3`), configurado con el endpoint `https://<R2_ACCOUNT_ID>.r2.cloudflarestorage.com` y `region: "auto"`.
+- Las subidas son siempre **server-side** (Server Actions del panel admin, ticket #11) usando `PutObjectCommand` directo — no se usan URLs firmadas ni upload desde el cliente, así que no hace falta configurar CORS en el bucket.
+- `R2_PUBLIC_URL` es el dominio público desde el que se sirven los objetos (custom domain o `*.r2.dev`) — `r2PublicUrl(key)` arma la URL final; nunca se construye a mano en los componentes.
+- Estructura de keys (a definir en el ticket #11): `products/{productId}/{uuid}-{filename}`.
+
 ## Referencia rápida de reglas de negocio (fuente: PDF de análisis)
 
 - Precio mayorista automático a partir de 6 artículos en el carrito (umbral configurable, no hardcodear el número 6 dos veces).
