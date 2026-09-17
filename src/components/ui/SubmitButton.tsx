@@ -5,7 +5,7 @@ import type { ComponentProps } from "react";
 import { Button } from "@/components/ui/Button";
 import { cn } from "@/lib/utils";
 
-export function SubmitButton({ className, children, ...props }: ComponentProps<"button">) {
+export function SubmitButton({ className, children, ...props }: ComponentProps<typeof Button>) {
   const { pending } = useFormStatus();
 
   return (

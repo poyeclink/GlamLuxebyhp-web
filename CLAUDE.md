@@ -54,9 +54,13 @@ Stack obligatorio: Next.js (App Router) + TypeScript + React + Prisma + Supabase
 - Cliente S3-compatible en `src/lib/r2.ts` (`@aws-sdk/client-s3`), configurado con el endpoint `https://<R2_ACCOUNT_ID>.r2.cloudflarestorage.com` y `region: "auto"`.
 - Las subidas son siempre **server-side** (Server Actions del panel admin, ticket #11) usando `PutObjectCommand` directo — no se usan URLs firmadas ni upload desde el cliente, así que no hace falta configurar CORS en el bucket.
 - `R2_PUBLIC_URL` es el dominio público desde el que se sirven los objetos (custom domain o `*.r2.dev`) — `r2PublicUrl(key)` arma la URL final; nunca se construye a mano en los componentes.
-- Estructura de keys (a definir en el ticket #11): `products/{productId}/{uuid}-{filename}`.
+- Estructura de keys: `products/{productId}/{uuid}-{filename-sanitizado}` (`src/server/services/product-image-service.ts`, función `buildKey`).
 - `ProductImage` guarda solo `key` (no `url`) — la URL pública siempre se deriva con `r2PublicUrl(key)` al leer, nunca se persiste. Así, si cambia `R2_PUBLIC_URL` (ej. de `*.r2.dev` a un dominio propio), no hay que migrar datos.
-- Una sola `isPrimary: true` por producto no está forzado a nivel de base de datos (requeriría un índice único parcial que Prisma no modela bien) — se garantiza en el service layer del ticket #11 (al marcar una imagen como primaria, desmarcar las demás del mismo producto en la misma operación).
+- Una sola `isPrimary: true` por producto no está forzado a nivel de base de datos (requeriría un índice único parcial que Prisma no modela bien) — se garantiza en `setPrimaryProductImage` (transacción: desmarca todas las del producto, marca la elegida) y en `addProductImage`/`deleteProductImage` (la primera imagen subida es primaria por defecto; al borrar la primaria se promueve la siguiente por `position`).
+- Validación de imágenes: solo `image/jpeg|png|webp`, máx. 5MB (`assertValidImageFile`) — valida el MIME que reporta el navegador, no magic bytes; suficiente para un panel admin de bajo riesgo, no para un endpoint público.
+- Todos los Server Actions de `src/server/actions/product-image-actions.ts` verifican `role administrador` al inicio (`requireAdmin()`) — es la única defensa real, la protección de `/admin/*` en `proxy.ts` no alcanza a un Server Action si se invocara desde otro lado.
+- `ProductImageUploader` (`src/components/admin/ProductImageUploader.tsx`) es el componente reutilizable para subir/reemplazar/borrar/marcar-principal — pensado para que el ticket #13 (CRUD de productos) lo monte directamente en el formulario de producto, recibiendo `images` ya con `url` calculada por el Server Component padre (nunca se expone `R2_PUBLIC_URL` al cliente).
+- `next.config.ts` lee `R2_PUBLIC_URL` en build/dev time para autorizar ese host en `images.remotePatterns` (necesario para usar `next/image` con las imágenes de R2) — si cambian de dominio público, no hay que tocar el config, se recalcula solo.
 
 ## Referencia rápida de reglas de negocio (fuente: PDF de análisis)
 
