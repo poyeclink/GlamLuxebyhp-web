@@ -32,6 +32,13 @@ export async function listFeaturedCategories(limit = 6) {
     .slice(0, limit);
 }
 
+export function listShopCategories() {
+  return prisma.category.findMany({
+    where: { products: { some: { active: true } } },
+    orderBy: { name: "asc" },
+  });
+}
+
 type CategoryInput = {
   name: string;
   slug: string;

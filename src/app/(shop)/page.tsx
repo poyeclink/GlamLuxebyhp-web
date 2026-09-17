@@ -2,8 +2,7 @@ import Link from "next/link";
 import { CategoryCard } from "@/components/shop/CategoryCard";
 import { ProductCard } from "@/components/shop/ProductCard";
 import { listFeaturedCategories } from "@/server/services/category-service";
-import { listFeaturedProducts } from "@/server/services/product-service";
-import { r2PublicUrl } from "@/lib/r2";
+import { listFeaturedProducts, toProductCardItem } from "@/server/services/product-service";
 
 export default async function HomePage() {
   const [categories, products] = await Promise.all([
@@ -57,17 +56,7 @@ export default async function HomePage() {
         ) : (
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
             {products.map((product) => (
-              <ProductCard
-                key={product.id}
-                product={{
-                  slug: product.slug,
-                  name: product.name,
-                  categoryName: product.category.name,
-                  wholesalePrice: Number(product.wholesalePrice),
-                  individualPrice: Number(product.individualPrice),
-                  imageUrl: product.images[0] ? r2PublicUrl(product.images[0].key) : null,
-                }}
-              />
+              <ProductCard key={product.id} product={toProductCardItem(product)} />
             ))}
           </div>
         )}

@@ -1,5 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { deleteFromR2 } from "@/server/services/product-image-service";
+import { r2PublicUrl } from "@/lib/r2";
+import type { ProductCardItem } from "@/components/shop/ProductCard";
 
 export class ProductError extends Error {}
 
@@ -20,6 +22,40 @@ export function listFeaturedProducts(limit = 8) {
       images: { where: { isPrimary: true }, take: 1 },
     },
   });
+}
+
+export function listShopProducts(categorySlug?: string) {
+  return prisma.product.findMany({
+    where: {
+      active: true,
+      ...(categorySlug ? { category: { slug: categorySlug } } : {}),
+    },
+    orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+    include: {
+      category: true,
+      images: { where: { isPrimary: true }, take: 1 },
+    },
+  });
+}
+
+type ProductForCard = {
+  slug: string;
+  name: string;
+  wholesalePrice: unknown;
+  individualPrice: unknown;
+  category: { name: string };
+  images: { key: string }[];
+};
+
+export function toProductCardItem(product: ProductForCard): ProductCardItem {
+  return {
+    slug: product.slug,
+    name: product.name,
+    categoryName: product.category.name,
+    wholesalePrice: Number(product.wholesalePrice),
+    individualPrice: Number(product.individualPrice),
+    imageUrl: product.images[0] ? r2PublicUrl(product.images[0].key) : null,
+  };
 }
 
 export function getProduct(id: string) {
