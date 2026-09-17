@@ -58,9 +58,17 @@ Stack obligatorio: Next.js (App Router) + TypeScript + React + Prisma + Supabase
 - `ProductImage` guarda solo `key` (no `url`) — la URL pública siempre se deriva con `r2PublicUrl(key)` al leer, nunca se persiste. Así, si cambia `R2_PUBLIC_URL` (ej. de `*.r2.dev` a un dominio propio), no hay que migrar datos.
 - Una sola `isPrimary: true` por producto no está forzado a nivel de base de datos (requeriría un índice único parcial que Prisma no modela bien) — se garantiza en `setPrimaryProductImage` (transacción: desmarca todas las del producto, marca la elegida) y en `addProductImage`/`deleteProductImage` (la primera imagen subida es primaria por defecto; al borrar la primaria se promueve la siguiente por `position`).
 - Validación de imágenes: solo `image/jpeg|png|webp`, máx. 5MB (`assertValidImageFile`) — valida el MIME que reporta el navegador, no magic bytes; suficiente para un panel admin de bajo riesgo, no para un endpoint público.
-- Todos los Server Actions de `src/server/actions/product-image-actions.ts` verifican `role administrador` al inicio (`requireAdmin()`) — es la única defensa real, la protección de `/admin/*` en `proxy.ts` no alcanza a un Server Action si se invocara desde otro lado.
+- Todos los Server Actions de admin verifican `role administrador` al inicio con `requireAdmin()` (`src/lib/session.ts`) — es la única defensa real, la protección de `/admin/*` en `proxy.ts` no alcanza a un Server Action si se invocara desde otro lado. Reusar este helper en cada Server Action de admin nueva, no reescribirlo.
 - `ProductImageUploader` (`src/components/admin/ProductImageUploader.tsx`) es el componente reutilizable para subir/reemplazar/borrar/marcar-principal — pensado para que el ticket #13 (CRUD de productos) lo monte directamente en el formulario de producto, recibiendo `images` ya con `url` calculada por el Server Component padre (nunca se expone `R2_PUBLIC_URL` al cliente).
 - `next.config.ts` lee `R2_PUBLIC_URL` en build/dev time para autorizar ese host en `images.remotePatterns` (necesario para usar `next/image` con las imágenes de R2) — si cambian de dominio público, no hay que tocar el config, se recalcula solo.
+
+## Panel admin: CRUD (categorías, y patrón para productos/etc. en adelante)
+
+- `/admin/categorias` sigue el patrón estándar de CRUD admin de este proyecto: página lista (Server Component) + `/nueva` y `/[id]/editar` con un `CategoryForm` compartido (Client Component con `useActionState`) que recibe la Server Action ya bindeada (`updateCategoryAction.bind(null, id)`).
+- Ticket #12 reinterpretó "eliminar (soft si tiene productos)" del plan original: en vez de agregar un campo `active` a `Category` (no existía y no hacía falta), el borrado simplemente se **bloquea con un mensaje claro** si tiene productos asociados (ya lo protege el `onDelete: Restrict` del ticket #8 a nivel de FK; el service pre-valida para dar un mensaje amigable con el conteo, en vez de dejar que reviente el constraint).
+- Auto-generación de slug (`CategoryForm`) desde el nombre, pero **solo al crear** — al editar, el slug ya existente no se debe regenerar solo por tocar el nombre (se detectó y arregló este bug real durante la verificación: cambiar el nombre en modo edición estaba pisando el slug).
+- `src/app/(admin)/admin/layout.tsx` es la nav mínima compartida de todo `/admin/*` (links + logout) — cada ticket nuevo de admin solo agrega su link ahí, no repite header/logout.
+- `eslint.config.mjs` tiene `argsIgnorePattern`/`varsIgnorePattern: "^_"` para `no-unused-vars` — parámetros de Server Actions no usados (como `_prevState` cuando la action no necesita leer el estado previo) se prefijan con `_` y no generan warning.
 
 ## Referencia rápida de reglas de negocio (fuente: PDF de análisis)
 

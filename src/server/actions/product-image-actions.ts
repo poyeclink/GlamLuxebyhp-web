@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { getSession } from "@/lib/session";
+import { requireAdmin } from "@/lib/session";
 import {
   ProductImageError,
   addProductImage,
@@ -9,13 +9,6 @@ import {
   replaceProductImage,
   setPrimaryProductImage,
 } from "@/server/services/product-image-service";
-
-async function requireAdmin() {
-  const session = await getSession();
-  if (session?.role !== "administrador") {
-    throw new Error("No autorizado.");
-  }
-}
 
 export type ProductImageActionState = {
   error?: string;

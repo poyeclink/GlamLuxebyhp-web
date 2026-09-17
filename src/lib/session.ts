@@ -57,3 +57,11 @@ export async function getSession(): Promise<SessionPayload | null> {
   if (!token) return null;
   return verifySessionToken(token);
 }
+
+export async function requireAdmin(): Promise<SessionPayload> {
+  const session = await getSession();
+  if (session?.role !== "administrador") {
+    throw new Error("No autorizado.");
+  }
+  return session;
+}
