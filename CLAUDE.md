@@ -42,6 +42,13 @@ Stack obligatorio: Next.js (App Router) + TypeScript + React + Prisma + Supabase
 - Variantes de componentes con `class-variance-authority` (`cva`) + `cn()` (`clsx` + `tailwind-merge`, en `src/lib/utils.ts`) — mismo patrón que usa shadcn/ui, así cualquier componente de shadcn se puede copiar/pegar directo sin reajustar tokens.
 - Primitivos disponibles: `Button` (variants primary/secondary/outline/ghost/destructive, prop `loading` con spinner), `Input`, `Label`, `TextField` (Label+Input), `Card`/`CardHeader`/`CardTitle`/`CardContent`/`CardFooter`, `Badge`, `FormError`, `SubmitButton` (wrapper de `Button` con `useFormStatus`), `PriceDual` (precio mayorista + individual, patrón de negocio del PDF).
 
+## Layout y navegación
+
+- `src/app/(shop)/layout.tsx` envuelve todas las rutas de tienda (Home, login, registro, y las que vengan: tienda, producto, carrito, checkout, perfil, about, contacto, políticas) con `SiteHeader` + `SiteFooter`. `(admin)` (acceso-admin, admin) es una superficie aparte, sin este layout ni el header/footer de la tienda — a propósito, según el PDF.
+- `SiteHeader` es Server Component (lee `getSession()` para mostrar "Mi cuenta"+logout o "Iniciar sesión"); el toggle del menú móvil vive aparte en `MobileNav` (Client Component) porque es la única parte que necesita estado en el cliente.
+- Como el header depende de `getSession()` (usa `cookies()`), todas las rutas bajo `(shop)` son dinámicas (`ƒ` en el build), no estáticas — esperado, no es un bug.
+- Contacto de WhatsApp en el footer es opcional vía `NEXT_PUBLIC_WHATSAPP_NUMBER`: si no está configurado, el link simplemente no se renderiza (no hay número real todavía).
+
 ## Referencia rápida de reglas de negocio (fuente: PDF de análisis)
 
 - Precio mayorista automático a partir de 6 artículos en el carrito (umbral configurable, no hardcodear el número 6 dos veces).
