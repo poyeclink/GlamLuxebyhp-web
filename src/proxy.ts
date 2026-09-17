@@ -5,13 +5,17 @@ export async function proxy(request: NextRequest) {
   const token = request.cookies.get(SESSION_COOKIE_NAME)?.value;
   const session = token ? await verifySessionToken(token) : null;
 
-  if (!session || session.role !== "administrador") {
-    return NextResponse.redirect(new URL("/acceso-admin", request.url));
+  if (request.nextUrl.pathname.startsWith("/admin")) {
+    if (!session || session.role !== "administrador") {
+      return NextResponse.redirect(new URL("/acceso-admin", request.url));
+    }
+  } else if (!session || session.role !== "cliente") {
+    return NextResponse.redirect(new URL("/login", request.url));
   }
 
   return NextResponse.next();
 }
 
 export const config = {
-  matcher: ["/admin/:path*"],
+  matcher: ["/admin/:path*", "/carrito/:path*"],
 };

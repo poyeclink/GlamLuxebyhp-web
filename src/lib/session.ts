@@ -65,3 +65,11 @@ export async function requireAdmin(): Promise<SessionPayload> {
   }
   return session;
 }
+
+export async function requireCustomer(): Promise<SessionPayload> {
+  const session = await getSession();
+  if (session?.role !== "cliente") {
+    throw new Error("Debes iniciar sesión para continuar.");
+  }
+  return session;
+}

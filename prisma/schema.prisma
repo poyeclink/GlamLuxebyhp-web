@@ -31,6 +31,7 @@ model User {
   whatsapp     String?
   createdAt    DateTime  @default(now())
   addresses    Address[]
+  cart         Cart?
 }
 
 model Address {
@@ -72,6 +73,7 @@ model Product {
   createdAt       DateTime         @default(now())
   variants        ProductVariant[]
   images          ProductImage[]
+  cartItems       CartItem[]
 
   @@index([categoryId])
 }
@@ -89,11 +91,37 @@ model ProductImage {
 }
 
 model ProductVariant {
-  id        String  @id @default(uuid()) @db.Uuid
-  productId String  @db.Uuid
-  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  id        String     @id @default(uuid()) @db.Uuid
+  productId String     @db.Uuid
+  product   Product    @relation(fields: [productId], references: [id], onDelete: Cascade)
   size      String
-  stock     Int     @default(0)
+  stock     Int        @default(0)
+  cartItems CartItem[]
 
   @@unique([productId, size])
+}
+
+model Cart {
+  id     String     @id @default(uuid()) @db.Uuid
+  userId String     @unique @db.Uuid
+  user   User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items  CartItem[]
+}
+
+model CartItem {
+  id        String          @id @default(uuid()) @db.Uuid
+  cartId    String          @db.Uuid
+  cart      Cart            @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  productId String          @db.Uuid
+  product   Product         @relation(fields: [productId], references: [id], onDelete: Cascade)
+  variantId String?         @db.Uuid
+  variant   ProductVariant? @relation(fields: [variantId], references: [id], onDelete: Cascade)
+  quantity  Int
+  createdAt DateTime        @default(now())
+
+  // Postgres no deduplica NULLs en un índice único, así que esto solo protege
+  // contra filas duplicadas cuando variantId no es null (productos con tallas,
+  // donde el stock limitado sí importa) — ver addToCart en cart-service.ts.
+  @@unique([cartId, productId, variantId])
+  @@index([productId])
 }

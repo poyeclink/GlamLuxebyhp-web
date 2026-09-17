@@ -1,15 +1,30 @@
 import Link from "next/link";
 import { ShoppingBag } from "lucide-react";
 import { getSession } from "@/lib/session";
+import { getCartItemCount } from "@/server/services/cart-service";
 import { LogoutButton } from "@/components/auth/LogoutButton";
 import { Button } from "@/components/ui/Button";
 import { MobileNav } from "@/components/layout/MobileNav";
 
 const NAV_LINKS = [{ href: "/tienda", label: "Tienda" }];
 
+function CartLink({ count }: { count: number }) {
+  return (
+    <Link href="/carrito" aria-label="Carrito" className="relative text-muted-foreground hover:text-foreground">
+      <ShoppingBag className="h-5 w-5" />
+      {count > 0 ? (
+        <span className="absolute -right-2 -top-2 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] font-medium text-primary-foreground">
+          {count}
+        </span>
+      ) : null}
+    </Link>
+  );
+}
+
 export async function SiteHeader() {
   const session = await getSession();
   const isCustomer = session?.role === "cliente";
+  const cartCount = isCustomer ? await getCartItemCount(session.userId) : 0;
 
   const authSlot = isCustomer ? (
     <div className="flex items-center gap-3">
@@ -46,24 +61,12 @@ export async function SiteHeader() {
         </nav>
 
         <div className="hidden items-center gap-4 md:flex">
-          <Link
-            href="/carrito"
-            aria-label="Carrito"
-            className="text-muted-foreground hover:text-foreground"
-          >
-            <ShoppingBag className="h-5 w-5" />
-          </Link>
+          <CartLink count={cartCount} />
           {authSlot}
         </div>
 
         <div className="flex items-center gap-2 md:hidden">
-          <Link
-            href="/carrito"
-            aria-label="Carrito"
-            className="text-muted-foreground hover:text-foreground"
-          >
-            <ShoppingBag className="h-5 w-5" />
-          </Link>
+          <CartLink count={cartCount} />
           <MobileNav links={NAV_LINKS} authSlot={authSlot} />
         </div>
       </div>
