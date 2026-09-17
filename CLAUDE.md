@@ -69,6 +69,9 @@ Stack obligatorio: Next.js (App Router) + TypeScript + React + Prisma + Supabase
 - Auto-generación de slug (`CategoryForm`) desde el nombre, pero **solo al crear** — al editar, el slug ya existente no se debe regenerar solo por tocar el nombre (se detectó y arregló este bug real durante la verificación: cambiar el nombre en modo edición estaba pisando el slug).
 - `src/app/(admin)/admin/layout.tsx` es la nav mínima compartida de todo `/admin/*` (links + logout) — cada ticket nuevo de admin solo agrega su link ahí, no repite header/logout.
 - `eslint.config.mjs` tiene `argsIgnorePattern`/`varsIgnorePattern: "^_"` para `no-unused-vars` — parámetros de Server Actions no usados (como `_prevState` cuando la action no necesita leer el estado previo) se prefijan con `_` y no generan warning.
+- CRUD de productos (`/admin/productos`) sigue exactamente el mismo patrón que categorías, con dos diferencias: (1) `ProductForm` recibe la lista de categorías como prop (Server Component la carga) para el `SelectField`; (2) la página de editar producto monta además `ProductImageUploader` (ticket #11) debajo del formulario — las imágenes solo se gestionan una vez el producto existe (tiene `id`), nunca en el formulario de creación.
+- `deleteProduct` (`product-service.ts`) borra primero los objetos de R2 de todas las imágenes del producto (reutilizando `deleteFromR2`, exportado desde `product-image-service.ts`) y luego borra el `Product` — el cascade de Prisma limpia las filas de `ProductImage`/`ProductVariant`, pero nunca toca R2, así que ese paso manual es obligatorio o quedan objetos huérfanos en el bucket.
+- Primitivos de UI nuevos: `Textarea`, `Select`, `SelectField` (Label+Select, mismo patrón que `TextField`), `Checkbox` (input+label a la derecha). Igual que el resto del design system, solo tokens semánticos, cero colores hardcodeados.
 
 ## Referencia rápida de reglas de negocio (fuente: PDF de análisis)
 

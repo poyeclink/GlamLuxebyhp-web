@@ -37,7 +37,7 @@ async function uploadToR2(key: string, file: File) {
   );
 }
 
-async function deleteFromR2(key: string) {
+export async function deleteFromR2(key: string) {
   try {
     await r2.send(new DeleteObjectCommand({ Bucket: R2_BUCKET_NAME, Key: key }));
   } catch (error) {
