@@ -108,10 +108,20 @@ model ProductVariant {
 }
 
 model Cart {
-  id     String     @id @default(uuid()) @db.Uuid
-  userId String     @unique @db.Uuid
-  user   User       @relation(fields: [userId], references: [id], onDelete: Cascade)
-  items  CartItem[]
+  id           String     @id @default(uuid()) @db.Uuid
+  userId       String?    @unique @db.Uuid
+  user         User?      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  // Carrito de invitado (sin cuenta): identificado por una cookie opaca en vez
+  // de un usuario — ver src/lib/cart-session.ts. Se fusiona con el carrito del
+  // User y se borra al iniciar sesión/registrarse (mergeGuestCartIntoUser).
+  //
+  // La migración guest_cart_session_token agrega además un CHECK de Postgres
+  // (userId xor sessionToken) que este schema no puede expresar — invisible
+  // para `prisma db push`, que no reproduce SQL fuera de las migraciones. No
+  // usar `db push` contra esta tabla; el flujo de este proyecto ya es
+  // migrate dev/deploy (ver CLAUDE.md).
+  sessionToken String?    @unique
+  items        CartItem[]
 }
 
 model CartItem {

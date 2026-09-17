@@ -10,6 +10,7 @@ export async function proxy(request: NextRequest) {
       return NextResponse.redirect(new URL("/acceso-admin", request.url));
     }
   } else if (!session || session.role !== "cliente") {
+    // /carrito no está aquí a propósito: admite invitados (ticket #22).
     return NextResponse.redirect(new URL("/login", request.url));
   }
 
@@ -17,5 +18,5 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/admin/:path*", "/carrito/:path*", "/perfil/:path*"],
+  matcher: ["/admin/:path*", "/perfil/:path*"],
 };

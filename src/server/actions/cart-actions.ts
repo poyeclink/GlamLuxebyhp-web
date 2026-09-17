@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
-import { requireCustomer } from "@/lib/session";
+import { resolveCartOwnerForWrite } from "@/lib/cart-session";
 import {
   CartError,
   addToCart,
@@ -30,7 +30,7 @@ export async function addToCartAction(
   _prevState: CartActionState,
   formData: FormData,
 ): Promise<CartActionState> {
-  const session = await requireCustomer();
+  const owner = await resolveCartOwnerForWrite();
 
   const parsed = addToCartSchema.safeParse({
     variantId: formData.get("variantId") || undefined,
@@ -41,7 +41,7 @@ export async function addToCartAction(
   }
 
   try {
-    await addToCart(session.userId, productId, parsed.data.variantId ?? null, parsed.data.quantity);
+    await addToCart(owner, productId, parsed.data.variantId ?? null, parsed.data.quantity);
   } catch (error) {
     if (error instanceof CartError) return { error: error.message };
     throw error;
@@ -60,7 +60,7 @@ export async function updateCartItemQuantityAction(
   _prevState: CartActionState,
   formData: FormData,
 ): Promise<CartActionState> {
-  const session = await requireCustomer();
+  const owner = await resolveCartOwnerForWrite();
 
   const parsed = quantitySchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) {
@@ -68,7 +68,7 @@ export async function updateCartItemQuantityAction(
   }
 
   try {
-    await updateCartItemQuantity(session.userId, itemId, parsed.data.quantity);
+    await updateCartItemQuantity(owner, itemId, parsed.data.quantity);
   } catch (error) {
     if (error instanceof CartError) return { error: error.message };
     throw error;
@@ -82,10 +82,10 @@ export async function removeCartItemAction(
   itemId: string,
   _prevState: CartActionState,
 ): Promise<CartActionState> {
-  const session = await requireCustomer();
+  const owner = await resolveCartOwnerForWrite();
 
   try {
-    await removeCartItem(session.userId, itemId);
+    await removeCartItem(owner, itemId);
   } catch (error) {
     if (error instanceof CartError) return { error: error.message };
     throw error;

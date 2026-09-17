@@ -1,20 +1,16 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { Badge } from "@/components/ui/Badge";
-import { Button } from "@/components/ui/Button";
 import { PriceDual } from "@/components/ui/PriceDual";
 import { ImageGallery } from "@/components/shop/ImageGallery";
 import { AddToCartForm } from "@/components/shop/AddToCartForm";
 import { getProductBySlug } from "@/server/services/product-service";
-import { getSession } from "@/lib/session";
 import { r2PublicUrl } from "@/lib/r2";
 
 export default async function ProductoPage({ params }: PageProps<"/producto/[slug]">) {
   const { slug } = await params;
-  const [product, session] = await Promise.all([getProductBySlug(slug), getSession()]);
+  const product = await getProductBySlug(slug);
   if (!product) notFound();
-
-  const isCustomer = session?.role === "cliente";
 
   const images = product.images.map((image) => ({
     id: image.id,
@@ -70,17 +66,11 @@ export default async function ProductoPage({ params }: PageProps<"/producto/[slu
             </div>
           ) : null}
 
-          {isCustomer ? (
-            <AddToCartForm
-              productId={product.id}
-              hasVariants={product.hasVariants}
-              variants={product.variants}
-            />
-          ) : (
-            <Link href="/login">
-              <Button className="mt-2 w-full sm:w-auto">Inicia sesión para comprar</Button>
-            </Link>
-          )}
+          <AddToCartForm
+            productId={product.id}
+            hasVariants={product.hasVariants}
+            variants={product.variants}
+          />
         </div>
       </div>
     </div>

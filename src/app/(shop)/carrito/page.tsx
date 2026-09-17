@@ -2,15 +2,15 @@ import Link from "next/link";
 import { CartItemRow } from "@/components/shop/CartItemRow";
 import { WholesaleProgress } from "@/components/shop/WholesaleProgress";
 import { WHOLESALE_ITEM_THRESHOLD, getCartWithPricing } from "@/server/services/cart-service";
-import { requireCustomer } from "@/lib/session";
+import { resolveCartOwnerForRead } from "@/lib/cart-session";
 import { r2PublicUrl } from "@/lib/r2";
 import { formatCurrency } from "@/lib/utils";
 
 export default async function CarritoPage() {
-  const session = await requireCustomer();
-  const cart = await getCartWithPricing(session.userId);
+  const owner = await resolveCartOwnerForRead();
+  const cart = owner ? await getCartWithPricing(owner) : null;
 
-  if (cart.items.length === 0) {
+  if (!cart || cart.items.length === 0) {
     return (
       <div className="mx-auto flex max-w-2xl flex-col items-center gap-4 px-4 py-24 text-center">
         <h1 className="text-2xl font-semibold text-foreground">Tu carrito está vacío</h1>

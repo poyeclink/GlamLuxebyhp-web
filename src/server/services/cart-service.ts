@@ -4,6 +4,11 @@ import { resolveShippingCost } from "@/server/services/shipping-service";
 
 export class CartError extends Error {}
 
+// Un carrito es de un User autenticado o de un invitado (cookie opaca,
+// src/lib/cart-session.ts) — nunca ambos, reforzado por el CHECK de la
+// migración guest_cart_session_token.
+export type CartOwner = { userId: string } | { sessionToken: string };
+
 // Del PDF: umbral que activa precio mayorista automático en el carrito. Los
 // ShippingRate del tier "individual" (prisma/seed.ts) deben cubrir hasta
 // threshold-1 — si este número sube sin extender esas tarifas, el hueco
@@ -14,10 +19,22 @@ function isUniqueConstraintError(error: unknown) {
   return error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002";
 }
 
-async function getOrCreateCart(userId: string) {
+function cartWhereForOwner(owner: CartOwner) {
+  return "userId" in owner ? { userId: owner.userId } : { sessionToken: owner.sessionToken };
+}
+
+function cartBelongsToOwner(
+  cart: { userId: string | null; sessionToken: string | null },
+  owner: CartOwner,
+) {
+  return "userId" in owner ? cart.userId === owner.userId : cart.sessionToken === owner.sessionToken;
+}
+
+async function getOrCreateCart(owner: CartOwner) {
   // upsert en vez de find-then-create: dos "agregar al carrito" simultáneos del
-  // mismo usuario nuevo no deben pisarse (Cart.userId es único).
-  return prisma.cart.upsert({ where: { userId }, create: { userId }, update: {} });
+  // mismo dueño (usuario o invitado) no deben pisarse (userId/sessionToken son únicos).
+  const where = cartWhereForOwner(owner);
+  return prisma.cart.upsert({ where, create: owner, update: {} });
 }
 
 async function assertVariantAvailable(productId: string, variantId: string, quantity: number) {
@@ -32,7 +49,7 @@ async function assertVariantAvailable(productId: string, variantId: string, quan
 }
 
 export async function addToCart(
-  userId: string,
+  owner: CartOwner,
   productId: string,
   variantId: string | null,
   quantity: number,
@@ -47,7 +64,7 @@ export async function addToCart(
     await assertVariantAvailable(productId, variantId, quantity);
   }
 
-  const cart = await getOrCreateCart(userId);
+  const cart = await getOrCreateCart(owner);
 
   const existingItem = await prisma.cartItem.findFirst({
     where: { cartId: cart.id, productId, variantId },
@@ -81,39 +98,39 @@ export async function addToCart(
   }
 }
 
-async function getOwnedCartItem(userId: string, itemId: string) {
+async function getOwnedCartItem(owner: CartOwner, itemId: string) {
   const item = await prisma.cartItem.findUnique({
     where: { id: itemId },
     include: { cart: true },
   });
-  if (!item || item.cart.userId !== userId) {
+  if (!item || !cartBelongsToOwner(item.cart, owner)) {
     throw new CartError("Este artículo no pertenece a tu carrito.");
   }
   return item;
 }
 
-export async function updateCartItemQuantity(userId: string, itemId: string, quantity: number) {
-  const item = await getOwnedCartItem(userId, itemId);
+export async function updateCartItemQuantity(owner: CartOwner, itemId: string, quantity: number) {
+  const item = await getOwnedCartItem(owner, itemId);
   if (item.variantId) await assertVariantAvailable(item.productId, item.variantId, quantity);
   return prisma.cartItem.update({ where: { id: itemId }, data: { quantity } });
 }
 
-export async function removeCartItem(userId: string, itemId: string) {
-  const item = await getOwnedCartItem(userId, itemId);
+export async function removeCartItem(owner: CartOwner, itemId: string) {
+  const item = await getOwnedCartItem(owner, itemId);
   await prisma.cartItem.delete({ where: { id: item.id } });
 }
 
-export async function getCartItemCount(userId: string) {
+export async function getCartItemCount(owner: CartOwner) {
   const cart = await prisma.cart.findUnique({
-    where: { userId },
+    where: cartWhereForOwner(owner),
     include: { items: { select: { quantity: true } } },
   });
   return cart?.items.reduce((sum, item) => sum + item.quantity, 0) ?? 0;
 }
 
-export async function getCartWithPricing(userId: string) {
+export async function getCartWithPricing(owner: CartOwner) {
   const cart = await prisma.cart.findUnique({
-    where: { userId },
+    where: cartWhereForOwner(owner),
     include: {
       items: {
         orderBy: { createdAt: "asc" },
@@ -154,4 +171,29 @@ export async function getCartWithPricing(userId: string) {
       : await resolveShippingCost(useWholesalePrice ? "mayorista" : "individual", totalQuantity);
 
   return { items, totalQuantity, useWholesalePrice, subtotal, shippingEstimate };
+}
+
+export async function mergeGuestCartIntoUser(sessionToken: string, userId: string) {
+  const guestCart = await prisma.cart.findUnique({
+    where: { sessionToken },
+    include: { items: true },
+  });
+  if (!guestCart) return;
+
+  // Se borra antes de fusionar (no después): addToCart no es idempotente
+  // (suma cantidades), así que si algo falla a mitad del loop de abajo, un
+  // reintento del login no debe volver a encontrar este carrito y duplicar
+  // las líneas que ya se fusionaron — perder lo que faltaba es preferible a
+  // duplicar cantidades ya cobradas/mostradas.
+  await prisma.cart.delete({ where: { id: guestCart.id } });
+
+  for (const item of guestCart.items) {
+    try {
+      await addToCart({ userId }, item.productId, item.variantId, item.quantity);
+    } catch (error) {
+      // Producto desactivado o sin stock suficiente desde que se agregó como
+      // invitado: se descarta esa línea en vez de bloquear el login.
+      if (!(error instanceof CartError)) throw error;
+    }
+  }
 }

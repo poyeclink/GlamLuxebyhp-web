@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { jwtVerify, SignJWT } from "jose";
 import { cookies } from "next/headers";
 
@@ -51,12 +52,15 @@ export async function clearSessionCookie() {
   cookieStore.delete(SESSION_COOKIE_NAME);
 }
 
-export async function getSession(): Promise<SessionPayload | null> {
+// cache(): varios Server Components/actions de la misma request (header,
+// página, resolveCartOwnerForRead/Write) llaman getSession() por separado —
+// sin esto cada uno repite la lectura de cookie + verificación del JWT.
+export const getSession = cache(async (): Promise<SessionPayload | null> => {
   const cookieStore = await cookies();
   const token = cookieStore.get(SESSION_COOKIE_NAME)?.value;
   if (!token) return null;
   return verifySessionToken(token);
-}
+});
 
 export async function requireAdmin(): Promise<SessionPayload> {
   const session = await getSession();

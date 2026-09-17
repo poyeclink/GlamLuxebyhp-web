@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ShoppingBag } from "lucide-react";
 import { getSession } from "@/lib/session";
+import { resolveCartOwnerForRead } from "@/lib/cart-session";
 import { getCartItemCount } from "@/server/services/cart-service";
 import { LogoutButton } from "@/components/auth/LogoutButton";
 import { Button } from "@/components/ui/Button";
@@ -24,7 +25,8 @@ function CartLink({ count }: { count: number }) {
 export async function SiteHeader() {
   const session = await getSession();
   const isCustomer = session?.role === "cliente";
-  const cartCount = isCustomer ? await getCartItemCount(session.userId) : 0;
+  const cartOwner = await resolveCartOwnerForRead();
+  const cartCount = cartOwner ? await getCartItemCount(cartOwner) : 0;
 
   const authSlot = isCustomer ? (
     <div className="flex items-center gap-3">
