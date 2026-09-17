@@ -24,9 +24,9 @@ export function LoginForm() {
       />
       <FormError message={state.error} />
       <SubmitButton>Iniciar sesión</SubmitButton>
-      <p className="text-center text-sm text-neutral-600">
+      <p className="text-center text-sm text-muted-foreground">
         ¿No tienes cuenta?{" "}
-        <Link href="/registro" className="font-medium text-neutral-900 underline">
+        <Link href="/registro" className="font-medium text-foreground underline">
           Regístrate
         </Link>
       </p>

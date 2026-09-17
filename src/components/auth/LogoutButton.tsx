@@ -1,14 +1,12 @@
 import { logoutAction } from "@/server/actions/auth-actions";
+import { Button } from "@/components/ui/Button";
 
 export function LogoutButton() {
   return (
     <form action={logoutAction}>
-      <button
-        type="submit"
-        className="text-sm font-medium text-neutral-700 underline hover:text-neutral-900"
-      >
+      <Button type="submit" variant="ghost" size="sm">
         Cerrar sesión
-      </button>
+      </Button>
     </form>
   );
 }

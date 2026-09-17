@@ -35,6 +35,13 @@ Stack obligatorio: Next.js (App Router) + TypeScript + React + Prisma + Supabase
 - `src/proxy.ts` protege `/admin/:path*` (requiere `role administrador`, si no redirige a `/acceso-admin`). En Next.js 16 el archivo se llama `proxy.ts` y la función `proxy`, no `middleware.ts`/`middleware` — ese nombre está deprecado desde v16. Corre en runtime Node.js por defecto (ya no Edge).
 - Los Server Actions de auth siempre devuelven el mismo mensaje genérico ("Correo o contraseña incorrectos") sin importar si el correo no existe, la contraseña es incorrecta, o el usuario tiene el rol equivocado para ese formulario — evita filtrar qué cuentas existen o son admin.
 
+## Design system (`src/components/ui/`)
+
+- Tokens de color/radio en `src/app/globals.css` como variables CSS (`--background`, `--foreground`, `--card`, `--primary`, `--secondary`, `--muted`, `--border`, `--input`, `--ring`, `--destructive`, `--radius`) mapeadas a utilidades de Tailwind v4 vía `@theme inline` (ej. `--color-primary` → clases `bg-primary`/`text-primary`). Paleta neutra (grises) a propósito — cuando se defina la marca, el rebranding es cambiar estos valores en un solo lugar, no tocar cada componente.
+- **Nunca usar clases `neutral-*`/`gray-*`/colores literales de Tailwind directamente en componentes** — siempre los tokens semánticos (`bg-background`, `text-foreground`, `text-muted-foreground`, `border-border`, etc.), para que el rebranding futuro no requiera tocar componentes.
+- Variantes de componentes con `class-variance-authority` (`cva`) + `cn()` (`clsx` + `tailwind-merge`, en `src/lib/utils.ts`) — mismo patrón que usa shadcn/ui, así cualquier componente de shadcn se puede copiar/pegar directo sin reajustar tokens.
+- Primitivos disponibles: `Button` (variants primary/secondary/outline/ghost/destructive, prop `loading` con spinner), `Input`, `Label`, `TextField` (Label+Input), `Card`/`CardHeader`/`CardTitle`/`CardContent`/`CardFooter`, `Badge`, `FormError`, `SubmitButton` (wrapper de `Button` con `useFormStatus`), `PriceDual` (precio mayorista + individual, patrón de negocio del PDF).
+
 ## Referencia rápida de reglas de negocio (fuente: PDF de análisis)
 
 - Precio mayorista automático a partir de 6 artículos en el carrito (umbral configurable, no hardcodear el número 6 dos veces).

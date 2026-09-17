@@ -26,9 +26,9 @@ export function RegisterForm() {
       />
       <FormError message={state.error} />
       <SubmitButton>Crear cuenta</SubmitButton>
-      <p className="text-center text-sm text-neutral-600">
+      <p className="text-center text-sm text-muted-foreground">
         ¿Ya tienes cuenta?{" "}
-        <Link href="/login" className="font-medium text-neutral-900 underline">
+        <Link href="/login" className="font-medium text-foreground underline">
           Inicia sesión
         </Link>
       </p>
