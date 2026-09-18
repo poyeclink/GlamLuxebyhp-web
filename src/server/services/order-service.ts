@@ -1,6 +1,8 @@
 import { prisma } from "@/lib/prisma";
-import type { AddressType, PaymentMethod } from "@/generated/prisma/client";
+import type { AddressType, OrderStatus, PaymentMethod } from "@/generated/prisma/client";
 import { computeCartTotal, getCartWithPricing } from "@/server/services/cart-service";
+import { PAYMENT_METHOD_OPTIONS } from "@/server/services/payment-service";
+import { isUuid } from "@/lib/utils";
 
 export class OrderError extends Error {}
 
@@ -146,4 +148,64 @@ export async function expireReservedOrders() {
   }
 
   return { expiredCount };
+}
+
+// findUnique con un id sin forma de UUID revienta con un error crudo de
+// Postgres antes de llegar al chequeo de dueño — mismo cuidado que
+// getAddressForEdit (address-service.ts).
+export async function getOrderForCustomer(userId: string, id: string) {
+  if (!isUuid(id)) return null;
+  const order = await prisma.order.findUnique({ where: { id }, include: { items: true } });
+  if (!order || order.userId !== userId) return null;
+  return order;
+}
+
+// Copy de "siguientes pasos" para la pantalla de confirmación (ticket #29).
+// Los pasos reales de pago con tarjeta (Stripe, ticket #31) y de pago manual
+// (instrucciones desde PaymentMethodConfig, ticket #33) todavía no existen —
+// este texto es un placeholder honesto ("te avisaremos") que esas tickets
+// reemplazan, no una promesa de una función ya construida.
+export function getOrderStatusMessage(status: OrderStatus, paymentMethod: PaymentMethod) {
+  switch (status) {
+    case "reservado": {
+      if (paymentMethod === "tarjeta") {
+        return {
+          title: "Pedido reservado",
+          description:
+            "Tu pedido está reservado por 3 días. Pronto habilitaremos el pago en línea con tarjeta — te avisaremos para completarlo.",
+        };
+      }
+      // Fallback al valor crudo del enum si algún día PAYMENT_METHOD_OPTIONS
+      // (ticket #36, lista dinámica) no cubre un método — nunca mostrar "undefined".
+      const label =
+        PAYMENT_METHOD_OPTIONS.find((option) => option.value === paymentMethod)?.label ??
+        paymentMethod;
+      return {
+        title: "Pedido reservado",
+        description:
+          `Tu pedido está reservado por 3 días. Te contactaremos con los datos para pagar por ${label} ` +
+          "— nuestro equipo verifica los pagos manuales antes de confirmar el pedido.",
+      };
+    }
+    case "confirmado":
+      return {
+        title: "Pago confirmado",
+        description: "Verificamos tu pago. Estamos preparando tu pedido para el envío.",
+      };
+    case "enviado":
+      return { title: "Pedido enviado", description: "Tu pedido ya está en camino." };
+    case "vencido":
+      return {
+        title: "Reserva vencida",
+        description: "La reserva de este pedido venció sin un pago verificado.",
+      };
+    case "cancelado":
+      return { title: "Pedido cancelado", description: "Este pedido fue cancelado." };
+    default: {
+      // Chequeo de exhaustividad: si OrderStatus gana un valor nuevo (ticket
+      // #35 y en adelante), esto deja de compilar hasta agregar su caso.
+      const unhandled: never = status;
+      throw new Error(`Estado de pedido no manejado: ${unhandled}`);
+    }
+  }
 }

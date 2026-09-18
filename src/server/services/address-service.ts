@@ -1,9 +1,8 @@
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
+import { isUuid } from "@/lib/utils";
 
 export class AddressError extends Error {}
-
-const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 // Vive aquí (no en address-actions.ts) porque un archivo "use server" solo
 // puede exportar funciones async — un objeto Zod ahí rompe la evaluación del
@@ -46,7 +45,7 @@ export function listAddresses(userId: string) {
 // antes de llegar al chequeo de dueño; lo tratamos igual que "no existe" en vez de
 // dejar que se propague como un 500 crudo.
 async function getOwnedAddress(userId: string, id: string) {
-  if (!UUID_PATTERN.test(id)) throw new AddressError("Esta dirección no existe.");
+  if (!isUuid(id)) throw new AddressError("Esta dirección no existe.");
   const address = await prisma.address.findUnique({ where: { id } });
   if (!address || address.userId !== userId) {
     throw new AddressError("Esta dirección no te pertenece.");
@@ -81,7 +80,7 @@ export async function deleteAddress(userId: string, id: string) {
 }
 
 export async function getAddressForEdit(userId: string, id: string) {
-  if (!UUID_PATTERN.test(id)) return null;
+  if (!isUuid(id)) return null;
   const address = await prisma.address.findUnique({ where: { id } });
   if (!address || address.userId !== userId) return null;
   return address;
