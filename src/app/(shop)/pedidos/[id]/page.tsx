@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Badge } from "@/components/ui/Badge";
 import { OrderSummary } from "@/components/checkout/OrderSummary";
@@ -24,6 +25,9 @@ export default async function OrderConfirmationPage({
   return (
     <div className="mx-auto flex max-w-lg flex-col gap-10 px-4 py-16">
       <div className="flex flex-col gap-3">
+        <Link href="/pedidos" className="text-sm text-muted-foreground hover:text-foreground">
+          ← Mis pedidos
+        </Link>
         <div className="flex items-center gap-3">
           <h1 className="text-2xl font-semibold text-foreground">{title}</h1>
           <Badge variant={ORDER_STATUS_BADGE_VARIANT[order.status]}>{order.status}</Badge>

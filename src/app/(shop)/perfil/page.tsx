@@ -3,18 +3,42 @@ import { Card, CardContent } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { AddressSummary } from "@/components/account/AddressSummary";
 import { DeleteAddressButton } from "@/components/account/DeleteAddressButton";
+import { ProfileForm } from "@/components/account/ProfileForm";
 import { requireCustomer } from "@/lib/session";
 import { listAddresses } from "@/server/services/address-service";
+import { getCustomerProfile } from "@/server/services/user-service";
 
 export default async function PerfilPage() {
   const session = await requireCustomer();
-  const addresses = await listAddresses(session.userId);
+  const [profile, addresses] = await Promise.all([
+    getCustomerProfile(session.userId),
+    listAddresses(session.userId),
+  ]);
 
   return (
     <div className="mx-auto flex max-w-2xl flex-col gap-10 px-4 py-16">
-      <div className="flex flex-col gap-1">
-        <h1 className="text-2xl font-semibold text-foreground">Mi cuenta</h1>
-        <p className="text-muted-foreground">{session.name}</p>
+      <div className="flex items-center justify-between gap-4">
+        <div className="flex flex-col gap-1">
+          <h1 className="text-2xl font-semibold text-foreground">Mi cuenta</h1>
+          <p className="text-muted-foreground">{session.name}</p>
+        </div>
+        <Link href="/pedidos">
+          <Button variant="outline" size="sm">
+            Mis pedidos
+          </Button>
+        </Link>
+      </div>
+
+      <div className="flex flex-col gap-4">
+        <h2 className="text-lg font-semibold text-foreground">Datos personales</h2>
+        <Card>
+          <CardContent className="p-4">
+            <ProfileForm
+              email={profile.email}
+              defaultValues={{ name: profile.name, whatsapp: profile.whatsapp }}
+            />
+          </CardContent>
+        </Card>
       </div>
 
       <div className="flex flex-col gap-4">

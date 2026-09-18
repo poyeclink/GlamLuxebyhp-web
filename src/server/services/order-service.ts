@@ -218,6 +218,16 @@ export async function expireReservedOrders() {
   return { expiredCount };
 }
 
+// Historial de pedidos del cliente — a diferencia de listOrdersForAdmin, ya
+// viene filtrado por userId (el cliente nunca ve pedidos ajenos).
+export function listOrdersForCustomer(userId: string) {
+  return prisma.order.findMany({
+    where: { userId },
+    orderBy: { createdAt: "desc" },
+    select: { id: true, status: true, total: true, createdAt: true },
+  });
+}
+
 // findUnique con un id sin forma de UUID revienta con un error crudo de
 // Postgres antes de llegar al chequeo de dueño — mismo cuidado que
 // getAddressForEdit (address-service.ts).
