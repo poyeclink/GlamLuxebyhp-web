@@ -1,11 +1,9 @@
-import { redirect } from "next/navigation";
 import { Card, CardContent } from "@/components/ui/Card";
 import { AddressSummary } from "@/components/account/AddressSummary";
 import { CartTotals } from "@/components/shop/CartTotals";
 import { TermsAcceptanceForm } from "@/components/checkout/TermsAcceptanceForm";
 import { requireCustomer } from "@/lib/session";
-import { getCartWithPricing } from "@/server/services/cart-service";
-import { getAddressForEdit } from "@/server/services/address-service";
+import { requireCheckoutCartAndAddress } from "@/lib/checkout";
 import { formatCurrency } from "@/lib/utils";
 
 export default async function CheckoutResumenPage({
@@ -14,15 +12,8 @@ export default async function CheckoutResumenPage({
   searchParams: Promise<{ addressId?: string }>;
 }) {
   const session = await requireCustomer();
-  const cart = await getCartWithPricing({ userId: session.userId });
-  if (cart.items.length === 0) redirect("/carrito");
-
   const { addressId } = await searchParams;
-  // addressId viene de un query string editable por el usuario — se revalida
-  // dueño con el mismo helper que /perfil, no un findUnique directo (ver
-  // sección "Checkout" de CLAUDE.md).
-  const address = addressId ? await getAddressForEdit(session.userId, addressId) : null;
-  if (!address) redirect("/checkout/direccion");
+  const { cart, address } = await requireCheckoutCartAndAddress(session.userId, addressId);
 
   return (
     <div className="mx-auto flex max-w-lg flex-col gap-10 px-4 py-16">

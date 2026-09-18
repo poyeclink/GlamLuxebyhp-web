@@ -8,6 +8,7 @@ import {
   parseAddressInput,
 } from "@/server/services/address-service";
 import { getCartWithPricing } from "@/server/services/cart-service";
+import { isPaymentMethod } from "@/server/services/payment-service";
 import type { AddressActionState } from "@/server/actions/address-actions";
 
 export async function createCheckoutAddressAction(
@@ -50,5 +51,41 @@ export async function acceptCheckoutTermsAction(
   const termsAcceptedAt = new Date().toISOString();
   redirect(
     `/checkout/pago?addressId=${address.id}&termsAcceptedAt=${encodeURIComponent(termsAcceptedAt)}`,
+  );
+}
+
+export type CheckoutPaymentActionState = { error?: string };
+
+export async function selectCheckoutPaymentMethodAction(
+  _prevState: CheckoutPaymentActionState,
+  formData: FormData,
+): Promise<CheckoutPaymentActionState> {
+  const session = await requireCustomer();
+
+  const cart = await getCartWithPricing({ userId: session.userId });
+  if (cart.items.length === 0) redirect("/carrito");
+
+  const addressId = formData.get("addressId");
+  if (typeof addressId !== "string") return { error: "Selecciona una dirección de envío." };
+
+  // termsAcceptedAt solo viaja como señal de "paso 2 completado" (ver
+  // CLAUDE.md) — si falta, el cliente saltó el paso de términos.
+  const termsAcceptedAt = formData.get("termsAcceptedAt");
+  if (typeof termsAcceptedAt !== "string" || termsAcceptedAt.length === 0) {
+    return { error: "Debes completar el paso anterior del checkout." };
+  }
+
+  const paymentMethod = formData.get("paymentMethod");
+  if (!isPaymentMethod(paymentMethod)) {
+    return { error: "Selecciona un método de pago." };
+  }
+
+  const address = await getAddressForEdit(session.userId, addressId);
+  if (!address) return { error: "Esta dirección ya no está disponible." };
+
+  redirect(
+    `/checkout/confirmar?addressId=${address.id}` +
+      `&termsAcceptedAt=${encodeURIComponent(termsAcceptedAt)}` +
+      `&paymentMethod=${encodeURIComponent(paymentMethod)}`,
   );
 }
