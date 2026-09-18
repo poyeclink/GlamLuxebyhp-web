@@ -15,6 +15,14 @@ export type CartOwner = { userId: string } | { sessionToken: string };
 // resuelve a null ("se coordina aparte") en vez de dar un precio real.
 export const WHOLESALE_ITEM_THRESHOLD = 6;
 
+// Único lugar con esta fórmula: la usan tanto CartTotals (para mostrar el
+// carrito/checkout) como order-service.ts (para el Order.total persistido) —
+// que ambos deriven de aquí evita que un cambio futuro (ej. envío gratis
+// mayorista) se aplique en la UI pero no en lo que de verdad se cobra.
+export function computeCartTotal(subtotal: number, shippingEstimate: number | null) {
+  return subtotal + (shippingEstimate ?? 0);
+}
+
 function isUniqueConstraintError(error: unknown) {
   return error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002";
 }
@@ -154,6 +162,9 @@ export async function getCartWithPricing(owner: CartOwner) {
     );
     return {
       id: item.id,
+      productId: item.productId,
+      productActive: item.product.active,
+      variantId: item.variantId,
       productName: item.product.name,
       variantSize: item.variant?.size ?? null,
       quantity: item.quantity,

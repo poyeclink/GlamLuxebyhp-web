@@ -9,6 +9,7 @@ import {
 } from "@/server/services/address-service";
 import { getCartWithPricing } from "@/server/services/cart-service";
 import { isPaymentMethod } from "@/server/services/payment-service";
+import { OrderError, createReservedOrder } from "@/server/services/order-service";
 import type { AddressActionState } from "@/server/actions/address-actions";
 
 export async function createCheckoutAddressAction(
@@ -88,4 +89,55 @@ export async function selectCheckoutPaymentMethodAction(
       `&termsAcceptedAt=${encodeURIComponent(termsAcceptedAt)}` +
       `&paymentMethod=${encodeURIComponent(paymentMethod)}`,
   );
+}
+
+export type ConfirmOrderActionState = { error?: string };
+
+export async function confirmCheckoutOrderAction(
+  _prevState: ConfirmOrderActionState,
+  formData: FormData,
+): Promise<ConfirmOrderActionState> {
+  const session = await requireCustomer();
+
+  const cart = await getCartWithPricing({ userId: session.userId });
+  if (cart.items.length === 0) redirect("/carrito");
+
+  const addressId = formData.get("addressId");
+  if (typeof addressId !== "string") return { error: "Selecciona una dirección de envío." };
+
+  const termsAcceptedAt = formData.get("termsAcceptedAt");
+  if (typeof termsAcceptedAt !== "string" || termsAcceptedAt.length === 0) {
+    return { error: "Debes completar el paso anterior del checkout." };
+  }
+
+  const paymentMethod = formData.get("paymentMethod");
+  if (!isPaymentMethod(paymentMethod)) {
+    return { error: "Selecciona un método de pago." };
+  }
+
+  const address = await getAddressForEdit(session.userId, addressId);
+  if (!address) return { error: "Esta dirección ya no está disponible." };
+
+  let order;
+  try {
+    order = await createReservedOrder({
+      userId: session.userId,
+      address: {
+        fullName: address.fullName,
+        whatsapp: address.whatsapp,
+        email: address.email,
+        addressLine: address.addressLine,
+        addressType: address.addressType,
+        city: address.city,
+        state: address.state,
+        zip: address.zip,
+      },
+      paymentMethod,
+    });
+  } catch (error) {
+    if (error instanceof OrderError) return { error: error.message };
+    throw error;
+  }
+
+  redirect(`/pedidos/${order.id}`);
 }

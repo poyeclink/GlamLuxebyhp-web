@@ -1,4 +1,5 @@
 import { formatCurrency } from "@/lib/utils";
+import { computeCartTotal } from "@/server/services/cart-service";
 
 export function CartTotals({
   subtotal,
@@ -21,7 +22,7 @@ export function CartTotals({
       </div>
       <div className="flex items-center justify-between gap-8 text-lg font-semibold text-foreground">
         <span>Total estimado</span>
-        <span>{formatCurrency(subtotal + (shippingEstimate ?? 0))}</span>
+        <span>{formatCurrency(computeCartTotal(subtotal, shippingEstimate))}</span>
       </div>
     </div>
   );
