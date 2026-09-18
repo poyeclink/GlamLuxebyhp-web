@@ -85,6 +85,7 @@ export async function createReservedOrder(params: {
         items: {
           create: cart.items.map((item) => ({
             productId: item.productId,
+            variantId: item.variantId,
             productName: item.productName,
             variantSize: item.variantSize,
             unitPrice: item.unitPrice,
@@ -94,4 +95,55 @@ export async function createReservedOrder(params: {
       },
     });
   });
+}
+
+// Corre desde el cron del ticket #28 (src/app/api/cron/expire-orders/route.ts).
+// Un pedido reservado sin pago verificado en RESERVATION_DAYS pasa a "vencido"
+// y su stock reservado se libera — el propio índice (status, reservedUntil)
+// del schema existe para esta consulta.
+export async function expireReservedOrders() {
+  const expiredOrders = await prisma.order.findMany({
+    where: { status: "reservado", reservedUntil: { lt: new Date() } },
+    select: { id: true, items: { select: { variantId: true, quantity: true } } },
+  });
+
+  let expiredCount = 0;
+
+  for (const order of expiredOrders) {
+    try {
+      const expired = await prisma.$transaction(async (tx) => {
+        // updateMany guardado por status, no un update por id: si dos corridas
+        // del cron se solapan (o esta consulta trae el mismo pedido dos veces
+        // por un reintento), la segunda encuentra 0 filas en estado "reservado"
+        // y no repite la liberación de stock — mismo patrón atómico que el
+        // "reclamo" del carrito en createReservedOrder.
+        const claimed = await tx.order.updateMany({
+          where: { id: order.id, status: "reservado" },
+          data: { status: "vencido" },
+        });
+        if (claimed.count === 0) return false;
+
+        for (const item of order.items) {
+          if (!item.variantId) continue;
+          // updateMany (no update): si la talla fue borrada después de la
+          // compra (OrderItem.variant es SetNull), no hay nada que liberar —
+          // updateMany simplemente afecta 0 filas en vez de lanzar.
+          await tx.productVariant.updateMany({
+            where: { id: item.variantId },
+            data: { stock: { increment: item.quantity } },
+          });
+        }
+        return true;
+      });
+      if (expired) expiredCount++;
+    } catch (error) {
+      // Un pedido con problemas (fila bloqueada, error transitorio) no debe
+      // detener el resto del lote — los que ya expiraron en esta corrida se
+      // quedan así (transacciones independientes), y este se reintenta en la
+      // siguiente corrida del cron (sigue "reservado" hasta que se reclame).
+      console.error(`expireReservedOrders: fallo al expirar el pedido ${order.id}`, error);
+    }
+  }
+
+  return { expiredCount };
 }

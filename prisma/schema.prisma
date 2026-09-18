@@ -114,12 +114,13 @@ model ProductImage {
 }
 
 model ProductVariant {
-  id        String     @id @default(uuid()) @db.Uuid
-  productId String     @db.Uuid
-  product   Product    @relation(fields: [productId], references: [id], onDelete: Cascade)
-  size      String
-  stock     Int        @default(0)
-  cartItems CartItem[]
+  id         String      @id @default(uuid()) @db.Uuid
+  productId  String      @db.Uuid
+  product    Product     @relation(fields: [productId], references: [id], onDelete: Cascade)
+  size       String
+  stock      Int         @default(0)
+  cartItems  CartItem[]
+  orderItems OrderItem[]
 
   @@unique([productId, size])
 }
@@ -233,6 +234,15 @@ model OrderItem {
   productId String?  @db.Uuid
   product   Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
 
+  // Igual de opcional/solo-referencia que productId de arriba, pero con un
+  // propósito operativo real (no solo mostrar en el admin): el ticket #28
+  // (cron de expiración) necesita saber exactamente qué ProductVariant
+  // devolver al stock cuando un pedido reservado vence sin pago. variantSize
+  // (el snapshot de abajo) no alcanza para eso — reconstruir el id buscando
+  // por productId+size sería frágil si el admin renombra o recrea la talla.
+  variantId String?         @db.Uuid
+  variant   ProductVariant? @relation(fields: [variantId], references: [id], onDelete: SetNull)
+
   productName String
   variantSize String?
   unitPrice   Decimal @db.Decimal(10, 2)
@@ -240,4 +250,5 @@ model OrderItem {
 
   @@index([orderId])
   @@index([productId])
+  @@index([variantId])
 }
