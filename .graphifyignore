@@ -1,0 +1,17 @@
+# Graphify exclusions — generated/irrelevant/secret content kept out of the knowledge graph.
+node_modules/
+.next/
+dist/
+build/
+bin/
+obj/
+coverage/
+.git/
+.env
+.env.*
+!.env.example
+src/generated/
+tsconfig.tsbuildinfo
+pnpm-lock.yaml
+graphify-out/
+.graphify-backup/
