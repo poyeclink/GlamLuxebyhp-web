@@ -42,3 +42,9 @@ yarn-error.log*
 next-env.d.ts
 
 /src/generated/prisma
+
+# graphify (regenerate locally: graphify extract . --code-only && graphify cluster-only . --no-label)
+/graphify-out/
+/.graphify-backup/
+.claude/settings.json.graphify-bak
+
