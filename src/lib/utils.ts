@@ -25,3 +25,14 @@ const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{
 export function isUuid(value: string) {
   return UUID_PATTERN.test(value);
 }
+
+// Pastilla de filtro (tienda, admin/pedidos): un solo lugar para que un ajuste
+// visual futuro no diverja entre las dos listas que la usan.
+export function filterPillClass(active: boolean) {
+  return cn(
+    "rounded-full border border-border px-4 py-1.5 text-sm font-medium",
+    active
+      ? "border-foreground bg-foreground text-background"
+      : "text-muted-foreground hover:text-foreground",
+  );
+}

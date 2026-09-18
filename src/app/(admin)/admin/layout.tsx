@@ -3,8 +3,11 @@ import { AdminLogoutButton } from "@/components/auth/AdminLogoutButton";
 
 const ADMIN_LINKS = [
   { href: "/admin", label: "Inicio" },
+  { href: "/admin/pedidos", label: "Pedidos" },
   { href: "/admin/categorias", label: "Categorías" },
   { href: "/admin/productos", label: "Productos" },
+  { href: "/admin/inventario", label: "Inventario" },
+  { href: "/admin/envios", label: "Envíos" },
 ];
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {

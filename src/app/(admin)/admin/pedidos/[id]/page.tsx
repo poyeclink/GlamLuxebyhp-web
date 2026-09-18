@@ -1,37 +1,43 @@
 import { notFound } from "next/navigation";
 import { Badge } from "@/components/ui/Badge";
 import { OrderSummary } from "@/components/checkout/OrderSummary";
-import { requireCustomer } from "@/lib/session";
+import { OrderStatusForm } from "@/components/admin/OrderStatusForm";
 import {
   ORDER_STATUS_BADGE_VARIANT,
-  getOrderForCustomer,
-  getOrderStatusMessage,
+  getAllowedNextStatuses,
+  getOrderForAdmin,
 } from "@/server/services/order-service";
+import { PAYMENT_METHOD_OPTIONS } from "@/server/services/payment-service";
 import { formatDate } from "@/lib/utils";
 
-export default async function OrderConfirmationPage({
+export default async function AdminOrderDetailPage({
   params,
-}: {
-  params: Promise<{ id: string }>;
-}) {
-  const session = await requireCustomer();
+}: PageProps<"/admin/pedidos/[id]">) {
   const { id } = await params;
-  const order = await getOrderForCustomer(session.userId, id);
+  const order = await getOrderForAdmin(id);
   if (!order) notFound();
 
-  const { title, description } = getOrderStatusMessage(order.status, order.paymentMethod);
+  const paymentMethodLabel =
+    PAYMENT_METHOD_OPTIONS.find((option) => option.value === order.paymentMethod)?.label ??
+    order.paymentMethod;
 
   return (
     <div className="mx-auto flex max-w-lg flex-col gap-10 px-4 py-16">
       <div className="flex flex-col gap-3">
         <div className="flex items-center gap-3">
-          <h1 className="text-2xl font-semibold text-foreground">{title}</h1>
+          <h1 className="text-2xl font-semibold text-foreground">Pedido de {order.fullName}</h1>
           <Badge variant={ORDER_STATUS_BADGE_VARIANT[order.status]}>{order.status}</Badge>
         </div>
-        <p className="text-sm text-muted-foreground">{description}</p>
-        <p className="text-xs text-muted-foreground">
-          Pedido del {formatDate(order.createdAt)}
+        <p className="text-xs text-muted-foreground">Pedido del {formatDate(order.createdAt)}</p>
+        <p className="text-sm text-muted-foreground">
+          Contacto: {order.whatsapp} · {order.email}
         </p>
+        <p className="text-sm text-muted-foreground">Método de pago: {paymentMethodLabel}</p>
+      </div>
+
+      <div className="flex flex-col gap-3">
+        <h2 className="text-lg font-semibold text-foreground">Estado del pedido</h2>
+        <OrderStatusForm orderId={order.id} allowedNextStatuses={getAllowedNextStatuses(order.status)} />
       </div>
 
       <OrderSummary

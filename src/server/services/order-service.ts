@@ -1,12 +1,78 @@
 import { prisma } from "@/lib/prisma";
-import type { AddressType, OrderStatus, PaymentMethod } from "@/generated/prisma/client";
+import type { AddressType, OrderStatus, PaymentMethod, Prisma } from "@/generated/prisma/client";
 import { computeCartTotal, getCartWithPricing } from "@/server/services/cart-service";
 import { PAYMENT_METHOD_OPTIONS } from "@/server/services/payment-service";
+import { logInventoryChange } from "@/server/services/inventory-service";
 import { isUuid } from "@/lib/utils";
 
 export class OrderError extends Error {}
 
 const RESERVATION_DAYS = 3;
+
+// Badge/label de OrderStatus centralizados aquí: antes de esto, cada página
+// que renderizaba un pedido (dashboard, lista admin, detalle admin, detalle
+// del cliente) redeclaraba el mismo Record<OrderStatus, ...> por separado.
+export const ORDER_STATUS_LABELS: Record<OrderStatus, string> = {
+  reservado: "Reservado",
+  confirmado: "Confirmado",
+  enviado: "Enviado",
+  cancelado: "Cancelado",
+  vencido: "Vencido",
+};
+
+export const ORDER_STATUS_BADGE_VARIANT: Record<
+  OrderStatus,
+  "secondary" | "default" | "destructive"
+> = {
+  reservado: "secondary",
+  confirmado: "default",
+  enviado: "default",
+  vencido: "destructive",
+  cancelado: "destructive",
+};
+
+// Transiciones manuales que el admin puede disparar desde /admin/pedidos
+// (ticket de gestión de pedidos). `vencido` no aparece como destino: ese
+// estado solo lo pone el cron de expiración (ticket #28), nunca un admin a
+// mano. Los estados terminales (enviado, cancelado, vencido) no tienen salida.
+const ALLOWED_MANUAL_TRANSITIONS: Record<OrderStatus, OrderStatus[]> = {
+  reservado: ["confirmado", "cancelado"],
+  confirmado: ["enviado", "cancelado"],
+  enviado: [],
+  cancelado: [],
+  vencido: [],
+};
+
+export function getAllowedNextStatuses(status: OrderStatus): OrderStatus[] {
+  return ALLOWED_MANUAL_TRANSITIONS[status];
+}
+
+// Compartida por expireReservedOrders (cron) y updateOrderStatus (cancelación
+// manual desde el admin) — ambos casos devuelven al inventario el stock que
+// createReservedOrder reservó, y dejan el mismo tipo de InventoryLog
+// ("liberacion"). Debe correr dentro de la transacción del caller: si el
+// resto de esa transacción revierte, la liberación de stock revierte con ella.
+async function releaseOrderStock(
+  tx: Prisma.TransactionClient,
+  order: { id: string; items: { variantId: string | null; quantity: number }[] },
+) {
+  for (const item of order.items) {
+    if (!item.variantId) continue;
+    // updateMany (no update): si la talla fue borrada después de la compra
+    // (OrderItem.variant es SetNull), no hay nada que liberar.
+    const result = await tx.productVariant.updateMany({
+      where: { id: item.variantId },
+      data: { stock: { increment: item.quantity } },
+    });
+    if (result.count === 0) continue;
+    await logInventoryChange(tx, {
+      variantId: item.variantId,
+      reason: "liberacion",
+      quantityChange: item.quantity,
+      orderId: order.id,
+    });
+  }
+}
 
 type OrderAddressInput = {
   fullName: string;
@@ -19,9 +85,6 @@ type OrderAddressInput = {
   zip: string;
 };
 
-// InventoryLog (ticket #39) todavía no existe: este ticket solo descuenta
-// stock de ProductVariant, sin dejar un registro de movimiento todavía. El
-// ticket #39 es el que agrega ese log en este mismo punto.
 export async function createReservedOrder(params: {
   userId: string;
   address: OrderAddressInput;
@@ -70,7 +133,7 @@ export async function createReservedOrder(params: {
       }
     }
 
-    return tx.order.create({
+    const order = await tx.order.create({
       data: {
         userId: params.userId,
         pricingTier: cart.useWholesalePrice ? "mayorista" : "individual",
@@ -96,6 +159,20 @@ export async function createReservedOrder(params: {
         },
       },
     });
+
+    // Después de crear el pedido, no antes: cada InventoryLog referencia
+    // orderId, así que necesita el id ya asignado.
+    for (const item of cart.items) {
+      if (!item.variantId) continue;
+      await logInventoryChange(tx, {
+        variantId: item.variantId,
+        reason: "reserva",
+        quantityChange: -item.quantity,
+        orderId: order.id,
+      });
+    }
+
+    return order;
   });
 }
 
@@ -125,16 +202,7 @@ export async function expireReservedOrders() {
         });
         if (claimed.count === 0) return false;
 
-        for (const item of order.items) {
-          if (!item.variantId) continue;
-          // updateMany (no update): si la talla fue borrada después de la
-          // compra (OrderItem.variant es SetNull), no hay nada que liberar —
-          // updateMany simplemente afecta 0 filas en vez de lanzar.
-          await tx.productVariant.updateMany({
-            where: { id: item.variantId },
-            data: { stock: { increment: item.quantity } },
-          });
-        }
+        await releaseOrderStock(tx, order);
         return true;
       });
       if (expired) expiredCount++;
@@ -158,6 +226,91 @@ export async function getOrderForCustomer(userId: string, id: string) {
   const order = await prisma.order.findUnique({ where: { id }, include: { items: true } });
   if (!order || order.userId !== userId) return null;
   return order;
+}
+
+// Sin chequeo de dueño (a diferencia de getOrderForCustomer): el admin puede
+// ver cualquier pedido. Mismo cuidado con isUuid antes de golpear Postgres.
+export async function getOrderForAdmin(id: string) {
+  if (!isUuid(id)) return null;
+  return prisma.order.findUnique({ where: { id }, include: { items: true } });
+}
+
+export function listOrdersForAdmin(status?: OrderStatus) {
+  return prisma.order.findMany({
+    where: status ? { status } : undefined,
+    orderBy: { createdAt: "desc" },
+    select: {
+      id: true,
+      status: true,
+      fullName: true,
+      total: true,
+      paymentMethod: true,
+      createdAt: true,
+    },
+  });
+}
+
+// Todos los estados con conteo, incluso en 0 — el dashboard necesita mostrar
+// las 5 columnas siempre, no solo las que tengan pedidos.
+export async function getOrderStatusCounts(): Promise<Record<OrderStatus, number>> {
+  const counts = await prisma.order.groupBy({ by: ["status"], _count: true });
+  const result: Record<OrderStatus, number> = {
+    reservado: 0,
+    confirmado: 0,
+    enviado: 0,
+    cancelado: 0,
+    vencido: 0,
+  };
+  for (const row of counts) result[row.status] = row._count;
+  return result;
+}
+
+export function listRecentOrders(limit = 10) {
+  return prisma.order.findMany({
+    orderBy: { createdAt: "desc" },
+    take: limit,
+    select: { id: true, status: true, fullName: true, total: true, createdAt: true },
+  });
+}
+
+// Cambio manual de estado desde /admin/pedidos. A diferencia de
+// createReservedOrder/expireReservedOrders (que reclaman con un WHERE
+// guardado por el estado ORIGEN antes de mutar), aquí el estado origen ya se
+// valida arriba contra ALLOWED_MANUAL_TRANSITIONS — el updateMany igual usa
+// ese mismo WHERE como sección crítica atómica contra dos admins cambiando el
+// mismo pedido a la vez (dos pestañas, doble clic).
+export async function updateOrderStatus(orderId: string, newStatus: OrderStatus) {
+  if (!isUuid(orderId)) throw new OrderError("Pedido no encontrado.");
+
+  const order = await prisma.order.findUnique({
+    where: { id: orderId },
+    include: { items: { select: { variantId: true, quantity: true } } },
+  });
+  if (!order) throw new OrderError("Pedido no encontrado.");
+
+  const allowed = getAllowedNextStatuses(order.status);
+  if (!allowed.includes(newStatus)) {
+    throw new OrderError(
+      `No se puede pasar un pedido de "${order.status}" a "${newStatus}".`,
+    );
+  }
+
+  await prisma.$transaction(async (tx) => {
+    const claimed = await tx.order.updateMany({
+      where: { id: orderId, status: order.status },
+      data: { status: newStatus },
+    });
+    if (claimed.count === 0) {
+      throw new OrderError("Este pedido ya fue actualizado por otra persona. Recarga la página.");
+    }
+
+    // confirmado/enviado no mueven stock: ya se descontó en la reserva
+    // (createReservedOrder) y se mantiene descontado mientras el pedido no se
+    // cancele o venza. Solo cancelado libera lo reservado.
+    if (newStatus === "cancelado") {
+      await releaseOrderStock(tx, order);
+    }
+  });
 }
 
 // Copy de "siguientes pasos" para la pantalla de confirmación (ticket #29).

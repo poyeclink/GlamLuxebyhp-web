@@ -42,17 +42,25 @@ enum PaymentMethod {
   paypal
 }
 
+enum InventoryLogReason {
+  reserva
+  venta
+  liberacion
+  ajuste_manual
+}
+
 model User {
-  id           String    @id @default(uuid()) @db.Uuid
-  name         String
-  email        String    @unique
-  passwordHash String
-  role         UserRole
-  whatsapp     String?
-  createdAt    DateTime  @default(now())
-  addresses    Address[]
-  cart         Cart?
-  orders       Order[]
+  id            String         @id @default(uuid()) @db.Uuid
+  name          String
+  email         String         @unique
+  passwordHash  String
+  role          UserRole
+  whatsapp      String?
+  createdAt     DateTime       @default(now())
+  addresses     Address[]
+  cart          Cart?
+  orders        Order[]
+  inventoryLogs InventoryLog[]
 }
 
 model Address {
@@ -114,13 +122,14 @@ model ProductImage {
 }
 
 model ProductVariant {
-  id         String      @id @default(uuid()) @db.Uuid
-  productId  String      @db.Uuid
-  product    Product     @relation(fields: [productId], references: [id], onDelete: Cascade)
-  size       String
-  stock      Int         @default(0)
-  cartItems  CartItem[]
-  orderItems OrderItem[]
+  id            String         @id @default(uuid()) @db.Uuid
+  productId     String         @db.Uuid
+  product       Product        @relation(fields: [productId], references: [id], onDelete: Cascade)
+  size          String
+  stock         Int            @default(0)
+  cartItems     CartItem[]
+  orderItems    OrderItem[]
+  inventoryLogs InventoryLog[]
 
   @@unique([productId, size])
 }
@@ -214,8 +223,9 @@ model Order {
   // 3 días desde la creación (regla de negocio) — el cron del ticket #28
   // marca `vencido` los pedidos `reservado` que pasan este momento sin pago.
   reservedUntil   DateTime
-  createdAt       DateTime    @default(now())
+  createdAt       DateTime       @default(now())
   items           OrderItem[]
+  inventoryLogs   InventoryLog[]
 
   @@index([userId])
   // (status, reservedUntil) en vez de solo status: sirve directo la consulta
@@ -251,4 +261,44 @@ model OrderItem {
   @@index([orderId])
   @@index([productId])
   @@index([variantId])
+}
+
+model InventoryLog {
+  id String @id @default(uuid()) @db.Uuid
+
+  // Opcional + SetNull (no Cascade): igual que OrderItem.variantId, este log
+  // es un registro de auditoría que debe sobrevivir a que el admin borre esa
+  // talla o el producto más adelante (product-variant-service.ts / cascade
+  // desde deleteProduct) — un Cascade aquí destruiría en silencio el
+  // historial que este modelo existe para preservar.
+  variantId String?            @db.Uuid
+  variant   ProductVariant?    @relation(fields: [variantId], references: [id], onDelete: SetNull)
+  reason    InventoryLogReason
+
+  // Positivo = entra stock (liberación, ajuste manual +), negativo = sale
+  // (reserva, ajuste manual -). "venta" (reservado -> confirmado) queda
+  // reservado para cuando exista un evento de stock real y distinto de la
+  // reserva que justifique una fila propia — hoy el admin de pedidos no
+  // escribe ninguna, porque el stock ya se descontó en la reserva y una fila
+  // en 0 no es un movimiento real (ver updateOrderStatus).
+  quantityChange Int
+  // Snapshot del stock del variant justo después de este movimiento — permite
+  // reconstruir el historial sin recalcular sumando deltas.
+  stockAfter     Int
+
+  // Solo se llena para reserva/venta/liberación (movimientos disparados por
+  // un pedido); null en ajuste_manual.
+  orderId String? @db.Uuid
+  order   Order?  @relation(fields: [orderId], references: [id], onDelete: SetNull)
+
+  // Solo se llena en ajuste_manual (quién hizo la corrección) — null en
+  // movimientos automáticos (checkout, cron de expiración).
+  createdBy String? @db.Uuid
+  admin     User?   @relation(fields: [createdBy], references: [id], onDelete: SetNull)
+
+  note      String?
+  createdAt DateTime @default(now())
+
+  @@index([variantId, createdAt])
+  @@index([orderId])
 }
