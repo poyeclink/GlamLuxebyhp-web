@@ -1,12 +1,12 @@
 import Link from "next/link";
 import { CartItemRow } from "@/components/shop/CartItemRow";
 import { WholesaleProgress } from "@/components/shop/WholesaleProgress";
+import { CartTotals } from "@/components/shop/CartTotals";
 import { Button } from "@/components/ui/Button";
 import { WHOLESALE_ITEM_THRESHOLD, getCartWithPricing } from "@/server/services/cart-service";
 import { resolveCartOwnerForRead } from "@/lib/cart-session";
 import { getSession } from "@/lib/session";
 import { r2PublicUrl } from "@/lib/r2";
-import { formatCurrency } from "@/lib/utils";
 
 export default async function CarritoPage() {
   const [session, owner] = await Promise.all([getSession(), resolveCartOwnerForRead()]);
@@ -46,23 +46,8 @@ export default async function CarritoPage() {
         ))}
       </div>
 
-      <div className="flex flex-col gap-2 self-end text-right">
-        <div className="flex items-center justify-between gap-8 text-sm text-muted-foreground">
-          <span>Subtotal</span>
-          <span>{formatCurrency(cart.subtotal)}</span>
-        </div>
-        <div className="flex items-center justify-between gap-8 text-sm text-muted-foreground">
-          <span>Envío estimado</span>
-          <span>
-            {cart.shippingEstimate === null
-              ? "Se coordina aparte"
-              : formatCurrency(cart.shippingEstimate)}
-          </span>
-        </div>
-        <div className="flex items-center justify-between gap-8 text-lg font-semibold text-foreground">
-          <span>Total estimado</span>
-          <span>{formatCurrency(cart.subtotal + (cart.shippingEstimate ?? 0))}</span>
-        </div>
+      <div className="flex flex-col gap-2 self-end">
+        <CartTotals subtotal={cart.subtotal} shippingEstimate={cart.shippingEstimate} />
         <Link href={isCustomer ? "/checkout/direccion" : "/login"} className="mt-2">
           <Button className="w-full sm:w-auto">
             {isCustomer ? "Continuar con la compra" : "Inicia sesión para continuar"}
