@@ -3,7 +3,7 @@ import type { AddressType, OrderStatus, PaymentMethod, Prisma } from "@/generate
 import { computeCartTotal, getCartWithPricing } from "@/server/services/cart-service";
 import { PAYMENT_METHOD_OPTIONS } from "@/server/services/payment-service";
 import { logInventoryChange } from "@/server/services/inventory-service";
-import { isUuid } from "@/lib/utils";
+import { ADMIN_PAGE_SIZE, isUuid } from "@/lib/utils";
 
 export class OrderError extends Error {}
 
@@ -219,12 +219,20 @@ export async function expireReservedOrders() {
 }
 
 // Historial de pedidos del cliente — a diferencia de listOrdersForAdmin, ya
-// viene filtrado por userId (el cliente nunca ve pedidos ajenos).
+// viene filtrado por userId (el cliente nunca ve pedidos ajenos). Incluye
+// _count.items solo para mostrar "N artículos" en la lista sin traer cada
+// OrderItem completo.
 export function listOrdersForCustomer(userId: string) {
   return prisma.order.findMany({
     where: { userId },
     orderBy: { createdAt: "desc" },
-    select: { id: true, status: true, total: true, createdAt: true },
+    select: {
+      id: true,
+      status: true,
+      total: true,
+      createdAt: true,
+      _count: { select: { items: true } },
+    },
   });
 }
 
@@ -245,19 +253,37 @@ export async function getOrderForAdmin(id: string) {
   return prisma.order.findUnique({ where: { id }, include: { items: true } });
 }
 
-export function listOrdersForAdmin(status?: OrderStatus) {
-  return prisma.order.findMany({
-    where: status ? { status } : undefined,
-    orderBy: { createdAt: "desc" },
-    select: {
-      id: true,
-      status: true,
-      fullName: true,
-      total: true,
-      paymentMethod: true,
-      createdAt: true,
-    },
-  });
+export async function listOrdersForAdmin({
+  status,
+  search,
+  page = 1,
+}: {
+  status?: OrderStatus;
+  search?: string;
+  page?: number;
+}) {
+  const where = {
+    ...(status ? { status } : {}),
+    ...(search ? { fullName: { contains: search, mode: "insensitive" as const } } : {}),
+  };
+  const [items, total] = await Promise.all([
+    prisma.order.findMany({
+      where,
+      orderBy: { createdAt: "desc" },
+      select: {
+        id: true,
+        status: true,
+        fullName: true,
+        total: true,
+        paymentMethod: true,
+        createdAt: true,
+      },
+      skip: (Math.max(page, 1) - 1) * ADMIN_PAGE_SIZE,
+      take: ADMIN_PAGE_SIZE,
+    }),
+    prisma.order.count({ where }),
+  ]);
+  return { items, total };
 }
 
 // Todos los estados con conteo, incluso en 0 — el dashboard necesita mostrar

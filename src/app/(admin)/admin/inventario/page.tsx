@@ -1,9 +1,19 @@
 import Link from "next/link";
 import { listVariantsWithStock, LOW_STOCK_THRESHOLD } from "@/server/services/inventory-service";
 import { Badge } from "@/components/ui/Badge";
+import { SearchInput } from "@/components/ui/SearchInput";
+import { Pagination } from "@/components/ui/Pagination";
+import { ADMIN_PAGE_SIZE } from "@/lib/utils";
 
-export default async function AdminInventoryPage() {
-  const variants = await listVariantsWithStock();
+export default async function AdminInventoryPage({
+  searchParams,
+}: PageProps<"/admin/inventario">) {
+  const { q, page: pageParam } = await searchParams;
+  const search = typeof q === "string" && q.trim() !== "" ? q.trim() : undefined;
+  const page = Math.max(Number(typeof pageParam === "string" ? pageParam : "1") || 1, 1);
+
+  const { items: variants, total } = await listVariantsWithStock({ search, page });
+  const totalPages = Math.max(1, Math.ceil(total / ADMIN_PAGE_SIZE));
 
   return (
     <div className="mx-auto flex max-w-4xl flex-col gap-6 px-4 py-16">
@@ -14,8 +24,16 @@ export default async function AdminInventoryPage() {
         </p>
       </div>
 
+      <SearchInput
+        action="/admin/inventario"
+        placeholder="Buscar por producto..."
+        defaultValue={search}
+      />
+
       {variants.length === 0 ? (
-        <p className="text-muted-foreground">Todavía no hay tallas registradas.</p>
+        <p className="text-muted-foreground">
+          {search ? `No encontramos productos para "${search}".` : "Todavía no hay tallas registradas."}
+        </p>
       ) : (
         <table className="w-full border-collapse text-sm">
           <thead>
@@ -54,6 +72,14 @@ export default async function AdminInventoryPage() {
           </tbody>
         </table>
       )}
+
+      <Pagination
+        page={page}
+        totalPages={totalPages}
+        buildHref={(target) =>
+          `/admin/inventario?${search ? `q=${encodeURIComponent(search)}&` : ""}page=${target}`
+        }
+      />
     </div>
   );
 }

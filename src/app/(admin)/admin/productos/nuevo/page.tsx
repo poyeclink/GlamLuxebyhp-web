@@ -11,9 +11,9 @@ export default async function NewProductPage() {
       <h1 className="text-2xl font-semibold text-foreground">Nuevo producto</h1>
       {categories.length === 0 ? (
         <p className="text-muted-foreground">
-          Primero crea una{" "}
-          <Link href="/admin/categorias/nueva" className="underline">
-            categoría
+          Primero crea una categoría desde{" "}
+          <Link href="/admin/categorias" className="underline">
+            Categorías
           </Link>
           .
         </p>

@@ -1,7 +1,9 @@
 import Link from "next/link";
 import { ORDER_STATUS_BADGE_VARIANT, listOrdersForAdmin } from "@/server/services/order-service";
 import { Badge } from "@/components/ui/Badge";
-import { filterPillClass, formatCurrency, formatDate } from "@/lib/utils";
+import { SearchInput } from "@/components/ui/SearchInput";
+import { Pagination } from "@/components/ui/Pagination";
+import { ADMIN_PAGE_SIZE, filterPillClass, formatCurrency, formatDate } from "@/lib/utils";
 import type { OrderStatus } from "@/generated/prisma/client";
 
 const STATUS_FILTERS: { value: OrderStatus; label: string }[] = [
@@ -15,7 +17,7 @@ const STATUS_FILTERS: { value: OrderStatus; label: string }[] = [
 export default async function AdminOrdersPage({
   searchParams,
 }: PageProps<"/admin/pedidos">) {
-  const { estado } = await searchParams;
+  const { estado, q, page: pageParam } = await searchParams;
   // typeof === "string": searchParams puede traer un array (?estado=a&estado=b);
   // mismo cuidado que TiendaPage con `categoria`.
   const rawStatus = typeof estado === "string" ? estado : undefined;
@@ -25,21 +27,42 @@ export default async function AdminOrdersPage({
   // se debe resaltar "Todos" como si el usuario lo hubiera elegido.
   const isFiltering = Boolean(rawStatus);
   const statusFilter = matchedFilter?.value;
+  const search = typeof q === "string" && q.trim() !== "" ? q.trim() : undefined;
+  const page = Math.max(Number(typeof pageParam === "string" ? pageParam : "1") || 1, 1);
 
-  const orders = isFiltering && !matchedFilter ? [] : await listOrdersForAdmin(statusFilter);
+  const { items: orders, total } =
+    isFiltering && !matchedFilter
+      ? { items: [], total: 0 }
+      : await listOrdersForAdmin({ status: statusFilter, search, page });
+  const totalPages = Math.max(1, Math.ceil(total / ADMIN_PAGE_SIZE));
+
+  // Los links de estado deben conservar la búsqueda activa; el form de
+  // búsqueda conserva el estado activo vía hiddenParams — ninguno de los dos
+  // debe pisar al otro, y ambos omiten `page` para volver a la página 1.
+  const searchQueryString = search ? `q=${encodeURIComponent(search)}` : "";
 
   return (
     <div className="mx-auto flex max-w-5xl flex-col gap-6 px-4 py-16">
       <h1 className="text-2xl font-semibold text-foreground">Pedidos</h1>
 
+      <SearchInput
+        action="/admin/pedidos"
+        placeholder="Buscar por cliente..."
+        defaultValue={search}
+        hiddenParams={rawStatus ? { estado: rawStatus } : undefined}
+      />
+
       <div className="flex flex-wrap gap-2">
-        <Link href="/admin/pedidos" className={filterPillClass(!isFiltering)}>
+        <Link
+          href={`/admin/pedidos${searchQueryString ? `?${searchQueryString}` : ""}`}
+          className={filterPillClass(!isFiltering)}
+        >
           Todos
         </Link>
         {STATUS_FILTERS.map((option) => (
           <Link
             key={option.value}
-            href={`/admin/pedidos?estado=${option.value}`}
+            href={`/admin/pedidos?estado=${option.value}${searchQueryString ? `&${searchQueryString}` : ""}`}
             className={filterPillClass(statusFilter === option.value)}
           >
             {option.label}
@@ -49,7 +72,11 @@ export default async function AdminOrdersPage({
 
       {orders.length === 0 ? (
         <p className="text-muted-foreground">
-          {isFiltering && !matchedFilter ? "No reconocemos ese filtro de estado." : "No hay pedidos con ese filtro."}
+          {isFiltering && !matchedFilter
+            ? "No reconocemos ese filtro de estado."
+            : search
+              ? `No encontramos pedidos para "${search}".`
+              : "No hay pedidos con ese filtro."}
         </p>
       ) : (
         <table className="w-full border-collapse text-sm">
@@ -86,6 +113,14 @@ export default async function AdminOrdersPage({
           </tbody>
         </table>
       )}
+
+      <Pagination
+        page={page}
+        totalPages={totalPages}
+        buildHref={(target) =>
+          `/admin/pedidos?${rawStatus ? `estado=${rawStatus}&` : ""}${search ? `q=${encodeURIComponent(search)}&` : ""}page=${target}`
+        }
+      />
     </div>
   );
 }

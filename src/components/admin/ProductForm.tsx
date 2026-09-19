@@ -7,6 +7,8 @@ import { SelectField } from "@/components/ui/SelectField";
 import { Checkbox } from "@/components/ui/Checkbox";
 import { SubmitButton } from "@/components/ui/SubmitButton";
 import { FormError } from "@/components/ui/FormError";
+import { ImageDropzone } from "@/components/admin/ImageDropzone";
+import { VariantSelector } from "@/components/admin/VariantSelector";
 import type { ProductActionState } from "@/server/actions/product-actions";
 
 function slugify(value: string) {
@@ -50,6 +52,15 @@ export function ProductForm({
   const [slug, setSlug] = useState(defaultValues?.slug ?? "");
   // Al editar, el slug ya fue elegido antes: no se debe regenerar solo por tocar el nombre.
   const [slugTouched, setSlugTouched] = useState(defaultValues !== undefined);
+  // Solo al crear: al editar, ProductImageUploader (debajo de este formulario)
+  // ya gestiona las imágenes con el productId real — duplicar el input aquí
+  // llevaría a dos formularios distintos subiendo imágenes del mismo producto.
+  const isCreating = defaultValues === undefined;
+  // Controlado (no defaultChecked) solo para poder mostrar/ocultar
+  // VariantSelector en vivo — al editar, VariantManager ya cubre esto con el
+  // productId real, así que ahí el checkbox sigue siendo informativo nada más
+  // (ver nota en VariantManager/CLAUDE.md: no condiciona si se pueden cargar tallas).
+  const [hasVariants, setHasVariants] = useState(defaultValues?.hasVariants ?? false);
 
   return (
     <form action={formAction} className="flex flex-col gap-4">
@@ -129,7 +140,8 @@ export function ProductForm({
         <Checkbox
           label="Tiene variantes de talla"
           name="hasVariants"
-          defaultChecked={defaultValues?.hasVariants}
+          checked={hasVariants}
+          onChange={(event) => setHasVariants(event.target.checked)}
         />
         <Checkbox
           label="Activo (visible en la tienda)"
@@ -137,6 +149,21 @@ export function ProductForm({
           defaultChecked={defaultValues?.active ?? true}
         />
       </div>
+
+      {isCreating && hasVariants && (
+        <div className="flex flex-col gap-1.5">
+          <span className="text-sm font-medium text-foreground">Tallas y stock</span>
+          <VariantSelector />
+        </div>
+      )}
+
+      {isCreating && (
+        <div className="flex flex-col gap-1.5">
+          <span className="text-sm font-medium text-foreground">Imágenes (opcional)</span>
+          <ImageDropzone name="images" />
+          <p className="text-xs text-muted-foreground">La primera imagen será la principal.</p>
+        </div>
+      )}
 
       <FormError message={state.error} />
       <SubmitButton className="sm:w-auto">{submitLabel}</SubmitButton>

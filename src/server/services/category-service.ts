@@ -1,7 +1,11 @@
 import { prisma } from "@/lib/prisma";
+import { ADMIN_PAGE_SIZE } from "@/lib/utils";
 
 export class CategoryError extends Error {}
 
+// Sin paginar: la usan los <select> de categoría (nuevo/editar producto), que
+// necesitan la lista completa, no una página. listCategoriesAdmin (abajo) es
+// la versión con búsqueda/paginación para /admin/categorias.
 export function listCategories() {
   return prisma.category.findMany({
     orderBy: { name: "asc" },
@@ -9,8 +13,19 @@ export function listCategories() {
   });
 }
 
-export function getCategory(id: string) {
-  return prisma.category.findUnique({ where: { id } });
+export async function listCategoriesAdmin({ search, page = 1 }: { search?: string; page?: number }) {
+  const where = search ? { name: { contains: search, mode: "insensitive" as const } } : {};
+  const [items, total] = await Promise.all([
+    prisma.category.findMany({
+      where,
+      orderBy: { name: "asc" },
+      include: { _count: { select: { products: true } } },
+      skip: (Math.max(page, 1) - 1) * ADMIN_PAGE_SIZE,
+      take: ADMIN_PAGE_SIZE,
+    }),
+    prisma.category.count({ where }),
+  ]);
+  return { items, total };
 }
 
 // Counts only active products, unlike listCategories (which counts all of

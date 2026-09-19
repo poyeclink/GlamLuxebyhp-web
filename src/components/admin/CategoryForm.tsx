@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState, useEffect, useState } from "react";
 import { TextField } from "@/components/ui/TextField";
 import { SubmitButton } from "@/components/ui/SubmitButton";
 import { FormError } from "@/components/ui/FormError";
@@ -22,15 +22,23 @@ export function CategoryForm({
   action,
   defaultValues,
   submitLabel,
+  onSuccess,
 }: {
   action: (prevState: CategoryActionState, formData: FormData) => Promise<CategoryActionState>;
   defaultValues?: { name: string; slug: string };
   submitLabel: string;
+  onSuccess?: () => void;
 }) {
   const [state, formAction] = useActionState(action, initialState);
   const [slug, setSlug] = useState(defaultValues?.slug ?? "");
   // Al editar, el slug ya fue elegido antes: no se debe regenerar solo por tocar el nombre.
   const [slugTouched, setSlugTouched] = useState(defaultValues !== undefined);
+
+  // El formulario vive en un modal (categorías/envíos): sin redirect a una
+  // página aparte, esto es lo que le avisa al modal que ya puede cerrarse.
+  useEffect(() => {
+    if (state.success) onSuccess?.();
+  }, [state.success, onSuccess]);
 
   return (
     <form action={formAction} className="flex flex-col gap-4">

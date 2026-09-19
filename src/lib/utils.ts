@@ -26,6 +26,10 @@ export function isUuid(value: string) {
   return UUID_PATTERN.test(value);
 }
 
+// Tamaño de página compartido por los listados del admin (pedidos, productos,
+// categorías, inventario) — un solo lugar si se ajusta más adelante.
+export const ADMIN_PAGE_SIZE = 20;
+
 // Pastilla de filtro (tienda, admin/pedidos): un solo lugar para que un ajuste
 // visual futuro no diverja entre las dos listas que la usan.
 export function filterPillClass(active: boolean) {

@@ -8,7 +8,10 @@ const MAX_FILE_SIZE = 5 * 1024 * 1024;
 
 export class ProductImageError extends Error {}
 
-function assertValidImageFile(file: File) {
+// Exportado: createProductAction (product-actions.ts) pre-valida las
+// imágenes elegidas en el formulario de creación antes de crear el producto
+// — así un formato/tamaño inválido no crea un producto a medias.
+export function assertValidImageFile(file: File) {
   if (!ALLOWED_MIME_TYPES.includes(file.type)) {
     throw new ProductImageError("Formato no permitido. Usa JPEG, PNG o WEBP.");
   }

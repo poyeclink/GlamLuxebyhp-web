@@ -22,14 +22,6 @@ export function listShippingRates() {
   return prisma.shippingRate.findMany({ orderBy: [{ tier: "asc" }, { minQuantity: "asc" }] });
 }
 
-// isUuid antes de golpear Postgres — mismo cuidado que getOrderForAdmin /
-// getVariantForAdjustment: un id con forma inválida en la URL da null
-// (-> notFound() en la página) en vez de un error crudo de Postgres.
-export function getShippingRate(id: string) {
-  if (!isUuid(id)) return null;
-  return prisma.shippingRate.findUnique({ where: { id } });
-}
-
 type ShippingRateInput = {
   tier: PricingTier;
   minQuantity: number;

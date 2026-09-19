@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import type { InventoryLogReason, Prisma } from "@/generated/prisma/client";
-import { isUuid } from "@/lib/utils";
+import { ADMIN_PAGE_SIZE, isUuid } from "@/lib/utils";
 
 export class InventoryError extends Error {}
 
@@ -69,11 +69,24 @@ export function listInventoryLogsForVariant(variantId: string) {
 
 // Stock por variante para el reporte de inventario (ticket admin) — ordenado
 // por stock ascendente para que lo más bajo (y lo más urgente) aparezca primero.
-export function listVariantsWithStock() {
-  return prisma.productVariant.findMany({
-    orderBy: { stock: "asc" },
-    include: { product: { select: { id: true, name: true, slug: true, active: true } } },
-  });
+export async function listVariantsWithStock({
+  search,
+  page = 1,
+}: { search?: string; page?: number } = {}) {
+  const where = search
+    ? { product: { name: { contains: search, mode: "insensitive" as const } } }
+    : {};
+  const [items, total] = await Promise.all([
+    prisma.productVariant.findMany({
+      where,
+      orderBy: { stock: "asc" },
+      include: { product: { select: { id: true, name: true, slug: true, active: true } } },
+      skip: (Math.max(page, 1) - 1) * ADMIN_PAGE_SIZE,
+      take: ADMIN_PAGE_SIZE,
+    }),
+    prisma.productVariant.count({ where }),
+  ]);
+  return { items, total };
 }
 
 // isUuid antes de golpear Postgres — mismo cuidado que getOrderForAdmin /

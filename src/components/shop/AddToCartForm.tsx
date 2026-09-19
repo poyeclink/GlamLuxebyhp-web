@@ -2,10 +2,11 @@
 
 import { useActionState } from "react";
 import { addToCartAction, type CartActionState } from "@/server/actions/cart-actions";
-import { TextField } from "@/components/ui/TextField";
 import { SelectField } from "@/components/ui/SelectField";
 import { SubmitButton } from "@/components/ui/SubmitButton";
 import { FormError } from "@/components/ui/FormError";
+import { Label } from "@/components/ui/Label";
+import { QuantityInput } from "@/components/ui/QuantityInput";
 
 type VariantOption = {
   id: string;
@@ -42,15 +43,10 @@ export function AddToCartForm({
         </SelectField>
       ) : null}
 
-      <TextField
-        label="Cantidad"
-        name="quantity"
-        type="number"
-        min="1"
-        defaultValue="1"
-        className="w-24"
-        required
-      />
+      <div className="flex flex-col gap-1.5">
+        <Label htmlFor="quantity">Cantidad</Label>
+        <QuantityInput name="quantity" defaultValue={1} min={1} />
+      </div>
 
       <SubmitButton className="w-full sm:w-auto">Agregar al carrito</SubmitButton>
       <FormError message={state.error} />

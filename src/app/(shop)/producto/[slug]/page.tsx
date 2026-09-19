@@ -1,10 +1,16 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
+import { Package } from "lucide-react";
 import { Badge } from "@/components/ui/Badge";
 import { PriceDual } from "@/components/ui/PriceDual";
 import { ImageGallery } from "@/components/shop/ImageGallery";
 import { AddToCartForm } from "@/components/shop/AddToCartForm";
-import { getProductBySlug } from "@/server/services/product-service";
+import { RelatedProducts } from "@/components/shop/RelatedProducts";
+import {
+  getProductBySlug,
+  listRelatedProducts,
+  toProductCardItem,
+} from "@/server/services/product-service";
 import { r2PublicUrl } from "@/lib/r2";
 
 export default async function ProductoPage({ params }: PageProps<"/producto/[slug]">) {
@@ -20,6 +26,10 @@ export default async function ProductoPage({ params }: PageProps<"/producto/[slu
   const initialIndex = Math.max(
     product.images.findIndex((image) => image.isPrimary),
     0,
+  );
+
+  const relatedProducts = (await listRelatedProducts(product.categoryId, product.id)).map(
+    toProductCardItem,
   );
 
   return (
@@ -50,7 +60,12 @@ export default async function ProductoPage({ params }: PageProps<"/producto/[slu
             {product.description}
           </p>
 
-          {product.boxed ? <Badge variant="outline">Viene en caja</Badge> : null}
+          {product.boxed ? (
+            <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+              <Package className="h-4 w-4" />
+              Viene en caja
+            </div>
+          ) : null}
 
           {product.hasVariants && product.variants.length > 0 ? (
             <div className="flex flex-col gap-2">
@@ -73,6 +88,8 @@ export default async function ProductoPage({ params }: PageProps<"/producto/[slu
           />
         </div>
       </div>
+
+      <RelatedProducts products={relatedProducts} />
     </div>
   );
 }

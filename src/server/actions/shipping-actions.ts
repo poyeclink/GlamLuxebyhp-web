@@ -1,6 +1,5 @@
 "use server";
 
-import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { requireAdmin } from "@/lib/session";
@@ -13,6 +12,7 @@ import {
 
 export type ShippingActionState = {
   error?: string;
+  success?: boolean;
 };
 
 const shippingRateSchema = z.object({
@@ -46,8 +46,11 @@ export async function createShippingRateAction(
     throw error;
   }
 
+  // Sin redirect: el formulario ahora vive en un modal sobre /admin/envios (no
+  // en una página aparte) — revalidar y devolver éxito basta para que la
+  // lista se refresque y el modal se cierre solo.
   revalidatePath("/admin/envios");
-  redirect("/admin/envios");
+  return { success: true };
 }
 
 export async function updateShippingRateAction(
@@ -70,7 +73,7 @@ export async function updateShippingRateAction(
   }
 
   revalidatePath("/admin/envios");
-  redirect("/admin/envios");
+  return { success: true };
 }
 
 export async function deleteShippingRateAction(

@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import {
   getVariantForAdjustment,
@@ -5,6 +6,7 @@ import {
 } from "@/server/services/inventory-service";
 import { AdjustStockForm } from "@/components/admin/AdjustStockForm";
 import { Badge } from "@/components/ui/Badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { formatDate } from "@/lib/utils";
 import type { InventoryLogReason } from "@/generated/prisma/client";
 
@@ -26,20 +28,32 @@ export default async function AdminInventoryVariantPage({
 
   return (
     <div className="mx-auto flex max-w-2xl flex-col gap-8 px-4 py-16">
+      <Link href="/admin/inventario" className="text-sm text-muted-foreground hover:text-foreground">
+        ← Volver a inventario
+      </Link>
+
       <div className="flex flex-col gap-1">
         <h1 className="text-2xl font-semibold text-foreground">{variant.product.name}</h1>
-        <p className="text-sm text-muted-foreground">
-          Talla {variant.size} · Stock actual: <span className="font-medium">{variant.stock}</span>
-        </p>
+        <p className="text-sm text-muted-foreground">Talla {variant.size}</p>
       </div>
 
-      <div className="flex flex-col gap-3">
-        <h2 className="text-lg font-semibold text-foreground">Ajuste manual</h2>
-        <AdjustStockForm variantId={variant.id} />
-      </div>
+      <Card>
+        <CardContent className="flex items-center justify-between p-6">
+          <span className="text-sm text-muted-foreground">Stock actual</span>
+          <span className="text-2xl font-semibold text-foreground">{variant.stock}</span>
+        </CardContent>
+      </Card>
 
+      {/* Solo lectura, a propósito primero en la página — es lo que "Ver
+          historial" (link de origen en /admin/inventario) promete mostrar.
+          El ajuste manual (la única acción que de verdad cambia el stock)
+          vive aparte, más abajo y marcado como tal, para que no se confunda
+          con este registro informativo. */}
       <div className="flex flex-col gap-3">
         <h2 className="text-lg font-semibold text-foreground">Historial de movimientos</h2>
+        <p className="text-sm text-muted-foreground">
+          Registro de solo lectura: reservas, liberaciones y ajustes manuales de esta talla.
+        </p>
         {logs.length === 0 ? (
           <p className="text-sm text-muted-foreground">Todavía no hay movimientos registrados.</p>
         ) : (
@@ -68,6 +82,24 @@ export default async function AdminInventoryVariantPage({
           </ul>
         )}
       </div>
+
+      <Card className="border-destructive/40">
+        <CardHeader className="gap-2">
+          <div className="flex items-center gap-2">
+            <span className="material-symbols-outlined text-destructive" aria-hidden="true">
+              warning
+            </span>
+            <CardTitle className="text-base">Ajustar stock manualmente</CardTitle>
+          </div>
+          <p className="text-sm text-muted-foreground">
+            Esto cambia el inventario real de inmediato, no es una simulación. Un número negativo
+            resta stock, uno positivo lo suma.
+          </p>
+        </CardHeader>
+        <CardContent>
+          <AdjustStockForm variantId={variant.id} />
+        </CardContent>
+      </Card>
     </div>
   );
 }

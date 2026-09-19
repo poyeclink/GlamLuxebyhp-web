@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { deleteFromR2 } from "@/server/services/product-image-service";
 import { r2PublicUrl } from "@/lib/r2";
+import { ADMIN_PAGE_SIZE } from "@/lib/utils";
 import type { ProductCardItem } from "@/components/shop/ProductCard";
 
 export class ProductError extends Error {}
@@ -27,11 +28,19 @@ function sortVariantsBySize<T extends { size: string }>(variants: T[]) {
   return [...variants].sort((a, b) => compareSizes(a.size, b.size));
 }
 
-export function listProducts() {
-  return prisma.product.findMany({
-    orderBy: { name: "asc" },
-    include: { category: true },
-  });
+export async function listProducts({ search, page = 1 }: { search?: string; page?: number } = {}) {
+  const where = search ? { name: { contains: search, mode: "insensitive" as const } } : {};
+  const [items, total] = await Promise.all([
+    prisma.product.findMany({
+      where,
+      orderBy: { name: "asc" },
+      include: { category: true },
+      skip: (Math.max(page, 1) - 1) * ADMIN_PAGE_SIZE,
+      take: ADMIN_PAGE_SIZE,
+    }),
+    prisma.product.count({ where }),
+  ]);
+  return { items, total };
 }
 
 export function listFeaturedProducts(limit = 8) {
@@ -78,6 +87,40 @@ export function toProductCardItem(product: ProductForCard): ProductCardItem {
     individualPrice: Number(product.individualPrice),
     imageUrl: product.images[0] ? r2PublicUrl(product.images[0].key) : null,
   };
+}
+
+// "Productos que te podrían interesar" en la página de detalle — mismos
+// criterios que listShopProducts (activos, más recientes primero) pero
+// prioriza la categoría del producto que se está viendo, excluyéndolo.
+// Con catálogos chicos por categoría (común en las primeras etapas de la
+// tienda) esa categoría sola no siempre alcanza para un carrusel — se
+// completa con otros productos activos en vez de mostrar 1 solo resultado.
+export async function listRelatedProducts(categoryId: string, excludeProductId: string, limit = 8) {
+  const include = {
+    category: true,
+    images: { where: { isPrimary: true }, take: 1 },
+  } as const;
+
+  const sameCategory = await prisma.product.findMany({
+    where: { active: true, categoryId, id: { not: excludeProductId } },
+    orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+    take: limit,
+    include,
+  });
+
+  if (sameCategory.length >= limit) return sameCategory;
+
+  const otherProducts = await prisma.product.findMany({
+    where: {
+      active: true,
+      id: { notIn: [excludeProductId, ...sameCategory.map((product) => product.id)] },
+    },
+    orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+    take: limit - sameCategory.length,
+    include,
+  });
+
+  return [...sameCategory, ...otherProducts];
 }
 
 export async function getProductBySlug(slug: string) {

@@ -1,6 +1,5 @@
 "use server";
 
-import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { requireAdmin } from "@/lib/session";
@@ -13,6 +12,7 @@ import {
 
 export type CategoryActionState = {
   error?: string;
+  success?: boolean;
 };
 
 const categorySchema = z.object({
@@ -42,8 +42,11 @@ export async function createCategoryAction(
     throw error;
   }
 
+  // Sin redirect: el formulario ahora vive en un modal sobre /admin/categorias
+  // (no en una página aparte) — revalidar y devolver éxito basta para que la
+  // lista se refresque y el modal se cierre solo.
   revalidatePath("/admin/categorias");
-  redirect("/admin/categorias");
+  return { success: true };
 }
 
 export async function updateCategoryAction(
@@ -66,7 +69,7 @@ export async function updateCategoryAction(
   }
 
   revalidatePath("/admin/categorias");
-  redirect("/admin/categorias");
+  return { success: true };
 }
 
 export async function deleteCategoryAction(

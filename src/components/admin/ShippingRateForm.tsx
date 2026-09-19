@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useEffect } from "react";
 import { TextField } from "@/components/ui/TextField";
 import { SelectField } from "@/components/ui/SelectField";
 import { SubmitButton } from "@/components/ui/SubmitButton";
@@ -21,12 +21,20 @@ export function ShippingRateForm({
   action,
   defaultValues,
   submitLabel,
+  onSuccess,
 }: {
   action: (prevState: ShippingActionState, formData: FormData) => Promise<ShippingActionState>;
   defaultValues?: { tier: string; minQuantity: number; maxQuantity: number | null; price: number };
   submitLabel: string;
+  onSuccess?: () => void;
 }) {
   const [state, formAction] = useActionState(action, initialState);
+
+  // El formulario vive en un modal (categorías/envíos): sin redirect a una
+  // página aparte, esto es lo que le avisa al modal que ya puede cerrarse.
+  useEffect(() => {
+    if (state.success) onSuccess?.();
+  }, [state.success, onSuccess]);
 
   return (
     <form action={formAction} className="flex flex-col gap-4">
