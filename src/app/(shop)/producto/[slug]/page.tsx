@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/Badge";
 import { PriceDual } from "@/components/ui/PriceDual";
 import { ImageGallery } from "@/components/shop/ImageGallery";
 import { AddToCartForm } from "@/components/shop/AddToCartForm";
+import { ProductCard } from "@/components/shop/ProductCard";
 import { RelatedProducts } from "@/components/shop/RelatedProducts";
 import {
   getProductBySlug,
@@ -89,7 +90,13 @@ export default async function ProductoPage({ params }: PageProps<"/producto/[slu
         </div>
       </div>
 
-      <RelatedProducts products={relatedProducts} />
+      <RelatedProducts itemCount={relatedProducts.length}>
+        {relatedProducts.map((product) => (
+          <div key={product.slug} className="w-[45%] shrink-0 snap-start sm:w-[30%] lg:w-[22%]">
+            <ProductCard product={product} />
+          </div>
+        ))}
+      </RelatedProducts>
     </div>
   );
 }

@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 
 type Category = { id: string; name: string; slug: string };
 
-export function CategoryMenu({ categories }: { categories: Category[] }) {
+export function CategoryMenu({ categories, label = "Categorías" }: { categories: Category[]; label?: string }) {
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -32,7 +32,7 @@ export function CategoryMenu({ categories }: { categories: Category[] }) {
         aria-expanded={open}
         className="flex items-center gap-1 text-sm font-medium text-muted-foreground hover:text-foreground"
       >
-        Categorías
+        {label}
         <ChevronDown className={cn("h-4 w-4 transition-transform", open && "rotate-180")} />
       </button>
 

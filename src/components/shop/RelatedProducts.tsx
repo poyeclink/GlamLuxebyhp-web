@@ -1,11 +1,15 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { ProductCard, type ProductCardItem } from "@/components/shop/ProductCard";
 import { cn } from "@/lib/utils";
 
-export function RelatedProducts({ products }: { products: ProductCardItem[] }) {
+// Recibe las tarjetas ya renderizadas por el Server Component padre (children),
+// en vez de un array de datos + renderizar ProductCard aquí adentro: ProductCard
+// usa PriceDual, que ahora depende de next/headers (i18n) — importarlo desde
+// este Client Component metería ese código server-only en el bundle del
+// navegador y rompería la página con un error de build.
+export function RelatedProducts({ itemCount, children }: { itemCount: number; children: ReactNode }) {
   const scrollerRef = useRef<HTMLDivElement>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(false);
@@ -27,9 +31,9 @@ export function RelatedProducts({ products }: { products: ProductCardItem[] }) {
     const onResize = () => updateScrollState();
     window.addEventListener("resize", onResize);
     return () => window.removeEventListener("resize", onResize);
-  }, [products]);
+  }, [itemCount]);
 
-  if (products.length === 0) return null;
+  if (itemCount === 0) return null;
 
   function scrollByPage(direction: 1 | -1) {
     const node = scrollerRef.current;
@@ -71,11 +75,7 @@ export function RelatedProducts({ products }: { products: ProductCardItem[] }) {
           onScroll={updateScrollState}
           className="flex snap-x snap-mandatory gap-4 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
         >
-          {products.map((product) => (
-            <div key={product.slug} className="w-[45%] shrink-0 snap-start sm:w-[30%] lg:w-[22%]">
-              <ProductCard product={product} />
-            </div>
-          ))}
+          {children}
         </div>
 
         <div

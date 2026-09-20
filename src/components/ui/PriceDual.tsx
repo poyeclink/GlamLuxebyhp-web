@@ -1,5 +1,6 @@
 import { Badge } from "@/components/ui/Badge";
 import { cn, formatCurrency } from "@/lib/utils";
+import { t } from "@/lib/i18n";
 
 type PriceDualProps = {
   wholesalePrice: number;
@@ -7,17 +8,19 @@ type PriceDualProps = {
   className?: string;
 };
 
-export function PriceDual({ wholesalePrice, individualPrice, className }: PriceDualProps) {
+export async function PriceDual({ wholesalePrice, individualPrice, className }: PriceDualProps) {
+  const [wholesaleLabel, individualLabel] = await Promise.all([t("Mayorista"), t("Individual")]);
+
   return (
     <div className={cn("flex flex-col gap-1", className)}>
       <div className="flex items-center gap-2">
         <span className="text-xl font-semibold text-foreground">
           {formatCurrency(wholesalePrice)}
         </span>
-        <Badge variant="secondary">Mayorista</Badge>
+        <Badge variant="secondary">{wholesaleLabel}</Badge>
       </div>
       <span className="text-sm text-muted-foreground">
-        Individual: {formatCurrency(individualPrice)}
+        {individualLabel}: {formatCurrency(individualPrice)}
       </span>
     </div>
   );

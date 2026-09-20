@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ShoppingBag } from "lucide-react";
 import { getSession } from "@/lib/session";
+import { getLocale, t } from "@/lib/i18n";
 import { resolveCartOwnerForRead } from "@/lib/cart-session";
 import { getCartItemCount } from "@/server/services/cart-service";
 import { listShopCategories } from "@/server/services/category-service";
@@ -8,6 +9,7 @@ import { LogoutButton } from "@/components/auth/LogoutButton";
 import { Button } from "@/components/ui/Button";
 import { MobileNav } from "@/components/layout/MobileNav";
 import { CategoryMenu } from "@/components/layout/CategoryMenu";
+import { LanguageSwitcher } from "@/components/layout/LanguageSwitcher";
 
 // Enlaces estáticos del sitio — a diferencia de las categorías (dinámicas,
 // ver CategoryMenu abajo), estas páginas no dependen de datos y no cambian
@@ -18,9 +20,9 @@ const STATIC_NAV_LINKS = [
   { href: "/contacto", label: "Contacto" },
 ];
 
-function CartLink({ count }: { count: number }) {
+function CartLink({ count, label }: { count: number; label: string }) {
   return (
-    <Link href="/carrito" aria-label="Carrito" className="relative text-muted-foreground hover:text-foreground">
+    <Link href="/carrito" aria-label={label} className="relative text-muted-foreground hover:text-foreground">
       <ShoppingBag className="h-5 w-5" />
       {count > 0 ? (
         <span className="absolute -right-2 -top-2 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] font-medium text-primary-foreground">
@@ -34,34 +36,47 @@ function CartLink({ count }: { count: number }) {
 export async function SiteHeader() {
   const session = await getSession();
   const isCustomer = session?.role === "cliente";
-  const [cartOwner, categories] = await Promise.all([
+  const [cartOwner, categories, locale] = await Promise.all([
     resolveCartOwnerForRead(),
     listShopCategories(),
+    getLocale(),
   ]);
   const cartCount = cartOwner ? await getCartItemCount(cartOwner) : 0;
+
+  const [storeLabel, cartLabel, myAccountLabel, logoutLabel, loginLabel, categoriesLabel, categoryLabels, staticLabels] =
+    await Promise.all([
+      t("Tienda"),
+      t("Carrito"),
+      t("Mi cuenta"),
+      t("Cerrar sesión"),
+      t("Iniciar sesión"),
+      t("Categorías"),
+      Promise.all(categories.map((category) => t(category.name))),
+      Promise.all(STATIC_NAV_LINKS.map((link) => t(link.label))),
+    ]);
 
   // El menú móvil es una lista plana (sin submenú): las categorías se
   // intercalan aquí mismo en vez de replicar el dropdown de escritorio.
   const mobileLinks = [
-    { href: "/tienda", label: "Tienda" },
-    ...categories.map((category) => ({
+    { href: "/tienda", label: storeLabel },
+    ...categories.map((category, index) => ({
       href: `/tienda?categoria=${category.slug}`,
-      label: category.name,
+      label: categoryLabels[index],
     })),
-    ...STATIC_NAV_LINKS,
+    ...STATIC_NAV_LINKS.map((link, index) => ({ href: link.href, label: staticLabels[index] })),
   ];
 
   const authSlot = isCustomer ? (
     <div className="flex items-center gap-3">
       <Link href="/perfil" className="text-sm font-medium text-foreground">
-        Mi cuenta
+        {myAccountLabel}
       </Link>
-      <LogoutButton />
+      <LogoutButton label={logoutLabel} />
     </div>
   ) : (
     <Link href="/login">
       <Button variant="outline" size="sm">
-        Iniciar sesión
+        {loginLabel}
       </Button>
     </Link>
   );
@@ -75,27 +90,32 @@ export async function SiteHeader() {
 
         <nav className="hidden items-center gap-6 md:flex">
           <Link href="/tienda" className="text-sm font-medium text-muted-foreground hover:text-foreground">
-            Tienda
+            {storeLabel}
           </Link>
-          <CategoryMenu categories={categories} />
-          {STATIC_NAV_LINKS.map((link) => (
+          <CategoryMenu
+            categories={categories.map((category, index) => ({ ...category, name: categoryLabels[index] }))}
+            label={categoriesLabel}
+          />
+          {STATIC_NAV_LINKS.map((link, index) => (
             <Link
               key={link.href}
               href={link.href}
               className="text-sm font-medium text-muted-foreground hover:text-foreground"
             >
-              {link.label}
+              {staticLabels[index]}
             </Link>
           ))}
         </nav>
 
         <div className="hidden items-center gap-4 md:flex">
-          <CartLink count={cartCount} />
+          <LanguageSwitcher locale={locale} />
+          <CartLink count={cartCount} label={cartLabel} />
           {authSlot}
         </div>
 
         <div className="flex items-center gap-2 md:hidden">
-          <CartLink count={cartCount} />
+          <LanguageSwitcher locale={locale} />
+          <CartLink count={cartCount} label={cartLabel} />
           <MobileNav links={mobileLinks} authSlot={authSlot} />
         </div>
       </div>

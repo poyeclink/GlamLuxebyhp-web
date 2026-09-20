@@ -263,6 +263,24 @@ model OrderItem {
   @@index([variantId])
 }
 
+// Caché de traducciones on-demand (Cloudflare Workers AI, ver src/lib/cloudflare-ai.ts):
+// no hay archivos de idioma por mantener, cualquier texto (copy estático o
+// contenido dinámico como nombre/descripción de un Product) se traduce la
+// primera vez que se pide en un locale distinto al de autoría (español) y
+// se cachea aquí para no volver a llamar la API por el mismo texto.
+// sourceHash (no el texto plano) es la clave única porque una descripción de
+// producto puede exceder el límite de tamaño de un índice btree de Postgres.
+model Translation {
+  id             String   @id @default(uuid()) @db.Uuid
+  sourceHash     String
+  targetLocale   String
+  sourceText     String   @db.Text
+  translatedText String   @db.Text
+  createdAt      DateTime @default(now())
+
+  @@unique([sourceHash, targetLocale])
+}
+
 model InventoryLog {
   id String @id @default(uuid()) @db.Uuid
 
