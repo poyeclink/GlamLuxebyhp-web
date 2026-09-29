@@ -7,7 +7,7 @@ import { ADMIN_PAGE_SIZE, isUuid } from "@/lib/utils";
 
 export class OrderError extends Error {}
 
-const RESERVATION_DAYS = 3;
+export const RESERVATION_DAYS = 3;
 
 // Badge/label de OrderStatus centralizados aquí: antes de esto, cada página
 // que renderizaba un pedido (dashboard, lista admin, detalle admin, detalle
@@ -22,11 +22,11 @@ export const ORDER_STATUS_LABELS: Record<OrderStatus, string> = {
 
 export const ORDER_STATUS_BADGE_VARIANT: Record<
   OrderStatus,
-  "secondary" | "default" | "destructive"
+  "accent" | "secondary" | "default" | "destructive"
 > = {
-  reservado: "secondary",
+  reservado: "accent",
   confirmado: "default",
-  enviado: "default",
+  enviado: "secondary",
   vencido: "destructive",
   cancelado: "destructive",
 };

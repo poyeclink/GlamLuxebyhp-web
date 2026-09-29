@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { ProductForm } from "@/components/admin/ProductForm";
 import { ProductImageUploader } from "@/components/admin/ProductImageUploader";
 import { VariantManager } from "@/components/admin/VariantManager";
@@ -22,9 +23,15 @@ export default async function EditProductPage({
   }));
 
   return (
-    <div className="mx-auto flex max-w-lg flex-col gap-10 px-4 py-16">
-      <div className="flex flex-col gap-6">
-        <h1 className="text-2xl font-semibold text-foreground">Editar producto</h1>
+    <div className="mx-auto flex max-w-3xl flex-col gap-8 px-4 py-10 sm:px-8 lg:py-12">
+      <AdminPageHeader
+        back={{ href: "/admin/productos", label: "Volver a productos" }}
+        eyebrow="Editar producto"
+        title={product.name}
+      />
+
+      <section className="flex flex-col gap-5 rounded-2xl border border-border bg-background p-6 sm:p-8">
+        <h2 className="font-display text-2xl text-foreground">Información</h2>
         <ProductForm
           action={updateProductAction.bind(null, id)}
           categories={categories}
@@ -41,17 +48,17 @@ export default async function EditProductPage({
           }}
           submitLabel="Guardar cambios"
         />
-      </div>
+      </section>
 
-      <div className="flex flex-col gap-4">
-        <h2 className="text-lg font-semibold text-foreground">Imágenes</h2>
+      <section className="flex flex-col gap-5 rounded-2xl border border-border bg-background p-6 sm:p-8">
+        <h2 className="font-display text-2xl text-foreground">Imágenes</h2>
         <ProductImageUploader productId={product.id} images={images} />
-      </div>
+      </section>
 
-      <div className="flex flex-col gap-4">
-        <h2 className="text-lg font-semibold text-foreground">Tallas y stock</h2>
+      <section className="flex flex-col gap-5 rounded-2xl border border-border bg-background p-6 sm:p-8">
+        <h2 className="font-display text-2xl text-foreground">Tallas y stock</h2>
         <VariantManager productId={product.id} variants={product.variants} />
-      </div>
+      </section>
     </div>
   );
 }

@@ -1,10 +1,16 @@
 import { logoutAction } from "@/server/actions/auth-actions";
 import { Button } from "@/components/ui/Button";
 
-export function LogoutButton({ label = "Cerrar sesión" }: { label?: string }) {
+export function LogoutButton({
+  label = "Cerrar sesión",
+  className,
+}: {
+  label?: string;
+  className?: string;
+}) {
   return (
     <form action={logoutAction}>
-      <Button type="submit" variant="ghost" size="sm">
+      <Button type="submit" variant="ghost" size="sm" className={className}>
         {label}
       </Button>
     </form>

@@ -23,7 +23,13 @@ export function ProfileForm({
         <span className="text-sm font-medium text-foreground">Correo</span>
         <span className="text-sm text-muted-foreground">{email}</span>
       </div>
-      <TextField label="Nombre" name="name" type="text" defaultValue={defaultValues.name} required />
+      <TextField
+        label="Nombre"
+        name="name"
+        type="text"
+        defaultValue={defaultValues.name}
+        required
+      />
       <TextField
         label="WhatsApp"
         name="whatsapp"

@@ -1,85 +1,168 @@
 import Link from "next/link";
+import { ArrowUpRight, Plus } from "lucide-react";
 import { getSession } from "@/lib/session";
-import {
-  ORDER_STATUS_BADGE_VARIANT,
-  getOrderStatusCounts,
-  listRecentOrders,
-} from "@/server/services/order-service";
+import { getOrderStatusCounts, listRecentOrders } from "@/server/services/order-service";
 import { listLowStockVariants } from "@/server/services/product-variant-service";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
-import { formatCurrency, formatDate } from "@/lib/utils";
+import { Button } from "@/components/ui/Button";
+import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
+import { OrderStatusBadge } from "@/components/orders/OrderStatusBadge";
+import { cn, formatCurrency, formatDate } from "@/lib/utils";
 import type { OrderStatus } from "@/generated/prisma/client";
 
 // Plural porque son encabezados de tarjeta ("Reservados: 3"), a diferencia de
 // ORDER_STATUS_LABELS (singular, para un badge de un solo pedido) — no vale
 // la pena compartir un mapa para esta única diferencia de forma gramatical.
-const STATUS_CARD_LABELS: Record<OrderStatus, string> = {
-  reservado: "Reservados",
-  confirmado: "Confirmados",
-  enviado: "Enviados",
-  cancelado: "Cancelados",
-  vencido: "Vencidos",
-};
+const STATUS_CARDS: { status: OrderStatus; label: string; hint: string; icon: string }[] = [
+  {
+    status: "reservado",
+    label: "Reservados",
+    hint: "Esperando verificación de pago",
+    icon: "hourglass_top",
+  },
+  { status: "confirmado", label: "Confirmados", hint: "Listos para preparar", icon: "task_alt" },
+  { status: "enviado", label: "Enviados", hint: "En camino al cliente", icon: "local_shipping" },
+  { status: "cancelado", label: "Cancelados", hint: "Pago rechazado", icon: "block" },
+  { status: "vencido", label: "Vencidos", hint: "Reserva expirada", icon: "event_busy" },
+];
+
+const QUICK_LINKS = [
+  { href: "/admin/productos/nuevo", label: "Nuevo producto", icon: "add_box" },
+  { href: "/admin/categorias", label: "Categorías", icon: "category" },
+  { href: "/admin/inventario", label: "Inventario", icon: "warehouse" },
+  { href: "/admin/reportes", label: "Reportes PDF", icon: "picture_as_pdf" },
+];
+
+function CardLink({ href, children }: { href: string; children: React.ReactNode }) {
+  return (
+    <Link
+      href={href}
+      className="group flex items-center gap-1 text-sm font-medium text-accent transition-colors hover:text-foreground"
+    >
+      {children}
+      <ArrowUpRight className="h-4 w-4 transition-transform duration-300 group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
+    </Link>
+  );
+}
 
 export default async function AdminHomePage() {
   const [session, statusCounts, recentOrders, lowStockVariants] = await Promise.all([
     getSession(),
     getOrderStatusCounts(),
-    listRecentOrders(10),
-    listLowStockVariants(10),
+    listRecentOrders(8),
+    listLowStockVariants(8),
   ]);
+  const firstName = (session?.name ?? "Administrador").split(" ")[0];
 
   return (
-    <div className="mx-auto flex max-w-6xl flex-col gap-8 px-4 py-16">
-      <div className="flex flex-col gap-1">
-        <h1 className="text-2xl font-semibold text-foreground">Panel administrativo</h1>
-        <p className="text-muted-foreground">Sesión iniciada como {session?.name}.</p>
-      </div>
+    <div className="mx-auto flex max-w-7xl flex-col gap-10 px-4 py-10 sm:px-8 lg:py-12">
+      <AdminPageHeader
+        eyebrow={formatDate(new Date())}
+        title={`Hola, ${firstName}`}
+        description="Este es el resumen de tu tienda: pedidos por estado, ventas recientes y tallas por reponer."
+        action={
+          <Link href="/admin/productos/nuevo">
+            <Button>
+              <Plus className="h-4 w-4" aria-hidden="true" />
+              Nuevo producto
+            </Button>
+          </Link>
+        }
+      />
 
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
-        {(Object.keys(STATUS_CARD_LABELS) as OrderStatus[]).map((status) => (
-          <Card key={status}>
-            <CardContent className="flex flex-col gap-1 p-4">
-              <span className="text-sm text-muted-foreground">{STATUS_CARD_LABELS[status]}</span>
-              <span className="text-2xl font-semibold text-foreground">
-                {statusCounts[status]}
-              </span>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+      <ul className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
+        {STATUS_CARDS.map(({ status, label, hint, icon }, index) => {
+          const featured = index === 0;
+          return (
+            <li key={status} className={cn(featured && "col-span-2 sm:col-span-1")}>
+              <Link
+                href={`/admin/pedidos?estado=${status}`}
+                className={cn(
+                  "group flex h-full flex-col gap-6 rounded-2xl border p-5 hover-lift hover:shadow-[0_20px_40px_-24px_rgba(10,10,11,0.45)]",
+                  featured
+                    ? "border-inverse bg-inverse text-inverse-foreground"
+                    : "border-border bg-background text-foreground hover:border-foreground/30",
+                )}
+              >
+                <div className="flex items-center justify-between">
+                  <span
+                    className={cn(
+                      "flex h-10 w-10 items-center justify-center rounded-full transition-transform duration-300 group-hover:scale-110",
+                      featured
+                        ? "bg-inverse-accent/15 text-inverse-accent"
+                        : "bg-accent-soft text-accent",
+                    )}
+                  >
+                    <span
+                      className="material-symbols-outlined text-[20px] leading-none"
+                      aria-hidden="true"
+                    >
+                      {icon}
+                    </span>
+                  </span>
+                  <ArrowUpRight
+                    className={cn(
+                      "h-4 w-4 opacity-0 transition-opacity duration-300 group-hover:opacity-100",
+                      featured ? "text-inverse-accent" : "text-accent",
+                    )}
+                  />
+                </div>
+                <div className="flex flex-col gap-1">
+                  <span className="text-4xl font-semibold leading-none tracking-tight tabular-nums">
+                    {statusCounts[status]}
+                  </span>
+                  <span className="text-sm font-medium">{label}</span>
+                  <span
+                    className={cn(
+                      "text-xs",
+                      featured ? "text-inverse-muted" : "text-muted-foreground",
+                    )}
+                  >
+                    {hint}
+                  </span>
+                </div>
+              </Link>
+            </li>
+          );
+        })}
+      </ul>
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1.4fr_1fr]">
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between">
+          <CardHeader className="flex flex-row items-center justify-between border-b border-border">
             <CardTitle>Ventas recientes</CardTitle>
-            <Link href="/admin/pedidos" className="text-sm text-muted-foreground hover:text-foreground">
-              Ver todos
-            </Link>
+            <CardLink href="/admin/pedidos">Ver todos</CardLink>
           </CardHeader>
-          <CardContent className="pt-0">
+          <CardContent className="p-2">
             {recentOrders.length === 0 ? (
-              <p className="text-sm text-muted-foreground">Todavía no hay pedidos.</p>
+              <p className="p-6 text-sm text-muted-foreground">Todavía no hay pedidos.</p>
             ) : (
-              <ul className="flex flex-col divide-y divide-border">
+              <ul className="flex flex-col">
                 {recentOrders.map((order) => (
-                  <li key={order.id} className="flex items-center justify-between gap-4 py-3">
+                  <li key={order.id}>
                     <Link
                       href={`/admin/pedidos/${order.id}`}
-                      className="flex flex-col gap-0.5 text-sm hover:underline"
+                      className="flex items-center gap-4 rounded-xl px-4 py-3 transition-colors hover:bg-accent-soft/50"
                     >
-                      <span className="font-medium text-foreground">{order.fullName}</span>
-                      <span className="text-xs text-muted-foreground">
-                        {formatDate(order.createdAt)}
+                      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-secondary font-display text-foreground">
+                        {order.fullName.charAt(0).toUpperCase()}
                       </span>
-                    </Link>
-                    <div className="flex items-center gap-3">
-                      <span className="text-sm text-foreground">
+                      <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+                        <span className="truncate text-sm font-medium text-foreground">
+                          {order.fullName}
+                        </span>
+                        <span className="text-xs text-muted-foreground">
+                          {formatDate(order.createdAt)}
+                        </span>
+                      </span>
+                      <span className="hidden sm:block">
+                        <OrderStatusBadge status={order.status} />
+                      </span>
+                      <span className="w-20 text-right text-sm font-medium text-foreground">
                         {formatCurrency(Number(order.total))}
                       </span>
-                      <Badge variant={ORDER_STATUS_BADGE_VARIANT[order.status]}>{order.status}</Badge>
-                    </div>
+                    </Link>
                   </li>
                 ))}
               </ul>
@@ -87,38 +170,70 @@ export default async function AdminHomePage() {
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle>Alertas de stock bajo</CardTitle>
-            <Link href="/admin/inventario" className="text-sm text-muted-foreground hover:text-foreground">
-              Ver inventario
-            </Link>
-          </CardHeader>
-          <CardContent className="pt-0">
-            {lowStockVariants.length === 0 ? (
-              <p className="text-sm text-muted-foreground">
-                Ninguna talla está por debajo del umbral de stock bajo.
-              </p>
-            ) : (
-              <ul className="flex flex-col divide-y divide-border">
-                {lowStockVariants.map((variant) => (
-                  <li key={variant.id} className="flex items-center justify-between gap-4 py-3">
-                    <Link
-                      href={`/admin/inventario/${variant.id}`}
-                      className="flex flex-col gap-0.5 text-sm hover:underline"
-                    >
-                      <span className="font-medium text-foreground">{variant.product.name}</span>
-                      <span className="text-xs text-muted-foreground">Talla {variant.size}</span>
-                    </Link>
-                    <Badge variant={variant.stock === 0 ? "destructive" : "secondary"}>
-                      {variant.stock} en stock
-                    </Badge>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </CardContent>
-        </Card>
+        <div className="flex flex-col gap-6">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between border-b border-border">
+              <CardTitle>Stock bajo</CardTitle>
+              <CardLink href="/admin/inventario">Inventario</CardLink>
+            </CardHeader>
+            <CardContent className="p-2">
+              {lowStockVariants.length === 0 ? (
+                <div className="flex items-center gap-3 p-4 text-sm text-muted-foreground">
+                  <span className="material-symbols-outlined text-accent" aria-hidden="true">
+                    verified
+                  </span>
+                  Ninguna talla está por debajo del umbral de stock bajo.
+                </div>
+              ) : (
+                <ul className="flex flex-col">
+                  {lowStockVariants.map((variant) => (
+                    <li key={variant.id}>
+                      <Link
+                        href={`/admin/inventario/${variant.id}`}
+                        className="flex items-center justify-between gap-4 rounded-xl px-4 py-3 transition-colors hover:bg-accent-soft/50"
+                      >
+                        <span className="flex min-w-0 flex-col gap-0.5">
+                          <span className="truncate text-sm font-medium text-foreground">
+                            {variant.product.name}
+                          </span>
+                          <span className="text-xs text-muted-foreground">
+                            Talla {variant.size}
+                          </span>
+                        </span>
+                        <Badge variant={variant.stock === 0 ? "destructive" : "secondary"}>
+                          {variant.stock === 0 ? "Agotado" : `${variant.stock} en stock`}
+                        </Badge>
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card className="bg-inverse text-inverse-foreground">
+            <CardHeader>
+              <CardTitle>Accesos rápidos</CardTitle>
+            </CardHeader>
+            <CardContent className="grid grid-cols-2 gap-2">
+              {QUICK_LINKS.map((link) => (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  className="group flex flex-col gap-3 rounded-xl border border-inverse-border p-4 text-sm transition-colors duration-300 hover:border-inverse-accent/60 hover:bg-inverse-border/40"
+                >
+                  <span
+                    className="material-symbols-outlined text-[22px] leading-none text-inverse-accent transition-transform duration-300 group-hover:-translate-y-0.5"
+                    aria-hidden="true"
+                  >
+                    {link.icon}
+                  </span>
+                  {link.label}
+                </Link>
+              ))}
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </div>
   );

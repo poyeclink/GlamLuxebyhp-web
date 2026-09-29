@@ -6,8 +6,8 @@ export function Input({ className, ...props }: ComponentProps<"input">) {
     <input
       {...props}
       className={cn(
-        "h-10 w-full rounded-md border border-input bg-background px-3 text-sm outline-none",
-        "focus:border-ring focus:ring-1 focus:ring-ring",
+        "h-11 w-full rounded-lg border border-input bg-background px-3.5 text-sm outline-none transition-[border-color,box-shadow] duration-200",
+        "placeholder:text-muted-foreground/70 hover:border-foreground/30 focus:border-ring focus:ring-4 focus:ring-ring/15",
         "disabled:cursor-not-allowed disabled:opacity-60",
         className,
       )}

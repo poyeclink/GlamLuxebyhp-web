@@ -1,7 +1,10 @@
 "use client";
 
 import { useActionState } from "react";
-import { adjustVariantStockAction, type InventoryActionState } from "@/server/actions/inventory-actions";
+import {
+  adjustVariantStockAction,
+  type InventoryActionState,
+} from "@/server/actions/inventory-actions";
 import { Input } from "@/components/ui/Input";
 import { SubmitButton } from "@/components/ui/SubmitButton";
 import { FormError } from "@/components/ui/FormError";

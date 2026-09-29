@@ -20,3 +20,12 @@ export const t = cache(async (text: string): Promise<string> => {
   if (locale === DEFAULT_LOCALE) return text;
   return translate(text, locale);
 });
+
+// Traduce un diccionario de textos en paralelo — evita el Promise.all
+// posicional (y sus índices frágiles) en páginas con mucho copy.
+export async function tMany<T extends Record<string, string>>(texts: T): Promise<T> {
+  const entries = await Promise.all(
+    Object.entries(texts).map(async ([key, text]) => [key, await t(text)] as const),
+  );
+  return Object.fromEntries(entries) as T;
+}

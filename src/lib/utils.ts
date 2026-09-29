@@ -34,9 +34,9 @@ export const ADMIN_PAGE_SIZE = 20;
 // visual futuro no diverja entre las dos listas que la usan.
 export function filterPillClass(active: boolean) {
   return cn(
-    "rounded-full border border-border px-4 py-1.5 text-sm font-medium",
+    "shrink-0 rounded-full border border-border px-4 py-1.5 text-sm font-medium",
     active
       ? "border-foreground bg-foreground text-background"
-      : "text-muted-foreground hover:text-foreground",
+      : "text-muted-foreground transition-colors hover:border-foreground/40 hover:text-foreground",
   );
 }

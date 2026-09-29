@@ -14,7 +14,7 @@ export default async function CheckoutResumenPage({
 
   return (
     <div className="mx-auto flex max-w-lg flex-col gap-10 px-4 py-16">
-      <h1 className="text-2xl font-semibold text-foreground">Resumen del pedido</h1>
+      <h1 className="font-display text-3xl text-foreground sm:text-4xl">Resumen del pedido</h1>
 
       <OrderSummary
         address={address}

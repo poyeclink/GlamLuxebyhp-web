@@ -1,29 +1,46 @@
 @import "tailwindcss";
 
 :root {
-  --radius: 0.5rem;
+  --radius: 0.375rem;
 
+  /* Paleta del PDF de branding: Negro Noche #0A0A0B, Zafiro #1B6FB8,
+     Azul Hielo #5CB8F0, Bruma #EAF6FD, Blanco. Negro y blanco dominan; el azul
+     es solo acento (CTAs, precio mayorista, links, estados activos) — nunca un
+     fondo azul grande. Sobre blanco el acento es Zafiro (AA), sobre negro Azul
+     Hielo (--inverse-accent). */
   --background: #ffffff;
-  --foreground: #171717;
+  --foreground: #0a0a0b;
 
   --card: #ffffff;
-  --card-foreground: #171717;
+  --card-foreground: #0a0a0b;
 
-  --primary: #171717;
-  --primary-foreground: #fafafa;
+  --primary: #0a0a0b;
+  --primary-foreground: #ffffff;
 
-  --secondary: #f5f5f5;
-  --secondary-foreground: #171717;
+  --secondary: #f4f6f8;
+  --secondary-foreground: #0a0a0b;
 
-  --muted: #f5f5f5;
-  --muted-foreground: #737373;
+  --muted: #f4f6f8;
+  --muted-foreground: #5b6470;
 
-  --border: #e5e5e5;
-  --input: #e5e5e5;
-  --ring: #a3a3a3;
+  --accent: #1b6fb8;
+  --accent-foreground: #ffffff;
+  --accent-soft: #eaf6fd;
 
-  --destructive: #dc2626;
-  --destructive-foreground: #fef2f2;
+  /* Superficie siempre oscura (hero, footer, bandas de campaña) sin importar
+     el tema — la marca vive sobre Negro Noche. */
+  --inverse: #0a0a0b;
+  --inverse-foreground: #ffffff;
+  --inverse-muted: #9aa3ae;
+  --inverse-accent: #5cb8f0;
+  --inverse-border: #26272d;
+
+  --border: #e4e8ee;
+  --input: #d7dde5;
+  --ring: #1b6fb8;
+
+  --destructive: #c62828;
+  --destructive-foreground: #ffffff;
 }
 
 @theme inline {
@@ -42,6 +59,16 @@
   --color-muted: var(--muted);
   --color-muted-foreground: var(--muted-foreground);
 
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent-soft: var(--accent-soft);
+
+  --color-inverse: var(--inverse);
+  --color-inverse-foreground: var(--inverse-foreground);
+  --color-inverse-muted: var(--inverse-muted);
+  --color-inverse-accent: var(--inverse-accent);
+  --color-inverse-border: var(--inverse-border);
+
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
@@ -49,44 +76,166 @@
   --color-destructive: var(--destructive);
   --color-destructive-foreground: var(--destructive-foreground);
 
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
+  --radius-sm: calc(var(--radius) - 2px);
+  --radius-md: var(--radius);
+  --radius-lg: calc(var(--radius) + 2px);
+  --radius-xl: calc(var(--radius) + 6px);
 
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-inter);
+  --font-display: var(--font-bodoni);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-
-    --card: #171717;
-    --card-foreground: #ededed;
-
-    --primary: #ededed;
-    --primary-foreground: #171717;
-
-    --secondary: #262626;
-    --secondary-foreground: #ededed;
-
-    --muted: #262626;
-    --muted-foreground: #a3a3a3;
-
-    --border: #262626;
-    --input: #262626;
-    --ring: #525252;
-
-    --destructive: #b91c1c;
-    --destructive-foreground: #fef2f2;
-  }
+/* La marca es blanca con negro como acento: sin modo oscuro automático
+   (antes seguía prefers-color-scheme y en un sistema oscuro todo el sitio
+   quedaba negro). Las bandas oscuras son deliberadas vía --inverse. */
+:root {
+  color-scheme: light;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
+}
+
+::selection {
+  background: var(--accent);
+  color: var(--accent-foreground);
+}
+
+@utility eyebrow {
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+}
+
+/* Elevación de tarjetas al hover. Tailwind v4 mueve con la propiedad
+   `translate` (no `transform`), así que `transition-[…,transform]` la hacía
+   saltar. La franja ::after bajo el borde evita el parpadeo con el cursor en
+   el borde inferior (la tarjeta subía, dejaba de estar bajo el cursor, bajaba…). */
+@utility hover-lift {
+  position: relative;
+  transition-property: translate, box-shadow, border-color, background-color, color;
+  transition-duration: 500ms;
+  transition-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+  &::after {
+    content: "";
+    position: absolute;
+    inset-inline: 0;
+    top: 100%;
+    height: 0.375rem;
+  }
+  @media (hover: hover) {
+    &:hover {
+      translate: 0 -0.25rem;
+    }
+  }
+}
+
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes marquee {
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+@utility animate-marquee {
+  animation: marquee 40s linear infinite;
+}
+
+@utility animate-fade-up {
+  animation: fade-up 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* Entrada del hero de Home: líneas del título que suben desde una máscara
+   (overflow-hidden en el padre), fotos que se destapan de abajo hacia arriba
+   con un zoom lento, y un sello que gira. */
+@keyframes rise {
+  from {
+    transform: translateY(105%);
+  }
+  to {
+    transform: none;
+  }
+}
+
+@keyframes unveil {
+  from {
+    clip-path: inset(100% 0 0 0 round 2rem);
+  }
+  to {
+    clip-path: inset(0 0 0 0 round 2rem);
+  }
+}
+
+@keyframes settle {
+  from {
+    transform: scale(1.18);
+  }
+  to {
+    transform: none;
+  }
+}
+
+@utility animate-rise {
+  animation: rise 1s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@utility animate-unveil {
+  animation: unveil 1.3s cubic-bezier(0.76, 0, 0.24, 1) both;
+}
+
+@utility animate-settle {
+  animation: settle 2.2s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes turn {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@utility animate-spin-slow {
+  animation: turn 22s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+/* NavigationProgress: mientras llega la página siguiente, el contenido actual
+   se atenúa (con retardo, para que una navegación instantánea no parpadee). */
+main {
+  transition: opacity 0.3s ease;
+}
+
+html[data-navigating] {
+  cursor: progress;
+}
+
+html[data-navigating] main {
+  opacity: 0.7;
+  transition-delay: 0.15s;
 }
 
 /* Google Fonts recomienda estas reglas base para Material Symbols — sin

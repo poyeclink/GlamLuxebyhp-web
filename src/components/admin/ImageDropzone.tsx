@@ -55,10 +55,15 @@ export function ImageDropzone({ name }: { name: string }) {
         }}
         className={cn(
           "flex cursor-pointer flex-col items-center justify-center gap-1.5 rounded-lg border-2 border-dashed px-4 py-8 text-center transition-colors",
-          isDragging ? "border-ring bg-secondary" : "border-input hover:border-ring hover:bg-muted/50",
+          isDragging
+            ? "border-ring bg-secondary"
+            : "border-input hover:border-ring hover:bg-muted/50",
         )}
       >
-        <span className="material-symbols-outlined text-3xl text-muted-foreground" aria-hidden="true">
+        <span
+          className="material-symbols-outlined text-3xl text-muted-foreground"
+          aria-hidden="true"
+        >
           upload
         </span>
         <p className="text-sm text-foreground">
@@ -91,7 +96,10 @@ export function ImageDropzone({ name }: { name: string }) {
                 aria-label={`Quitar ${file.name}`}
                 className="flex h-4 w-4 items-center justify-center text-muted-foreground hover:text-foreground"
               >
-                <span className="material-symbols-outlined text-[14px] leading-none" aria-hidden="true">
+                <span
+                  className="material-symbols-outlined text-[14px] leading-none"
+                  aria-hidden="true"
+                >
                   close
                 </span>
               </button>

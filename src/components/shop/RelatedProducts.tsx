@@ -44,7 +44,7 @@ export function RelatedProducts({ itemCount, children }: { itemCount: number; ch
   return (
     <section className="flex flex-col gap-4 border-t border-border pt-10">
       <div className="flex items-center justify-between">
-        <h2 className="text-lg font-semibold text-foreground">
+        <h2 className="font-display text-xl text-foreground">
           Productos que te podrían interesar
         </h2>
         <div className="flex gap-2">

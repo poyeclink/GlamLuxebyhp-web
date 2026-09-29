@@ -23,6 +23,27 @@ async function main() {
 
   console.log(`Admin listo: ${admin.email}`);
 
+  const { DEMO_CUSTOMER_EMAIL, DEMO_CUSTOMER_PASSWORD } = process.env;
+  const existingDemo = DEMO_CUSTOMER_EMAIL
+    ? await prisma.user.findUnique({ where: { email: DEMO_CUSTOMER_EMAIL } })
+    : null;
+  if (existingDemo?.role === "administrador") {
+    console.log("DEMO_CUSTOMER_EMAIL pertenece a un admin — se omite el cliente demo.");
+  } else if (DEMO_CUSTOMER_EMAIL && DEMO_CUSTOMER_PASSWORD) {
+    const customerHash = await hashPassword(DEMO_CUSTOMER_PASSWORD);
+    const customer = await prisma.user.upsert({
+      where: { email: DEMO_CUSTOMER_EMAIL },
+      update: { passwordHash: customerHash, role: "cliente" },
+      create: {
+        name: "Cliente Demo",
+        email: DEMO_CUSTOMER_EMAIL,
+        passwordHash: customerHash,
+        role: "cliente",
+      },
+    });
+    console.log(`Cliente demo listo: ${customer.email}`);
+  }
+
   // Tramos documentados del PDF. El tramo mayorista no tiene fila (envío se
   // coordina aparte); si WHOLESALE_ITEM_THRESHOLD (cart-service.ts) cambia,
   // estos tramos deben cubrir hasta threshold-1 o quedará un hueco sin tarifa.

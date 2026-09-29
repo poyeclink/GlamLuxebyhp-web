@@ -18,7 +18,7 @@ export default async function CheckoutDireccionPage() {
 
   return (
     <div className="mx-auto flex max-w-lg flex-col gap-10 px-4 py-16">
-      <h1 className="text-2xl font-semibold text-foreground">Dirección de envío</h1>
+      <h1 className="font-display text-3xl text-foreground sm:text-4xl">Dirección de envío</h1>
 
       {addresses.length > 0 ? (
         <div className="flex flex-col gap-3">
@@ -36,7 +36,7 @@ export default async function CheckoutDireccionPage() {
       ) : null}
 
       <div className="flex flex-col gap-4">
-        <h2 className="text-lg font-semibold text-foreground">
+        <h2 className="font-display text-xl text-foreground">
           {addresses.length > 0 ? "O agrega una nueva dirección" : "Agrega tu dirección de envío"}
         </h2>
         <AddressForm action={createCheckoutAddressAction} submitLabel="Continuar" />

@@ -100,7 +100,10 @@ export function VariantSelector() {
               onClick={() => removeCustomRow(row.id)}
               aria-label={`Quitar talla ${row.size || "personalizada"}`}
             >
-              <span className="material-symbols-outlined text-[18px] leading-none" aria-hidden="true">
+              <span
+                className="material-symbols-outlined text-[18px] leading-none"
+                aria-hidden="true"
+              >
                 close
               </span>
             </Button>

@@ -5,8 +5,18 @@ const r2Hostname = process.env.R2_PUBLIC_URL
   : undefined;
 
 const nextConfig: NextConfig = {
+  // El PDF de reportes lee los trazos del logo desde public/ con fs; sin esto
+  // el archivo no viaja en el bundle serverless de esa ruta.
+  outputFileTracingIncludes: {
+    "/admin/reportes/pdf": ["./public/brand/wordmark-dark.svg"],
+  },
   images: {
-    remotePatterns: r2Hostname ? [{ protocol: "https", hostname: r2Hostname }] : [],
+    remotePatterns: [
+      ...(r2Hostname ? [{ protocol: "https" as const, hostname: r2Hostname }] : []),
+      // Fotos de ambientación temporales (src/lib/stock-images.ts) hasta tener
+      // sesiones de fotos propias.
+      { protocol: "https", hostname: "images.unsplash.com" },
+    ],
   },
 };
 

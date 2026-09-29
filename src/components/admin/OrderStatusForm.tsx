@@ -30,7 +30,11 @@ export function OrderStatusForm({
   );
 
   if (allowedNextStatuses.length === 0) {
-    return <p className="text-sm text-muted-foreground">Este pedido no tiene más cambios de estado disponibles.</p>;
+    return (
+      <p className="text-sm text-muted-foreground">
+        Este pedido no tiene más cambios de estado disponibles.
+      </p>
+    );
   }
 
   return (

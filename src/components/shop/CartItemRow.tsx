@@ -35,15 +35,19 @@ export function CartItemRow({ item }: { item: CartLineItem }) {
   );
 
   return (
-    <div className="flex flex-col gap-3 border-b border-border py-4 sm:flex-row sm:items-center sm:gap-4">
-      <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-md bg-muted">
+    // Móvil: foto a la izquierda y el resto apilado a su lado; desde sm: una
+    // sola fila (foto | datos | cantidad | total).
+    <div className="grid grid-cols-[5rem_minmax(0,1fr)] gap-x-4 gap-y-3 border-b border-border py-5 sm:grid-cols-[6rem_minmax(0,1fr)_auto_6rem] sm:items-center sm:gap-x-6">
+      <div className="relative row-span-3 aspect-[4/5] w-20 overflow-hidden rounded-xl bg-muted sm:row-span-1 sm:w-24">
         {item.imageUrl ? (
           <Image src={item.imageUrl} alt={item.productName} fill className="object-cover" />
         ) : null}
       </div>
 
-      <div className="flex flex-1 flex-col gap-1">
-        <span className="font-medium text-foreground">{item.productName}</span>
+      <div className="flex min-w-0 flex-col gap-1">
+        <span className="font-display text-lg leading-tight text-foreground">
+          {item.productName}
+        </span>
         {item.variantSize ? (
           <span className="text-sm text-muted-foreground">Talla: {item.variantSize}</span>
         ) : null}
@@ -52,7 +56,7 @@ export function CartItemRow({ item }: { item: CartLineItem }) {
         <FormError message={removeState.error} />
       </div>
 
-      <div className="flex items-center gap-2">
+      <div className="flex flex-wrap items-center gap-2">
         <form action={formAction} className="flex items-center gap-2">
           <Input
             name="quantity"
@@ -73,7 +77,7 @@ export function CartItemRow({ item }: { item: CartLineItem }) {
         </form>
       </div>
 
-      <span className="font-semibold text-foreground sm:w-24 sm:text-right">
+      <span className="font-semibold text-foreground sm:text-right">
         {formatCurrency(item.lineTotal)}
       </span>
     </div>

@@ -1,15 +1,16 @@
 import Link from "next/link";
+import { Plus } from "lucide-react";
 import { listProducts } from "@/server/services/product-service";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
+import { DataTable } from "@/components/ui/DataTable";
+import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { SearchInput } from "@/components/ui/SearchInput";
 import { Pagination } from "@/components/ui/Pagination";
 import { DeleteProductButton } from "@/components/admin/DeleteProductButton";
 import { ADMIN_PAGE_SIZE, formatCurrency } from "@/lib/utils";
 
-export default async function AdminProductsPage({
-  searchParams,
-}: PageProps<"/admin/productos">) {
+export default async function AdminProductsPage({ searchParams }: PageProps<"/admin/productos">) {
   const { q, page: pageParam } = await searchParams;
   const search = typeof q === "string" && q.trim() !== "" ? q.trim() : undefined;
   const page = Math.max(Number(typeof pageParam === "string" ? pageParam : "1") || 1, 1);
@@ -18,47 +19,58 @@ export default async function AdminProductsPage({
   const totalPages = Math.max(1, Math.ceil(total / ADMIN_PAGE_SIZE));
 
   return (
-    <div className="mx-auto flex max-w-5xl flex-col gap-6 px-4 py-16">
-      <div className="flex items-center justify-between gap-4">
-        <h1 className="text-2xl font-semibold text-foreground">Productos</h1>
-        <Link href="/admin/productos/nuevo">
-          <Button>Nuevo producto</Button>
-        </Link>
-      </div>
+    <div className="mx-auto flex max-w-6xl flex-col gap-8 px-4 py-10 sm:px-8 lg:py-12">
+      <AdminPageHeader
+        eyebrow="Catálogo"
+        title="Productos"
+        description={`${total} ${total === 1 ? "producto" : "productos"} en el catálogo.`}
+        action={
+          <Link href="/admin/productos/nuevo">
+            <Button>
+              <Plus className="h-4 w-4" aria-hidden="true" />
+              Nuevo producto
+            </Button>
+          </Link>
+        }
+      />
 
-      <SearchInput action="/admin/productos" placeholder="Buscar por nombre..." defaultValue={search} />
+      <SearchInput
+        action="/admin/productos"
+        placeholder="Buscar por nombre..."
+        defaultValue={search}
+      />
 
       {products.length === 0 ? (
-        <p className="text-muted-foreground">
+        <p className="rounded-2xl border border-dashed border-border bg-background p-10 text-center text-sm text-muted-foreground">
           {search ? `No encontramos productos para "${search}".` : "Todavía no hay productos."}
         </p>
       ) : (
-        <table className="w-full border-collapse text-sm">
+        <DataTable>
           <thead>
-            <tr className="border-b border-border text-left text-muted-foreground">
-              <th className="py-2 font-medium">Nombre</th>
-              <th className="py-2 font-medium">Categoría</th>
-              <th className="py-2 font-medium">Mayorista</th>
-              <th className="py-2 font-medium">Estado</th>
-              <th className="py-2 font-medium" />
+            <tr>
+              <th>Nombre</th>
+              <th>Categoría</th>
+              <th>Mayorista</th>
+              <th>Estado</th>
+              <th />
             </tr>
           </thead>
           <tbody>
             {products.map((product) => (
-              <tr key={product.id} className="border-b border-border">
-                <td className="py-3 text-foreground">{product.name}</td>
-                <td className="py-3 text-muted-foreground">{product.category.name}</td>
-                <td className="py-3 text-muted-foreground">
+              <tr key={product.id}>
+                <td className="font-medium text-foreground">{product.name}</td>
+                <td className="text-muted-foreground">{product.category.name}</td>
+                <td className="text-muted-foreground">
                   {formatCurrency(Number(product.wholesalePrice))}
                 </td>
-                <td className="py-3">
+                <td>
                   {product.active ? (
-                    <Badge variant="secondary">Activo</Badge>
+                    <Badge variant="accent">Activo</Badge>
                   ) : (
                     <Badge variant="outline">Inactivo</Badge>
                   )}
                 </td>
-                <td className="py-3">
+                <td>
                   <div className="flex items-center justify-end gap-2">
                     <Link href={`/admin/productos/${product.id}/editar`}>
                       <Button variant="outline" size="sm">
@@ -71,7 +83,7 @@ export default async function AdminProductsPage({
               </tr>
             ))}
           </tbody>
-        </table>
+        </DataTable>
       )}
 
       <Pagination

@@ -1,4 +1,6 @@
+import type { Metadata } from "next";
 import Link from "next/link";
+import { ArrowRight, ShoppingBag } from "lucide-react";
 import { CartItemRow } from "@/components/shop/CartItemRow";
 import { WholesaleProgress } from "@/components/shop/WholesaleProgress";
 import { CartTotals } from "@/components/shop/CartTotals";
@@ -8,6 +10,8 @@ import { resolveCartOwnerForRead } from "@/lib/cart-session";
 import { getSession } from "@/lib/session";
 import { r2PublicUrl } from "@/lib/r2";
 
+export const metadata: Metadata = { title: "Carrito" };
+
 export default async function CarritoPage() {
   const [session, owner] = await Promise.all([getSession(), resolveCartOwnerForRead()]);
   const isCustomer = session?.role === "cliente";
@@ -15,18 +19,31 @@ export default async function CarritoPage() {
 
   if (!cart || cart.items.length === 0) {
     return (
-      <div className="mx-auto flex max-w-2xl flex-col items-center gap-4 px-4 py-24 text-center">
-        <h1 className="text-2xl font-semibold text-foreground">Tu carrito está vacío</h1>
-        <Link href="/tienda" className="text-sm font-medium text-foreground hover:underline">
-          Ir a la tienda
+      <div className="mx-auto flex max-w-xl flex-col items-center gap-5 px-4 py-20 text-center sm:py-28">
+        <span className="flex h-16 w-16 items-center justify-center rounded-full bg-inverse text-inverse-accent">
+          <ShoppingBag className="h-7 w-7" aria-hidden="true" />
+        </span>
+        <h1 className="font-display text-4xl text-foreground sm:text-5xl">Tu carrito está vacío</h1>
+        <p className="max-w-sm text-sm leading-relaxed text-muted-foreground">
+          Explora la colección y agrega tus piezas favoritas. Desde {WHOLESALE_ITEM_THRESHOLD}{" "}
+          artículos todo tu carrito pasa a precio mayorista.
+        </p>
+        <Link href="/tienda" className="mt-2">
+          <Button size="lg">
+            Ir a la tienda
+            <ArrowRight className="h-4 w-4" aria-hidden="true" />
+          </Button>
         </Link>
       </div>
     );
   }
 
   return (
-    <div className="mx-auto flex max-w-4xl flex-col gap-8 px-4 py-16">
-      <h1 className="text-2xl font-semibold text-foreground">Tu carrito</h1>
+    <div className="mx-auto flex max-w-6xl flex-col gap-8 px-4 py-12 sm:px-6 sm:py-16">
+      <div className="flex flex-col gap-2">
+        <span className="eyebrow text-accent">Tu selección</span>
+        <h1 className="font-display text-4xl text-foreground sm:text-5xl">Tu carrito</h1>
+      </div>
 
       <WholesaleProgress
         totalQuantity={cart.totalQuantity}
@@ -34,25 +51,29 @@ export default async function CarritoPage() {
         reached={cart.useWholesalePrice}
       />
 
-      <div className="flex flex-col">
-        {cart.items.map((item) => (
-          <CartItemRow
-            key={item.id}
-            item={{
-              ...item,
-              imageUrl: item.imageKey ? r2PublicUrl(item.imageKey) : null,
-            }}
-          />
-        ))}
-      </div>
+      <div className="grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_22rem] lg:gap-12">
+        <div className="flex flex-col border-t border-border">
+          {cart.items.map((item) => (
+            <CartItemRow
+              key={item.id}
+              item={{
+                ...item,
+                imageUrl: item.imageKey ? r2PublicUrl(item.imageKey) : null,
+              }}
+            />
+          ))}
+        </div>
 
-      <div className="flex flex-col gap-2 self-end">
-        <CartTotals subtotal={cart.subtotal} shippingEstimate={cart.shippingEstimate} />
-        <Link href={isCustomer ? "/checkout/direccion" : "/login"} className="mt-2">
-          <Button className="w-full sm:w-auto">
-            {isCustomer ? "Continuar con la compra" : "Inicia sesión para continuar"}
-          </Button>
-        </Link>
+        <aside className="flex flex-col gap-5 rounded-2xl border border-border bg-background p-6 lg:sticky lg:top-28">
+          <h2 className="font-display text-2xl text-foreground">Resumen</h2>
+          <CartTotals subtotal={cart.subtotal} shippingEstimate={cart.shippingEstimate} />
+          <Link href={isCustomer ? "/checkout/direccion" : "/login"}>
+            <Button size="lg" className="w-full">
+              {isCustomer ? "Continuar con la compra" : "Inicia sesión para continuar"}
+              <ArrowRight className="h-4 w-4" aria-hidden="true" />
+            </Button>
+          </Link>
+        </aside>
       </div>
     </div>
   );

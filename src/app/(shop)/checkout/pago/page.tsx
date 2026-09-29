@@ -17,7 +17,7 @@ export default async function CheckoutPagoPage({
 
   return (
     <div className="mx-auto flex max-w-lg flex-col gap-10 px-4 py-16">
-      <h1 className="text-2xl font-semibold text-foreground">Método de pago</h1>
+      <h1 className="font-display text-3xl text-foreground sm:text-4xl">Método de pago</h1>
 
       <CartTotals subtotal={cart.subtotal} shippingEstimate={cart.shippingEstimate} />
 

@@ -14,10 +14,8 @@ export async function PriceDual({ wholesalePrice, individualPrice, className }: 
   return (
     <div className={cn("flex flex-col gap-1", className)}>
       <div className="flex items-center gap-2">
-        <span className="text-xl font-semibold text-foreground">
-          {formatCurrency(wholesalePrice)}
-        </span>
-        <Badge variant="secondary">{wholesaleLabel}</Badge>
+        <span className="text-xl font-semibold text-accent">{formatCurrency(wholesalePrice)}</span>
+        <Badge variant="accent">{wholesaleLabel}</Badge>
       </div>
       <span className="text-sm text-muted-foreground">
         {individualLabel}: {formatCurrency(individualPrice)}

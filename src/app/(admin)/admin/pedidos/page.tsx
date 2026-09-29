@@ -1,6 +1,8 @@
 import Link from "next/link";
-import { ORDER_STATUS_BADGE_VARIANT, listOrdersForAdmin } from "@/server/services/order-service";
-import { Badge } from "@/components/ui/Badge";
+import { listOrdersForAdmin } from "@/server/services/order-service";
+import { DataTable } from "@/components/ui/DataTable";
+import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
+import { OrderStatusBadge } from "@/components/orders/OrderStatusBadge";
 import { SearchInput } from "@/components/ui/SearchInput";
 import { Pagination } from "@/components/ui/Pagination";
 import { ADMIN_PAGE_SIZE, filterPillClass, formatCurrency, formatDate } from "@/lib/utils";
@@ -14,9 +16,7 @@ const STATUS_FILTERS: { value: OrderStatus; label: string }[] = [
   { value: "vencido", label: "Vencidos" },
 ];
 
-export default async function AdminOrdersPage({
-  searchParams,
-}: PageProps<"/admin/pedidos">) {
+export default async function AdminOrdersPage({ searchParams }: PageProps<"/admin/pedidos">) {
   const { estado, q, page: pageParam } = await searchParams;
   // typeof === "string": searchParams puede traer un array (?estado=a&estado=b);
   // mismo cuidado que TiendaPage con `categoria`.
@@ -42,36 +42,42 @@ export default async function AdminOrdersPage({
   const searchQueryString = search ? `q=${encodeURIComponent(search)}` : "";
 
   return (
-    <div className="mx-auto flex max-w-5xl flex-col gap-6 px-4 py-16">
-      <h1 className="text-2xl font-semibold text-foreground">Pedidos</h1>
-
-      <SearchInput
-        action="/admin/pedidos"
-        placeholder="Buscar por cliente..."
-        defaultValue={search}
-        hiddenParams={rawStatus ? { estado: rawStatus } : undefined}
+    <div className="mx-auto flex max-w-6xl flex-col gap-8 px-4 py-10 sm:px-8 lg:py-12">
+      <AdminPageHeader
+        eyebrow="Ventas"
+        title="Pedidos"
+        description={`${total} ${total === 1 ? "pedido" : "pedidos"} ${isFiltering ? "con este filtro" : "en total"}.`}
       />
 
-      <div className="flex flex-wrap gap-2">
-        <Link
-          href={`/admin/pedidos${searchQueryString ? `?${searchQueryString}` : ""}`}
-          className={filterPillClass(!isFiltering)}
-        >
-          Todos
-        </Link>
-        {STATUS_FILTERS.map((option) => (
+      <div className="flex flex-col gap-4">
+        <SearchInput
+          action="/admin/pedidos"
+          placeholder="Buscar por cliente..."
+          defaultValue={search}
+          hiddenParams={rawStatus ? { estado: rawStatus } : undefined}
+        />
+
+        <div className="flex flex-wrap gap-2">
           <Link
-            key={option.value}
-            href={`/admin/pedidos?estado=${option.value}${searchQueryString ? `&${searchQueryString}` : ""}`}
-            className={filterPillClass(statusFilter === option.value)}
+            href={`/admin/pedidos${searchQueryString ? `?${searchQueryString}` : ""}`}
+            className={filterPillClass(!isFiltering)}
           >
-            {option.label}
+            Todos
           </Link>
-        ))}
+          {STATUS_FILTERS.map((option) => (
+            <Link
+              key={option.value}
+              href={`/admin/pedidos?estado=${option.value}${searchQueryString ? `&${searchQueryString}` : ""}`}
+              className={filterPillClass(statusFilter === option.value)}
+            >
+              {option.label}
+            </Link>
+          ))}
+        </div>
       </div>
 
       {orders.length === 0 ? (
-        <p className="text-muted-foreground">
+        <p className="rounded-2xl border border-dashed border-border bg-background p-10 text-center text-sm text-muted-foreground">
           {isFiltering && !matchedFilter
             ? "No reconocemos ese filtro de estado."
             : search
@@ -79,31 +85,31 @@ export default async function AdminOrdersPage({
               : "No hay pedidos con ese filtro."}
         </p>
       ) : (
-        <table className="w-full border-collapse text-sm">
+        <DataTable>
           <thead>
-            <tr className="border-b border-border text-left text-muted-foreground">
-              <th className="py-2 font-medium">Cliente</th>
-              <th className="py-2 font-medium">Fecha</th>
-              <th className="py-2 font-medium">Método de pago</th>
-              <th className="py-2 font-medium">Total</th>
-              <th className="py-2 font-medium">Estado</th>
-              <th className="py-2 font-medium" />
+            <tr>
+              <th>Cliente</th>
+              <th>Fecha</th>
+              <th>Método de pago</th>
+              <th>Total</th>
+              <th>Estado</th>
+              <th />
             </tr>
           </thead>
           <tbody>
             {orders.map((order) => (
-              <tr key={order.id} className="border-b border-border">
-                <td className="py-3 text-foreground">{order.fullName}</td>
-                <td className="py-3 text-muted-foreground">{formatDate(order.createdAt)}</td>
-                <td className="py-3 text-muted-foreground">{order.paymentMethod}</td>
-                <td className="py-3 text-foreground">{formatCurrency(Number(order.total))}</td>
-                <td className="py-3">
-                  <Badge variant={ORDER_STATUS_BADGE_VARIANT[order.status]}>{order.status}</Badge>
+              <tr key={order.id}>
+                <td className="font-medium text-foreground">{order.fullName}</td>
+                <td className="text-muted-foreground">{formatDate(order.createdAt)}</td>
+                <td className="capitalize text-muted-foreground">{order.paymentMethod}</td>
+                <td className="text-foreground">{formatCurrency(Number(order.total))}</td>
+                <td>
+                  <OrderStatusBadge status={order.status} />
                 </td>
-                <td className="py-3 text-right">
+                <td className="text-right">
                   <Link
                     href={`/admin/pedidos/${order.id}`}
-                    className="text-sm font-medium text-foreground hover:underline"
+                    className="text-sm font-medium text-accent hover:underline"
                   >
                     Ver detalle
                   </Link>
@@ -111,7 +117,7 @@ export default async function AdminOrdersPage({
               </tr>
             ))}
           </tbody>
-        </table>
+        </DataTable>
       )}
 
       <Pagination

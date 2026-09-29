@@ -11,6 +11,7 @@ export const ADMIN_LINKS = [
   { href: "/admin/productos", label: "Productos", icon: "inventory_2" },
   { href: "/admin/inventario", label: "Inventario", icon: "warehouse" },
   { href: "/admin/envios", label: "Envíos", icon: "local_shipping" },
+  { href: "/admin/reportes", label: "Reportes", icon: "monitoring" },
 ];
 
 // "/admin" necesita coincidencia exacta (si no, siempre se marca activo, ya
@@ -36,13 +37,26 @@ export function AdminNavLinks({ onNavigate }: { onNavigate?: () => void }) {
             onClick={onNavigate}
             aria-current={active ? "page" : undefined}
             className={cn(
-              "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors",
+              "group relative flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors duration-300",
               active
-                ? "bg-secondary text-secondary-foreground"
-                : "text-muted-foreground hover:bg-muted hover:text-foreground",
+                ? "bg-inverse-foreground/10 text-inverse-foreground"
+                : "text-inverse-muted hover:bg-inverse-border/60 hover:text-inverse-foreground",
             )}
           >
-            <span className="material-symbols-outlined text-[20px] leading-none" aria-hidden="true">
+            <span
+              aria-hidden="true"
+              className={cn(
+                "absolute left-0 top-1/2 h-5 w-0.5 -translate-y-1/2 rounded-full bg-inverse-accent transition-opacity duration-300",
+                active ? "opacity-100" : "opacity-0",
+              )}
+            />
+            <span
+              className={cn(
+                "material-symbols-outlined text-[20px] leading-none transition-transform duration-300 group-hover:scale-110",
+                active && "text-inverse-accent",
+              )}
+              aria-hidden="true"
+            >
               {link.icon}
             </span>
             {link.label}

@@ -1,17 +1,26 @@
+import type { Metadata } from "next";
+import { AuthShell } from "@/components/auth/AuthShell";
+import { STOCK_IMAGES } from "@/lib/stock-images";
 import { RegisterForm } from "@/components/auth/RegisterForm";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
+import { WHOLESALE_ITEM_THRESHOLD } from "@/server/services/cart-service";
+
+export const metadata: Metadata = { title: "Crear cuenta", robots: { index: false } };
 
 export default function RegisterPage() {
   return (
-    <main className="mx-auto flex min-h-[70vh] max-w-sm flex-col justify-center px-4">
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-center">Crear cuenta</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <RegisterForm />
-        </CardContent>
-      </Card>
-    </main>
+    <AuthShell
+      eyebrow="Nueva cuenta"
+      image={STOCK_IMAGES.mirrorDress}
+      title="Crea tu cuenta"
+      subtitle="Guarda tus direcciones, sigue tus pedidos y compra más rápido."
+      brandTitle="Moda de alta calidad, al detalle o al por mayor."
+      brandPoints={[
+        "Registro gratis, sin compromisos",
+        `Precio mayorista automático desde ${WHOLESALE_ITEM_THRESHOLD} artículos`,
+        "Tu carrito se conserva al registrarte",
+      ]}
+    >
+      <RegisterForm />
+    </AuthShell>
   );
 }

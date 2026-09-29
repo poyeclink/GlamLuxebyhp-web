@@ -1,20 +1,14 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Badge } from "@/components/ui/Badge";
+import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
+import { OrderStatusBadge } from "@/components/orders/OrderStatusBadge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { OrderSummary } from "@/components/checkout/OrderSummary";
 import { OrderStatusForm } from "@/components/admin/OrderStatusForm";
-import {
-  ORDER_STATUS_BADGE_VARIANT,
-  getAllowedNextStatuses,
-  getOrderForAdmin,
-} from "@/server/services/order-service";
+import { getAllowedNextStatuses, getOrderForAdmin } from "@/server/services/order-service";
 import { PAYMENT_METHOD_OPTIONS } from "@/server/services/payment-service";
 import { formatDate } from "@/lib/utils";
 
-export default async function AdminOrderDetailPage({
-  params,
-}: PageProps<"/admin/pedidos/[id]">) {
+export default async function AdminOrderDetailPage({ params }: PageProps<"/admin/pedidos/[id]">) {
   const { id } = await params;
   const order = await getOrderForAdmin(id);
   if (!order) notFound();
@@ -24,22 +18,15 @@ export default async function AdminOrderDetailPage({
     order.paymentMethod;
 
   return (
-    <div className="mx-auto flex max-w-4xl flex-col gap-6 px-4 py-16">
-      <Link href="/admin/pedidos" className="text-sm text-muted-foreground hover:text-foreground">
-        ← Volver a pedidos
-      </Link>
+    <div className="mx-auto flex max-w-6xl flex-col gap-8 px-4 py-10 sm:px-8 lg:py-12">
+      <AdminPageHeader
+        back={{ href: "/admin/pedidos", label: "Volver a pedidos" }}
+        eyebrow={`Pedido #${order.id.slice(0, 8)} · ${formatDate(order.createdAt)}`}
+        title={`Pedido de ${order.fullName}`}
+        action={<OrderStatusBadge status={order.status} />}
+      />
 
-      <div className="flex flex-col gap-1">
-        <div className="flex flex-wrap items-center gap-3">
-          <h1 className="text-2xl font-semibold text-foreground">Pedido de {order.fullName}</h1>
-          <Badge variant={ORDER_STATUS_BADGE_VARIANT[order.status]}>{order.status}</Badge>
-        </div>
-        <p className="text-sm text-muted-foreground">
-          #{order.id.slice(0, 8)} · {formatDate(order.createdAt)}
-        </p>
-      </div>
-
-      <div className="grid items-start gap-6 lg:grid-cols-[1fr_320px]">
+      <div className="grid items-start gap-6 lg:grid-cols-[1fr_340px]">
         <div className="flex flex-col gap-8">
           <OrderSummary
             address={{
@@ -63,7 +50,7 @@ export default async function AdminOrderDetailPage({
           />
         </div>
 
-        <div className="flex flex-col gap-6 lg:sticky lg:top-6">
+        <div className="flex flex-col gap-6 lg:sticky lg:top-8">
           <Card>
             <CardHeader>
               <CardTitle className="text-base">Estado del pedido</CardTitle>

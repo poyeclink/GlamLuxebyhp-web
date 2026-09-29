@@ -1,34 +1,48 @@
 import Link from "next/link";
-import { ShoppingBag } from "lucide-react";
+import { ShoppingBag, User } from "lucide-react";
 import { getSession } from "@/lib/session";
 import { getLocale, t } from "@/lib/i18n";
 import { resolveCartOwnerForRead } from "@/lib/cart-session";
-import { getCartItemCount } from "@/server/services/cart-service";
+import { getCartItemCount, WHOLESALE_ITEM_THRESHOLD } from "@/server/services/cart-service";
 import { listShopCategories } from "@/server/services/category-service";
 import { LogoutButton } from "@/components/auth/LogoutButton";
 import { Button } from "@/components/ui/Button";
+import { Wordmark } from "@/components/brand/Logo";
 import { MobileNav } from "@/components/layout/MobileNav";
 import { CategoryMenu } from "@/components/layout/CategoryMenu";
 import { LanguageSwitcher } from "@/components/layout/LanguageSwitcher";
+import { AccountMenu } from "@/components/layout/AccountMenu";
+import { HeaderShell } from "@/components/layout/HeaderShell";
+import { MainNav } from "@/components/layout/MainNav";
 
 // Enlaces estáticos del sitio — a diferencia de las categorías (dinámicas,
-// ver CategoryMenu abajo), estas páginas no dependen de datos y no cambian
-// según lo que el admin cree en el catálogo. "Tienda" se renderiza aparte
-// (junto al dropdown de categorías) en vez de vivir en esta lista.
+// ver CategoryMenu), estas páginas no dependen de datos del catálogo.
 const STATIC_NAV_LINKS = [
   { href: "/about", label: "Nosotros" },
   { href: "/contacto", label: "Contacto" },
 ];
 
+const iconLinkClass =
+  "relative flex h-10 w-10 items-center justify-center rounded-full text-foreground transition-colors duration-300 hover:bg-muted";
+
 function CartLink({ count, label }: { count: number; label: string }) {
   return (
-    <Link href="/carrito" aria-label={label} className="relative text-muted-foreground hover:text-foreground">
-      <ShoppingBag className="h-5 w-5" />
-      {count > 0 ? (
-        <span className="absolute -right-2 -top-2 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] font-medium text-primary-foreground">
-          {count}
-        </span>
-      ) : null}
+    <Link
+      href="/carrito"
+      aria-label={`${label} (${count})`}
+      className="group flex h-10 items-center gap-2.5 rounded-full pl-2 text-foreground"
+    >
+      <span className="hidden text-[0.6875rem] font-semibold uppercase tracking-[0.24em] text-foreground/70 transition-colors duration-300 group-hover:text-foreground xl:inline">
+        {label}
+      </span>
+      <span className="relative flex h-10 w-10 items-center justify-center rounded-full border border-border transition-[border-color,background-color,color] duration-300 group-hover:border-foreground group-hover:bg-foreground group-hover:text-background">
+        <ShoppingBag className="h-4 w-4" strokeWidth={1.5} />
+        {count > 0 && (
+          <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-accent px-1 text-[0.625rem] font-semibold tabular-nums text-accent-foreground ring-2 ring-background">
+            {count}
+          </span>
+        )}
+      </span>
     </Link>
   );
 }
@@ -43,82 +57,139 @@ export async function SiteHeader() {
   ]);
   const cartCount = cartOwner ? await getCartItemCount(cartOwner) : 0;
 
-  const [storeLabel, cartLabel, myAccountLabel, logoutLabel, loginLabel, categoriesLabel, categoryLabels, staticLabels] =
-    await Promise.all([
-      t("Tienda"),
-      t("Carrito"),
-      t("Mi cuenta"),
-      t("Cerrar sesión"),
-      t("Iniciar sesión"),
-      t("Categorías"),
-      Promise.all(categories.map((category) => t(category.name))),
-      Promise.all(STATIC_NAV_LINKS.map((link) => t(link.label))),
-    ]);
+  const [
+    storeLabel,
+    cartLabel,
+    myAccountLabel,
+    logoutLabel,
+    loginLabel,
+    categoriesLabel,
+    viewAllLabel,
+    ordersLabel,
+    categoryLabels,
+    staticLabels,
+    promoTitle,
+    promoText,
+  ] = await Promise.all([
+    t("Tienda"),
+    t("Carrito"),
+    t("Mi cuenta"),
+    t("Cerrar sesión"),
+    t("Iniciar sesión"),
+    t("Categorías"),
+    t("Ver toda la tienda"),
+    t("Mis pedidos"),
+    Promise.all(categories.map((category) => t(category.name))),
+    Promise.all(STATIC_NAV_LINKS.map((link) => t(link.label))),
+    t("Precio mayorista automático"),
+    t(
+      `Combina ${WHOLESALE_ITEM_THRESHOLD} o más artículos de cualquier categoría y todo tu carrito baja de precio.`,
+    ),
+  ]);
 
-  // El menú móvil es una lista plana (sin submenú): las categorías se
-  // intercalan aquí mismo en vez de replicar el dropdown de escritorio.
-  const mobileLinks = [
+  const navLinks = [
     { href: "/tienda", label: storeLabel },
-    ...categories.map((category, index) => ({
-      href: `/tienda?categoria=${category.slug}`,
-      label: categoryLabels[index],
-    })),
     ...STATIC_NAV_LINKS.map((link, index) => ({ href: link.href, label: staticLabels[index] })),
   ];
+  const translatedCategories = categories.map((category, index) => ({
+    ...category,
+    name: categoryLabels[index],
+  }));
 
-  const authSlot = isCustomer ? (
-    <div className="flex items-center gap-3">
-      <Link href="/perfil" className="text-sm font-medium text-foreground">
-        {myAccountLabel}
-      </Link>
-      <LogoutButton label={logoutLabel} />
+  const mobileAuthSlot = (
+    <div className="flex flex-col gap-5">
+      {isCustomer ? (
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-5 text-sm">
+            <Link href="/perfil" className="text-inverse-foreground hover:text-inverse-accent">
+              {myAccountLabel}
+            </Link>
+            <Link href="/pedidos" className="text-inverse-foreground hover:text-inverse-accent">
+              {ordersLabel}
+            </Link>
+          </div>
+          <LogoutButton
+            label={logoutLabel}
+            className="text-inverse-muted hover:bg-inverse-border hover:text-inverse-foreground"
+          />
+        </div>
+      ) : (
+        <Link href="/login" className="block">
+          <Button variant="inverse" size="lg" className="w-full">
+            {loginLabel}
+          </Button>
+        </Link>
+      )}
+      <div className="flex justify-center">
+        <LanguageSwitcher locale={locale} inverse />
+      </div>
     </div>
-  ) : (
-    <Link href="/login">
-      <Button variant="outline" size="sm">
-        {loginLabel}
-      </Button>
-    </Link>
   );
 
   return (
-    <header className="relative border-b border-border bg-background">
-      <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4">
-        <Link href="/" className="text-lg font-semibold tracking-tight text-foreground">
-          GlamLuxeByHp
+    <HeaderShell>
+      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-6 px-4 sm:px-6 lg:grid lg:h-20 lg:grid-cols-[1fr_auto_1fr]">
+        <Link
+          href="/"
+          aria-label="Glam Luxe by HP — Inicio"
+          className="w-fit shrink-0 text-foreground transition-opacity duration-300 hover:opacity-75"
+        >
+          <Wordmark className="h-10 w-auto lg:h-12" />
         </Link>
 
-        <nav className="hidden items-center gap-6 md:flex">
-          <Link href="/tienda" className="text-sm font-medium text-muted-foreground hover:text-foreground">
-            {storeLabel}
-          </Link>
-          <CategoryMenu
-            categories={categories.map((category, index) => ({ ...category, name: categoryLabels[index] }))}
-            label={categoriesLabel}
+        <div className="hidden lg:block">
+          <MainNav
+            links={navLinks}
+            categoriesSlot={
+              <CategoryMenu
+                categories={translatedCategories}
+                label={categoriesLabel}
+                viewAllLabel={viewAllLabel}
+                promoTitle={promoTitle}
+                promoText={promoText}
+              />
+            }
           />
-          {STATIC_NAV_LINKS.map((link, index) => (
-            <Link
-              key={link.href}
-              href={link.href}
-              className="text-sm font-medium text-muted-foreground hover:text-foreground"
-            >
-              {staticLabels[index]}
-            </Link>
-          ))}
-        </nav>
-
-        <div className="hidden items-center gap-4 md:flex">
-          <LanguageSwitcher locale={locale} />
-          <CartLink count={cartCount} label={cartLabel} />
-          {authSlot}
         </div>
 
-        <div className="flex items-center gap-2 md:hidden">
-          <LanguageSwitcher locale={locale} />
+        <div className="flex items-center justify-end gap-1 sm:gap-2">
+          <div className="hidden lg:block">
+            <LanguageSwitcher locale={locale} />
+          </div>
+          <span aria-hidden="true" className="mx-2 hidden h-4 w-px bg-border lg:block" />
+          {isCustomer ? (
+            <div className="hidden lg:block">
+              <AccountMenu
+                label={myAccountLabel}
+                links={[
+                  { href: "/perfil", label: myAccountLabel },
+                  { href: "/pedidos", label: ordersLabel },
+                ]}
+                logoutSlot={<LogoutButton label={logoutLabel} />}
+              />
+            </div>
+          ) : (
+            <Link
+              href="/login"
+              aria-label={loginLabel}
+              title={loginLabel}
+              className={`${iconLinkClass} hidden lg:flex`}
+            >
+              <User className="h-[1.125rem] w-[1.125rem]" strokeWidth={1.5} />
+            </Link>
+          )}
           <CartLink count={cartCount} label={cartLabel} />
-          <MobileNav links={mobileLinks} authSlot={authSlot} />
+          <MobileNav
+            links={navLinks}
+            categoryLinks={translatedCategories.map((category) => ({
+              href: `/tienda?categoria=${category.slug}`,
+              label: category.name,
+            }))}
+            categoriesLabel={categoriesLabel}
+            authSlot={mobileAuthSlot}
+          />
         </div>
       </div>
-    </header>
+    </HeaderShell>
   );
 }

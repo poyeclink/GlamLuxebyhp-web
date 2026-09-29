@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import { ImageOff } from "lucide-react";
+import { Monogram } from "@/components/brand/Logo";
 import { cn } from "@/lib/utils";
 
 type GalleryImage = { id: string; url: string; alt: string };
@@ -31,7 +31,7 @@ export function ImageGallery({
           />
         ) : (
           <div className="flex h-full w-full items-center justify-center text-muted-foreground">
-            <ImageOff className="h-10 w-10" />
+            <Monogram className="h-28 w-28 text-muted-foreground/40" title="" aria-hidden="true" />
           </div>
         )}
       </div>

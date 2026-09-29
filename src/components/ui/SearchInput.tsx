@@ -22,7 +22,7 @@ export function SearchInput({
         ))}
       <div className="relative w-full">
         <span
-          className="material-symbols-outlined pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-[18px] text-muted-foreground"
+          className="material-symbols-outlined pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[18px] text-muted-foreground"
           aria-hidden="true"
         >
           search
@@ -32,7 +32,7 @@ export function SearchInput({
           name="q"
           defaultValue={defaultValue}
           placeholder={placeholder}
-          className="h-10 w-full rounded-md border border-input bg-background pl-8 pr-3 text-sm outline-none focus:border-ring focus:ring-1 focus:ring-ring"
+          className="h-11 w-full rounded-full border border-input bg-background pl-11 pr-4 text-sm outline-none transition-[border-color,box-shadow] duration-200 hover:border-foreground/30 focus:border-ring focus:ring-4 focus:ring-ring/15"
         />
       </div>
     </form>

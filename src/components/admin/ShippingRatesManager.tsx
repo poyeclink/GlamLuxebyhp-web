@@ -1,11 +1,17 @@
 "use client";
 
 import { useState } from "react";
+import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/Button";
+import { DataTable } from "@/components/ui/DataTable";
+import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { Modal } from "@/components/ui/Modal";
 import { ShippingRateForm } from "@/components/admin/ShippingRateForm";
 import { DeleteShippingRateButton } from "@/components/admin/DeleteShippingRateButton";
-import { createShippingRateAction, updateShippingRateAction } from "@/server/actions/shipping-actions";
+import {
+  createShippingRateAction,
+  updateShippingRateAction,
+} from "@/server/actions/shipping-actions";
 import { formatCurrency } from "@/lib/utils";
 
 type ShippingRate = {
@@ -22,36 +28,49 @@ export function ShippingRatesManager({ rates }: { rates: ShippingRate[] }) {
   const [modal, setModal] = useState<ModalState>(null);
 
   return (
-    <div className="mx-auto flex max-w-3xl flex-col gap-6 px-4 py-16">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold text-foreground">Tarifas de envío</h1>
-        <Button onClick={() => setModal({ mode: "create" })}>Nueva tarifa</Button>
-      </div>
+    <div className="mx-auto flex max-w-6xl flex-col gap-8 px-4 py-10 sm:px-8 lg:py-12">
+      <AdminPageHeader
+        eyebrow="Logística"
+        title="Tarifas de envío"
+        description="Costo de envío por tramo de cantidad de artículos en el carrito."
+        action={
+          <Button onClick={() => setModal({ mode: "create" })}>
+            <Plus className="h-4 w-4" aria-hidden="true" />
+            Nueva tarifa
+          </Button>
+        }
+      />
 
       {rates.length === 0 ? (
-        <p className="text-muted-foreground">Todavía no hay tarifas configuradas.</p>
+        <p className="rounded-2xl border border-dashed border-border bg-background p-10 text-center text-sm text-muted-foreground">
+          Todavía no hay tarifas configuradas.
+        </p>
       ) : (
-        <table className="w-full border-collapse text-sm">
+        <DataTable>
           <thead>
-            <tr className="border-b border-border text-left text-muted-foreground">
-              <th className="py-2 font-medium">Tier</th>
-              <th className="py-2 font-medium">Cantidad</th>
-              <th className="py-2 font-medium">Precio</th>
-              <th className="py-2 font-medium" />
+            <tr>
+              <th>Tier</th>
+              <th>Cantidad</th>
+              <th>Precio</th>
+              <th />
             </tr>
           </thead>
           <tbody>
             {rates.map((rate) => (
-              <tr key={rate.id} className="border-b border-border">
-                <td className="py-3 text-foreground">{rate.tier}</td>
-                <td className="py-3 text-muted-foreground">
+              <tr key={rate.id}>
+                <td className="font-medium capitalize text-foreground">{rate.tier}</td>
+                <td className="text-muted-foreground">
                   {rate.minQuantity}
                   {rate.maxQuantity === null ? "+" : `–${rate.maxQuantity}`}
                 </td>
-                <td className="py-3 text-foreground">{formatCurrency(rate.price)}</td>
-                <td className="py-3">
+                <td className="text-foreground">{formatCurrency(rate.price)}</td>
+                <td>
                   <div className="flex items-center justify-end gap-2">
-                    <Button variant="outline" size="sm" onClick={() => setModal({ mode: "edit", rate })}>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setModal({ mode: "edit", rate })}
+                    >
                       Editar
                     </Button>
                     <DeleteShippingRateButton id={rate.id} />
@@ -60,7 +79,7 @@ export function ShippingRatesManager({ rates }: { rates: ShippingRate[] }) {
               </tr>
             ))}
           </tbody>
-        </table>
+        </DataTable>
       )}
 
       <Modal
@@ -71,7 +90,9 @@ export function ShippingRatesManager({ rates }: { rates: ShippingRate[] }) {
         {modal !== null && (
           <ShippingRateForm
             action={
-              modal.mode === "edit" ? updateShippingRateAction.bind(null, modal.rate.id) : createShippingRateAction
+              modal.mode === "edit"
+                ? updateShippingRateAction.bind(null, modal.rate.id)
+                : createShippingRateAction
             }
             defaultValues={modal.mode === "edit" ? modal.rate : undefined}
             submitLabel={modal.mode === "edit" ? "Guardar cambios" : "Crear tarifa"}

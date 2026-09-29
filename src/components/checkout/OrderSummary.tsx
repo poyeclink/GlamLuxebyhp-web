@@ -22,7 +22,7 @@ export function OrderSummary({
       <div className="flex flex-col gap-3">
         <div className="flex items-center gap-2">
           <MapPin className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
-          <h2 className="text-lg font-semibold text-foreground">Dirección de envío</h2>
+          <h2 className="font-display text-xl text-foreground">Dirección de envío</h2>
         </div>
         <Card>
           <CardContent className="p-4">
@@ -34,7 +34,7 @@ export function OrderSummary({
       <div className="flex flex-col gap-3">
         <div className="flex items-center gap-2">
           <ShoppingBag className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
-          <h2 className="text-lg font-semibold text-foreground">Artículos</h2>
+          <h2 className="font-display text-xl text-foreground">Artículos</h2>
         </div>
         <Card>
           <CardContent className="p-4">
