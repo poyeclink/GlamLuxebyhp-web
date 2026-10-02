@@ -7,7 +7,8 @@ import { cn } from "@/lib/utils";
 import { useDismiss } from "@/hooks/use-dismiss";
 import { navItemClass } from "@/components/layout/MainNav";
 
-type Category = { id: string; name: string; slug: string };
+type Subcategory = { id: string; name: string; slug: string };
+type Category = Subcategory & { children: Subcategory[] };
 
 export function CategoryMenu({
   categories,
@@ -64,15 +65,30 @@ export function CategoryMenu({
             <p className="eyebrow text-[0.625rem] text-muted-foreground">{label}</p>
             <ul className="mt-3 grid grid-cols-2 gap-x-8">
               {categories.map((category) => (
-                <li key={category.id}>
+                <li key={category.id} className="border-b border-border/70">
                   <Link
                     href={`/tienda?categoria=${category.slug}`}
                     onClick={close}
-                    className="group/item flex items-center justify-between gap-3 border-b border-border/70 py-3 font-display text-lg text-foreground transition-colors duration-300 hover:text-accent"
+                    className="group/item flex items-center justify-between gap-3 py-3 font-display text-lg text-foreground transition-colors duration-300 hover:text-accent"
                   >
                     {category.name}
                     <ArrowRight className="h-3.5 w-3.5 -translate-x-1 text-accent opacity-0 transition-[translate,opacity] duration-300 group-hover/item:translate-x-0 group-hover/item:opacity-100" />
                   </Link>
+                  {category.children.length > 0 && (
+                    <ul className="-mt-1 flex flex-wrap gap-x-4 gap-y-1 pb-3">
+                      {category.children.map((child) => (
+                        <li key={child.id}>
+                          <Link
+                            href={`/tienda?categoria=${child.slug}`}
+                            onClick={close}
+                            className="text-xs text-muted-foreground transition-colors duration-300 hover:text-accent"
+                          >
+                            {child.name}
+                          </Link>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
                 </li>
               ))}
             </ul>

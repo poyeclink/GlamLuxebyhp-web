@@ -61,6 +61,42 @@ async function main() {
   }
 
   console.log("Tarifas de envío individuales listas.");
+
+  // Catálogo pedido por la clienta. Se identifica por slug: renombrar una
+  // categoría desde el admin no la duplica al volver a correr el seed.
+  const genders = [
+    { name: "Mujer", slug: "mujer" },
+    { name: "Hombre", slug: "hombre" },
+  ];
+  const categoryTree = [
+    { name: "Bolsos", slug: "bolsos" },
+    { name: "Zapatos y sandalias", slug: "zapatos", children: genders },
+    { name: "Billeteras", slug: "billeteras", children: genders },
+    { name: "Lentes de sol", slug: "lentes-de-sol", children: genders },
+    { name: "Cinturones", slug: "cinturones" },
+    { name: "Accesorios", slug: "accesorios" },
+    { name: "Misceláneos", slug: "miscelaneos" },
+    { name: "Ropa", slug: "ropa", children: genders },
+    { name: "Niños", slug: "ninos" },
+  ];
+
+  for (const { children = [], ...root } of categoryTree) {
+    const parent = await prisma.category.upsert({
+      where: { slug: root.slug },
+      update: {},
+      create: root,
+    });
+    for (const child of children) {
+      const slug = `${root.slug}-${child.slug}`;
+      await prisma.category.upsert({
+        where: { slug },
+        update: {},
+        create: { name: child.name, slug, parentId: parent.id },
+      });
+    }
+  }
+
+  console.log("Categorías y subcategorías listas.");
 }
 
 main()

@@ -1,86 +1,345 @@
 import type { Metadata } from "next";
+import Form from "next/form";
 import Link from "next/link";
+import { ArrowDown, Search, X } from "lucide-react";
 import { ProductCard } from "@/components/shop/ProductCard";
+import { ShopFilterForm } from "@/components/shop/ShopFilterForm";
+import { ShopToolbar } from "@/components/shop/ShopToolbar";
+import { Spotlight } from "@/components/motion/Spotlight";
+import { Marquee } from "@/components/motion/Marquee";
+import { Emblem } from "@/components/brand/Logo";
+import { Button } from "@/components/ui/Button";
 import { listShopCategories } from "@/server/services/category-service";
-import { listShopProducts, toProductCardItem } from "@/server/services/product-service";
-import { filterPillClass } from "@/lib/utils";
-import { WHOLESALE_ITEM_THRESHOLD } from "@/server/services/cart-service";
+import {
+  getShopFilterOptions,
+  searchShopProducts,
+  toProductCardItem,
+} from "@/server/services/product-service";
+import { cn, filterPillClass } from "@/lib/utils";
+import { countActiveFilters, parseShopFilters, shopHref } from "@/lib/shop-filters";
+
+type ShopCategory = Awaited<ReturnType<typeof listShopCategories>>[number];
+
+// El slug puede ser de una categoría principal o de una subcategoría; en ambos
+// casos se devuelve la principal, para mostrar la fila de subcategorías.
+function findCategory(categories: ShopCategory[], slug?: string) {
+  for (const root of categories) {
+    if (root.slug === slug) return { root, active: root, sub: undefined };
+    const sub = root.children.find((child) => child.slug === slug);
+    if (sub) return { root, active: sub, sub };
+  }
+  return undefined;
+}
 
 export async function generateMetadata({ searchParams }: PageProps<"/tienda">): Promise<Metadata> {
   const { categoria } = await searchParams;
-  const category =
-    typeof categoria === "string"
-      ? (await listShopCategories()).find((item) => item.slug === categoria)
-      : undefined;
+  const match =
+    typeof categoria === "string" ? findCategory(await listShopCategories(), categoria) : undefined;
+  const category = match && {
+    slug: match.active.slug,
+    name: match.sub ? `${match.root.name} · ${match.sub.name}` : match.root.name,
+  };
   return category
     ? {
         title: `${category.name} — Tienda`,
-        description: `Compra ${category.name.toLowerCase()} de alta calidad en Glam Luxe by HP, al detalle o con precio mayorista.`,
+        description: `Compra ${category.name.toLowerCase()} de alta calidad en Glam Luxe by HJ, al detalle o con precio mayorista.`,
         alternates: { canonical: `/tienda?categoria=${category.slug}` },
       }
     : {
         title: "Tienda",
-        description: `Ropa, bolsos y accesorios de alta calidad. Precio mayorista automático desde ${WHOLESALE_ITEM_THRESHOLD} artículos.`,
+        description: "Ropa, bolsos y accesorios de alta calidad, al detalle o por mayor.",
         alternates: { canonical: "/tienda" },
       };
 }
 
-export default async function TiendaPage({ searchParams }: PageProps<"/tienda">) {
-  const { categoria } = await searchParams;
-  const categorySlug = typeof categoria === "string" ? categoria : undefined;
+const pillRowClass =
+  "-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 sm:mx-0 sm:flex-wrap sm:px-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden";
 
-  const [categories, products] = await Promise.all([
+export default async function TiendaPage({ searchParams }: PageProps<"/tienda">) {
+  const filters = parseShopFilters(await searchParams);
+
+  const [categories, { items, total }, options] = await Promise.all([
     listShopCategories(),
-    listShopProducts(categorySlug),
+    searchShopProducts(filters),
+    getShopFilterOptions(filters),
   ]);
 
-  const activeCategory = categories.find((category) => category.slug === categorySlug);
-  const isFiltering = Boolean(categorySlug);
+  const match = findCategory(categories, filters.categoria);
+  const products = items.map(toProductCardItem);
+  const hasMore = products.length < total;
+
+  const titleA = filters.q ? "Resultados para" : match?.sub ? match.root.name : "Descubre";
+  const titleB = filters.q ? `“${filters.q}”` : (match?.active.name ?? "la colección");
+
+  const chips = [
+    ...(filters.q
+      ? [{ label: `Búsqueda: ${filters.q}`, href: shopHref(filters, { q: undefined }) }]
+      : []),
+    ...(filters.min !== undefined
+      ? [{ label: `Desde $${filters.min}`, href: shopHref(filters, { min: undefined }) }]
+      : []),
+    ...(filters.max !== undefined
+      ? [{ label: `Hasta $${filters.max}`, href: shopHref(filters, { max: undefined }) }]
+      : []),
+    ...filters.tallas.map((talla) => ({
+      label: `Talla ${talla}`,
+      href: shopHref(filters, { tallas: filters.tallas.filter((item) => item !== talla) }),
+    })),
+    ...(filters.disponible
+      ? [{ label: "Solo con stock", href: shopHref(filters, { disponible: false }) }]
+      : []),
+  ];
+  const clearAllHref = shopHref(filters, {
+    q: undefined,
+    min: undefined,
+    max: undefined,
+    tallas: [],
+    disponible: false,
+  });
 
   return (
-    <div className="mx-auto flex max-w-6xl flex-col gap-8 px-4 py-12 sm:py-16">
-      <div className="flex flex-col gap-2 border-b border-border pb-8">
-        <p className="eyebrow text-accent">{activeCategory ? "Categoría" : "Colección completa"}</p>
-        <div className="flex flex-wrap items-end justify-between gap-2">
-          <h1 className="font-display text-4xl text-foreground sm:text-5xl">
-            {activeCategory?.name ?? "Tienda"}
-          </h1>
-          <p className="text-sm text-muted-foreground">
-            {products.length} {products.length === 1 ? "producto" : "productos"}
-          </p>
-        </div>
-      </div>
+    <>
+      <section className="bg-inverse text-inverse-foreground [--logo-accent:var(--inverse-accent)]">
+        <Spotlight className="bg-inverse">
+          <Emblem
+            aria-hidden="true"
+            title=""
+            className="pointer-events-none absolute -right-28 top-1/2 h-[34rem] w-[34rem] -translate-y-1/2 animate-spin-slow text-inverse-foreground opacity-[0.06] motion-reduce:animate-none"
+          />
+          <div className="relative mx-auto flex max-w-7xl flex-col gap-8 px-4 py-14 sm:px-6 sm:py-20">
+            <nav
+              aria-label="Ruta"
+              className="eyebrow flex items-center gap-2 text-[0.625rem] text-inverse-muted"
+            >
+              <Link href="/" className="hover:text-inverse-foreground">
+                Inicio
+              </Link>
+              <span aria-hidden="true">/</span>
+              <Link href="/tienda" className="hover:text-inverse-foreground">
+                Tienda
+              </Link>
+              {match?.sub && (
+                <>
+                  <span aria-hidden="true">/</span>
+                  <Link
+                    href={`/tienda?categoria=${match.root.slug}`}
+                    className="hover:text-inverse-foreground"
+                  >
+                    {match.root.name}
+                  </Link>
+                </>
+              )}
+            </nav>
 
-      <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 sm:mx-0 sm:flex-wrap sm:px-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-        <Link href="/tienda" className={filterPillClass(!isFiltering)}>
-          Todas
-        </Link>
-        {categories.map((category) => (
-          <Link
-            key={category.id}
-            href={`/tienda?categoria=${category.slug}`}
-            className={filterPillClass(activeCategory?.id === category.id)}
-          >
-            {category.name}
-          </Link>
-        ))}
-      </div>
+            <h1 className="max-w-4xl font-display text-5xl leading-[1.04] sm:text-6xl lg:text-7xl">
+              <span className="block overflow-hidden pb-[0.08em]">
+                <span className="block animate-rise [animation-delay:60ms]">{titleA}</span>
+              </span>
+              <span className="block overflow-hidden pb-[0.08em]">
+                <span className="block animate-rise break-words italic text-inverse-accent [animation-delay:180ms]">
+                  {titleB}
+                </span>
+              </span>
+            </h1>
 
-      {products.length === 0 ? (
-        <p className="text-sm text-muted-foreground">
-          {isFiltering && !activeCategory
-            ? "No encontramos esa categoría."
-            : activeCategory
-              ? `Aún no hay productos en "${activeCategory.name}".`
-              : "Aún no hay productos disponibles."}
-        </p>
-      ) : (
-        <div className="grid grid-cols-2 gap-x-4 gap-y-10 sm:grid-cols-3 lg:grid-cols-4">
-          {products.map((product) => (
-            <ProductCard key={product.id} product={toProductCardItem(product)} />
-          ))}
-        </div>
+            <Form
+              action="/tienda"
+              className="flex w-full max-w-2xl animate-fade-up items-center gap-2 rounded-full border border-inverse-border bg-inverse-foreground/5 p-1.5 pl-5 transition-colors [animation-delay:320ms] focus-within:border-inverse-accent"
+            >
+              {filters.categoria && (
+                <input type="hidden" name="categoria" value={filters.categoria} />
+              )}
+              <Search className="h-5 w-5 shrink-0 text-inverse-muted" aria-hidden="true" />
+              <input
+                type="search"
+                name="q"
+                defaultValue={filters.q}
+                placeholder={
+                  match ? `Buscar en ${match.active.name}...` : "Buscar bolsos, zapatos, lentes..."
+                }
+                aria-label="Buscar productos"
+                className="h-11 min-w-0 flex-1 bg-transparent text-base text-inverse-foreground outline-none placeholder:text-inverse-muted"
+              />
+              <Button type="submit" variant="inverse" className="h-11 rounded-full px-6">
+                Buscar
+              </Button>
+            </Form>
+
+            <div className="flex animate-fade-up flex-wrap items-center gap-x-8 gap-y-3 text-sm text-inverse-muted [animation-delay:420ms]">
+              <span>
+                <strong className="text-2xl font-semibold tabular-nums text-inverse-foreground">
+                  {total}
+                </strong>{" "}
+                {total === 1 ? "pieza" : "piezas"}
+              </span>
+              <a
+                href="#productos"
+                className="group ml-auto hidden items-center gap-3 text-[0.6875rem] font-semibold uppercase tracking-[0.2em] text-inverse-foreground sm:flex"
+              >
+                Explorar
+                <span className="flex h-10 w-10 items-center justify-center rounded-full border border-inverse-border transition-colors group-hover:border-inverse-accent group-hover:text-inverse-accent">
+                  <ArrowDown className="h-4 w-4 animate-bounce motion-reduce:animate-none" />
+                </span>
+              </a>
+            </div>
+          </div>
+        </Spotlight>
+      </section>
+
+      {categories.length > 1 && (
+        <Marquee
+          className="border-b border-border bg-accent-soft py-5 text-foreground"
+          items={categories.map((category) => category.name)}
+        />
       )}
-    </div>
+
+      <div
+        id="productos"
+        className="mx-auto flex max-w-7xl scroll-mt-24 flex-col gap-8 px-4 py-10 sm:px-6 lg:scroll-mt-28 lg:py-14"
+      >
+        <div className="flex flex-col gap-3">
+          <div className={pillRowClass}>
+            <Link
+              href={shopHref(filters, { categoria: undefined, tallas: [] })}
+              scroll={false}
+              className={filterPillClass(!filters.categoria)}
+            >
+              Todas
+            </Link>
+            {categories.map((category) => (
+              <Link
+                key={category.id}
+                href={shopHref(filters, { categoria: category.slug, tallas: [] })}
+                scroll={false}
+                className={filterPillClass(match?.root.id === category.id)}
+              >
+                {category.name}
+              </Link>
+            ))}
+          </div>
+
+          {match && match.root.children.length > 0 && (
+            <div className={pillRowClass}>
+              <Link
+                href={shopHref(filters, { categoria: match.root.slug })}
+                scroll={false}
+                className={cn(filterPillClass(!match.sub), "px-3 py-1 text-xs")}
+              >
+                Todo en {match.root.name}
+              </Link>
+              {match.root.children.map((child) => (
+                <Link
+                  key={child.id}
+                  href={shopHref(filters, { categoria: child.slug })}
+                  scroll={false}
+                  className={cn(filterPillClass(match.sub?.id === child.id), "px-3 py-1 text-xs")}
+                >
+                  {child.name}
+                </Link>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div className="grid grid-cols-1 gap-10 lg:grid-cols-[15rem_minmax(0,1fr)]">
+          <aside className="hidden lg:sticky lg:top-28 lg:block lg:self-start">
+            <ShopFilterForm
+              key={shopHref(filters)}
+              filters={filters}
+              options={options}
+              idPrefix="d"
+              autoSubmit
+            />
+          </aside>
+
+          <section aria-label="Productos" className="flex min-w-0 flex-col gap-6">
+            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border pb-4">
+              <p className="text-sm text-muted-foreground">
+                {total === 0 ? (
+                  "Sin resultados"
+                ) : (
+                  <>
+                    Mostrando <span className="font-medium text-foreground">{products.length}</span>{" "}
+                    de <span className="font-medium text-foreground">{total}</span>
+                  </>
+                )}
+              </p>
+              <div className="flex items-center gap-2">
+                <ShopToolbar
+                  filters={filters}
+                  options={options}
+                  activeCount={countActiveFilters(filters)}
+                />
+              </div>
+            </div>
+
+            {chips.length > 0 && (
+              <div className="flex flex-wrap items-center gap-2">
+                {chips.map((chip) => (
+                  <Link
+                    key={chip.href}
+                    href={chip.href}
+                    scroll={false}
+                    className="group flex items-center gap-1.5 rounded-full bg-accent-soft px-3 py-1.5 text-xs font-medium text-foreground transition-colors hover:bg-foreground hover:text-background"
+                  >
+                    {chip.label}
+                    <X className="h-3 w-3 opacity-60 group-hover:opacity-100" aria-label="Quitar" />
+                  </Link>
+                ))}
+                <Link
+                  href={clearAllHref}
+                  scroll={false}
+                  className="px-2 text-xs font-medium text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
+                >
+                  Limpiar todo
+                </Link>
+              </div>
+            )}
+
+            {products.length === 0 ? (
+              <div className="flex flex-col items-center gap-4 rounded-2xl border border-dashed border-border px-6 py-16 text-center">
+                <Search className="h-8 w-8 text-muted-foreground/60" aria-hidden="true" />
+                <p className="font-display text-2xl text-foreground">
+                  {filters.categoria && !match
+                    ? "No encontramos esa categoría"
+                    : "No hay piezas con estos filtros"}
+                </p>
+                <p className="max-w-sm text-sm text-muted-foreground">
+                  Prueba con otra búsqueda, quita algún filtro o explora la colección completa.
+                </p>
+                <Link href="/tienda" scroll={false}>
+                  <Button variant="outline">Ver toda la tienda</Button>
+                </Link>
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 gap-x-4 gap-y-10 sm:grid-cols-3">
+                {products.map((product) => (
+                  <ProductCard key={product.slug} product={product} />
+                ))}
+              </div>
+            )}
+
+            {hasMore && (
+              <div className="flex flex-col items-center gap-4 pt-6">
+                <div className="h-0.5 w-48 overflow-hidden rounded-full bg-border">
+                  <div
+                    className="h-full rounded-full bg-accent"
+                    style={{ width: `${(products.length / total) * 100}%` }}
+                  />
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Has visto {products.length} de {total} piezas
+                </p>
+                <Link href={shopHref(filters, { page: filters.page + 1 })} scroll={false}>
+                  <Button variant="outline" size="lg">
+                    Ver más piezas
+                  </Button>
+                </Link>
+              </div>
+            )}
+          </section>
+        </div>
+      </div>
+    </>
   );
 }

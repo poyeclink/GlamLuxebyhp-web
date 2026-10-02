@@ -25,7 +25,7 @@ import { WHOLESALE_ITEM_THRESHOLD } from "@/server/services/cart-service";
 export const metadata: Metadata = {
   title: "Nosotros",
   description:
-    "Conoce Glam Luxe by HP: ropa, bolsos y accesorios de alta calidad seleccionados pieza por pieza, para compras personales y para boutiques.",
+    "Conoce Glam Luxe by HJ: ropa, bolsos y accesorios de alta calidad seleccionados pieza por pieza, para compras personales y para boutiques.",
   alternates: { canonical: "/about" },
 };
 
@@ -91,7 +91,7 @@ export default async function AboutPage() {
     eyebrow: "Nosotros",
     title: "Moda de alta calidad, elegida con criterio",
     description:
-      "Glam Luxe by HP nace de una idea simple: que vestir bien no dependa de pagar de más. Seleccionamos ropa, bolsos y accesorios con acabados de alta gama y los ponemos a tu alcance, al detalle o al por mayor.",
+      "Glam Luxe by HJ nace de una idea simple: que vestir bien no dependa de pagar de más. Seleccionamos ropa, bolsos y accesorios con acabados de alta gama y los ponemos a tu alcance, al detalle o al por mayor.",
     manifestoEyebrow: "Nuestra filosofía",
     manifestoA: "Creemos que el lujo no está en la etiqueta, sino en los",
     manifestoB: "detalles",
@@ -103,7 +103,7 @@ export default async function AboutPage() {
     pillar2t: "Costuras firmes, forros limpios y cortes que caen bien.",
     pillar3: "Acabados",
     pillar3t: "Cierres, bordados y terminaciones cuidadas al detalle.",
-    signature: "El equipo de Glam Luxe by HP",
+    signature: "El equipo de Glam Luxe by HJ",
     signatureRole: "Curaduría y selección",
     manifestoText:
       "Por eso cada prenda, bolso y accesorio que llega a nuestra tienda pasa primero por nuestras manos. No buscamos tener más productos, buscamos tener los correctos.",
@@ -153,7 +153,7 @@ export default async function AboutPage() {
     business2: "Sin cuentas especiales ni aprobaciones previas",
     business3: "Envío coordinado directamente contigo",
     business4: "Tu pedido reservado 3 días mientras confirmas el pago",
-    ctaEyebrow: "Glam Luxe by HP",
+    ctaEyebrow: "Glam Luxe by HJ",
     ctaTitle: "Descubre piezas que se ven —y se sienten— de alta gama",
     ctaShop: "Ir a la tienda",
     ctaContact: "Hablemos",

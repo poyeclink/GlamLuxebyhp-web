@@ -160,7 +160,7 @@ export default async function AdminReportsPage({ searchParams }: PageProps<"/adm
     filters.type === "ventas" ? getSalesReport(filters) : undefined,
     filters.type === "inventario" ? getInventoryReport(filters) : undefined,
   ]);
-  const categoryName = categories.find((category) => category.id === filters.categoryId)?.name;
+  const categoryName = categories.find((category) => category.id === filters.categoryId)?.label;
   const pdfHref = `/admin/reportes/pdf?${reportQueryString(filters)}`;
 
   return (
@@ -302,7 +302,7 @@ export default async function AdminReportsPage({ searchParams }: PageProps<"/adm
                 <option value="">Todas</option>
                 {categories.map((category) => (
                   <option key={category.id} value={category.id}>
-                    {category.name}
+                    {category.label}
                   </option>
                 ))}
               </SelectField>

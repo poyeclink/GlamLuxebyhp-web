@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Plus } from "lucide-react";
 import { listProducts } from "@/server/services/product-service";
+import { categoryLabel } from "@/server/services/category-service";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { DataTable } from "@/components/ui/DataTable";
@@ -59,7 +60,7 @@ export default async function AdminProductsPage({ searchParams }: PageProps<"/ad
             {products.map((product) => (
               <tr key={product.id}>
                 <td className="font-medium text-foreground">{product.name}</td>
-                <td className="text-muted-foreground">{product.category.name}</td>
+                <td className="text-muted-foreground">{categoryLabel(product.category)}</td>
                 <td className="text-muted-foreground">
                   {formatCurrency(Number(product.wholesalePrice))}
                 </td>

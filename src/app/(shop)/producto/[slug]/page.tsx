@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import { cache } from "react";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { Package } from "lucide-react";
-import { Badge } from "@/components/ui/Badge";
+import { CalendarClock, Package, ShieldCheck, Sparkles } from "lucide-react";
+import { Accordion } from "@/components/ui/Accordion";
 import { PriceDual } from "@/components/ui/PriceDual";
 import { ImageGallery } from "@/components/shop/ImageGallery";
 import { AddToCartForm } from "@/components/shop/AddToCartForm";
@@ -14,9 +14,34 @@ import {
   listRelatedProducts,
   toProductCardItem,
 } from "@/server/services/product-service";
+import { categoryLabel } from "@/server/services/category-service";
+import { RESERVATION_DAYS } from "@/server/services/order-service";
 import { r2PublicUrl } from "@/lib/r2";
 import { SITE_NAME, SITE_URL } from "@/lib/site";
 import { JsonLd } from "@/components/seo/JsonLd";
+
+const TRUST = [
+  { icon: ShieldCheck, label: "Pago seguro" },
+  { icon: CalendarClock, label: `Reserva de ${RESERVATION_DAYS} días` },
+  { icon: Sparkles, label: "Calidad revisada" },
+];
+
+const PURCHASE_INFO = [
+  {
+    question: "Envío",
+    answer:
+      "En compras al detalle el envío depende de la cantidad de artículos y lo ves en tu carrito antes de pagar. En pedidos mayoristas coordinamos el envío contigo.",
+  },
+  {
+    question: "Pago y reserva",
+    answer: `Paga con tarjeta, Zelle, Cash App o PayPal. Reservamos tu pedido y su inventario durante ${RESERVATION_DAYS} días mientras confirmamos tu pago.`,
+  },
+  {
+    question: "Cambios y devoluciones",
+    answer:
+      "Todas las ventas son finales. Si recibes una pieza con daño de fábrica, repórtalo dentro de las primeras 24 horas y lo resolvemos contigo.",
+  },
+];
 
 // generateMetadata y la página piden el mismo producto en la misma request.
 const getProduct = cache(getProductBySlug);
@@ -71,7 +96,7 @@ export default async function ProductoPage({ params }: PageProps<"/producto/[slu
           name: product.name,
           description: product.description,
           image: images.map((image) => image.url),
-          category: product.category.name,
+          category: categoryLabel(product.category),
           brand: { "@type": "Brand", name: SITE_NAME },
           offers: {
             "@type": "Offer",
@@ -86,6 +111,17 @@ export default async function ProductoPage({ params }: PageProps<"/producto/[slu
         <Link href="/tienda" className="hover:text-foreground">
           Tienda
         </Link>
+        {product.category.parent && (
+          <>
+            <span className="mx-2">/</span>
+            <Link
+              href={`/tienda?categoria=${product.category.parent.slug}`}
+              className="hover:text-foreground"
+            >
+              {product.category.parent.name}
+            </Link>
+          </>
+        )}
         <span className="mx-2">/</span>
         <Link href={`/tienda?categoria=${product.category.slug}`} className="hover:text-foreground">
           {product.category.name}
@@ -95,8 +131,8 @@ export default async function ProductoPage({ params }: PageProps<"/producto/[slu
       <div className="grid gap-10 md:grid-cols-2">
         <ImageGallery images={images} initialIndex={initialIndex} />
 
-        <div className="flex flex-col gap-4 md:sticky md:top-24 md:self-start">
-          <p className="eyebrow text-accent">{product.category.name}</p>
+        <div className="flex flex-col gap-5">
+          <p className="eyebrow text-accent">{categoryLabel(product.category)}</p>
           <h1 className="font-display text-3xl leading-tight text-foreground sm:text-4xl">
             {product.name}
           </h1>
@@ -104,7 +140,6 @@ export default async function ProductoPage({ params }: PageProps<"/producto/[slu
             wholesalePrice={Number(product.wholesalePrice)}
             individualPrice={Number(product.individualPrice)}
           />
-          <p className="whitespace-pre-line text-sm text-muted-foreground">{product.description}</p>
 
           {product.boxed ? (
             <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
@@ -113,24 +148,28 @@ export default async function ProductoPage({ params }: PageProps<"/producto/[slu
             </div>
           ) : null}
 
-          {product.hasVariants && product.variants.length > 0 ? (
-            <div className="flex flex-col gap-2">
-              <span className="text-sm font-medium text-foreground">Tallas disponibles</span>
-              <div className="flex flex-wrap gap-2">
-                {product.variants.map((variant) => (
-                  <Badge key={variant.id} variant={variant.stock > 0 ? "secondary" : "outline"}>
-                    {variant.size}
-                    {variant.stock === 0 ? " (agotado)" : ""}
-                  </Badge>
-                ))}
-              </div>
-            </div>
-          ) : null}
+          <div className="border-t border-border pt-5">
+            <AddToCartForm
+              productId={product.id}
+              hasVariants={product.hasVariants}
+              variants={product.variants}
+            />
+          </div>
 
-          <AddToCartForm
-            productId={product.id}
-            hasVariants={product.hasVariants}
-            variants={product.variants}
+          <ul className="grid grid-cols-3 gap-2 text-center text-xs text-muted-foreground">
+            {TRUST.map(({ icon: Icon, label }) => (
+              <li key={label} className="flex flex-col items-center gap-1.5 rounded-md bg-muted/60 px-2 py-3">
+                <Icon className="h-5 w-5 text-accent" />
+                {label}
+              </li>
+            ))}
+          </ul>
+
+          <Accordion
+            items={[
+              ...(product.description ? [{ question: "Descripción", answer: product.description }] : []),
+              ...PURCHASE_INFO,
+            ]}
           />
         </div>
       </div>

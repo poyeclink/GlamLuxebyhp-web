@@ -2,6 +2,7 @@
 
 import { useActionState, useEffect, useState } from "react";
 import { TextField } from "@/components/ui/TextField";
+import { SelectField } from "@/components/ui/SelectField";
 import { SubmitButton } from "@/components/ui/SubmitButton";
 import { FormError } from "@/components/ui/FormError";
 import type { CategoryActionState } from "@/server/actions/category-actions";
@@ -21,15 +22,19 @@ const initialState: CategoryActionState = {};
 export function CategoryForm({
   action,
   defaultValues,
+  parents,
   submitLabel,
   onSuccess,
 }: {
   action: (prevState: CategoryActionState, formData: FormData) => Promise<CategoryActionState>;
-  defaultValues?: { name: string; slug: string };
+  defaultValues?: { name: string; slug: string; parentId: string | null };
+  parents: { id: string; name: string; slug: string }[] | null;
   submitLabel: string;
   onSuccess?: () => void;
 }) {
   const [state, formAction] = useActionState(action, initialState);
+  const [name, setName] = useState(defaultValues?.name ?? "");
+  const [parentId, setParentId] = useState(defaultValues?.parentId ?? "");
   const [slug, setSlug] = useState(defaultValues?.slug ?? "");
   // Al editar, el slug ya fue elegido antes: no se debe regenerar solo por tocar el nombre.
   const [slugTouched, setSlugTouched] = useState(defaultValues !== undefined);
@@ -40,18 +45,49 @@ export function CategoryForm({
     if (state.success) onSuccess?.();
   }, [state.success, onSuccess]);
 
+  // Los slugs son únicos en toda la tabla: "Mujer" bajo Zapatos y bajo Ropa
+  // chocarían, así que el de una subcategoría lleva el del padre delante.
+  function suggestSlug(nextName: string, nextParentId: string) {
+    if (slugTouched) return;
+    const parentSlug = parents?.find((parent) => parent.id === nextParentId)?.slug;
+    setSlug(slugify(parentSlug ? `${parentSlug} ${nextName}` : nextName));
+  }
+
   return (
     <form action={formAction} className="flex flex-col gap-4">
       <TextField
         label="Nombre"
         name="name"
         type="text"
-        defaultValue={defaultValues?.name}
+        value={name}
         onChange={(event) => {
-          if (!slugTouched) setSlug(slugify(event.target.value));
+          setName(event.target.value);
+          suggestSlug(event.target.value, parentId);
         }}
         required
       />
+      {parents ? (
+        <SelectField
+          label="Categoría principal"
+          name="parentId"
+          value={parentId}
+          onChange={(event) => {
+            setParentId(event.target.value);
+            suggestSlug(name, event.target.value);
+          }}
+        >
+          <option value="">Ninguna (es una categoría principal)</option>
+          {parents.map((parent) => (
+            <option key={parent.id} value={parent.id}>
+              {parent.name}
+            </option>
+          ))}
+        </SelectField>
+      ) : (
+        <p className="text-xs text-muted-foreground">
+          Tiene subcategorías, así que se mantiene como categoría principal.
+        </p>
+      )}
       <TextField
         label="Slug"
         name="slug"

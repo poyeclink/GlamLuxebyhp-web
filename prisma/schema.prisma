@@ -82,10 +82,17 @@ model Address {
 }
 
 model Category {
-  id       String    @id @default(uuid()) @db.Uuid
+  id       String     @id @default(uuid()) @db.Uuid
   name     String
-  slug     String    @unique
+  slug     String     @unique
+  // Un solo nivel de subcategorías (ej. Zapatos › Mujer): una subcategoría no
+  // puede tener hijas — lo valida category-service, no la base.
+  parentId String?    @db.Uuid
+  parent   Category?  @relation("CategoryTree", fields: [parentId], references: [id], onDelete: Restrict)
+  children Category[] @relation("CategoryTree")
   products Product[]
+
+  @@index([parentId])
 }
 
 model Product {

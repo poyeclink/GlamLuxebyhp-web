@@ -60,7 +60,7 @@ export function Accordion({ items }: { items: AccordionItem[] }) {
               )}
             >
               <div className="overflow-hidden">
-                <p className="pb-6 pl-12 pr-14 text-sm leading-relaxed text-muted-foreground sm:text-base">
+                <p className="whitespace-pre-line pb-6 pl-12 pr-14 text-sm leading-relaxed text-muted-foreground sm:text-base">
                   {item.answer}
                 </p>
               </div>

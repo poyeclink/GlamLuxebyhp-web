@@ -7,7 +7,7 @@ import { AdminUserCard } from "@/components/admin/AdminUserCard";
 import { getSession } from "@/lib/session";
 
 export const metadata: Metadata = {
-  title: { default: "Panel administrativo", template: "%s | Admin · Glam Luxe by HP" },
+  title: { default: "Panel administrativo", template: "%s | Admin · Glam Luxe by HJ" },
   robots: { index: false },
 };
 

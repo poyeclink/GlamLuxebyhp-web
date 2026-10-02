@@ -8,17 +8,9 @@ function unsplash(id: string) {
 }
 
 export const STOCK_IMAGES = {
-  clothingRack: {
-    src: unsplash("1445205170230-053b83016050"),
-    alt: "Prendas de temporada colgadas en un perchero",
-  },
   boutique: {
     src: unsplash("1441984904996-e0b6ba687e04"),
     alt: "Interior de una boutique de ropa",
-  },
-  handbags: {
-    src: unsplash("1593267891718-17abae428da0"),
-    alt: "Clienta eligiendo un bolso de cuero",
   },
   editorial: {
     src: unsplash("1595065666634-4725aa7e8379"),
@@ -35,10 +27,6 @@ export const STOCK_IMAGES = {
   blouses: {
     src: unsplash("1612423284934-2850a4ea6b0f"),
     alt: "Blusas estampadas en perchas de madera",
-  },
-  blackGown: {
-    src: unsplash("1764998112464-f293be747d84"),
-    alt: "Modelo con un vestido negro de gala posando al aire libre",
   },
   monochromeCoat: {
     src: unsplash("1587115924362-622c3fa065bd"),
@@ -60,17 +48,9 @@ export const STOCK_IMAGES = {
     src: unsplash("1764179690237-6c9a7a48406c"),
     alt: "Mujer con pañuelo y abrigo claro sosteniendo un bolso",
   },
-  structuredBag: {
-    src: unsplash("1605733513597-a8f8341084e6"),
-    alt: "Bolso de cuero gris estructurado con hebillas doradas",
-  },
   leatherTote: {
     src: unsplash("1624687943971-e86af76d57de"),
     alt: "Bolso tote de cuero color miel colgado en la pared",
-  },
-  goldJewelry: {
-    src: unsplash("1611107683227-e9060eccd846"),
-    alt: "Brazaletes y cadenas de oro sobre un fondo blanco",
   },
   pearlBox: {
     src: unsplash("1515562141207-7a88fb7ce338"),

@@ -3,6 +3,25 @@ import { deleteFromR2 } from "@/server/services/product-image-service";
 import { r2PublicUrl } from "@/lib/r2";
 import { ADMIN_PAGE_SIZE } from "@/lib/utils";
 import type { ProductCardItem } from "@/components/shop/ProductCard";
+import { categoryLabel, productInCategory } from "@/server/services/category-service";
+
+import { SHOP_PAGE_SIZE, type ShopFilters } from "@/lib/shop-filters";
+import type { Prisma } from "@/generated/prisma/client";
+
+const categoryWithParent = { include: { parent: true } } as const;
+
+// Lo que necesita una ProductCard: principal primero y una segunda foto para
+// el hover, más el stock de las tallas para marcar "Agotado".
+const cardInclude = {
+  category: categoryWithParent,
+  images: {
+    orderBy: [{ isPrimary: "desc" as const }, { position: "asc" as const }],
+    take: 2,
+  },
+  variants: { select: { stock: true } },
+} satisfies Prisma.ProductInclude;
+
+const NEW_PRODUCT_DAYS = 21;
 
 export class ProductError extends Error {}
 
@@ -34,7 +53,7 @@ export async function listProducts({ search, page = 1 }: { search?: string; page
     prisma.product.findMany({
       where,
       orderBy: { name: "asc" },
-      include: { category: true },
+      include: { category: categoryWithParent },
       skip: (Math.max(page, 1) - 1) * ADMIN_PAGE_SIZE,
       take: ADMIN_PAGE_SIZE,
     }),
@@ -43,15 +62,19 @@ export async function listProducts({ search, page = 1 }: { search?: string; page
   return { items, total };
 }
 
-export function listFeaturedProducts(limit = 8) {
+export function listFeaturedProducts(
+  limit = 8,
+  { categoryId, excludeIds = [] }: { categoryId?: string; excludeIds?: string[] } = {},
+) {
   return prisma.product.findMany({
-    where: { active: true },
+    where: {
+      active: true,
+      id: { notIn: excludeIds },
+      ...(categoryId ? productInCategory({ id: categoryId }) : {}),
+    },
     orderBy: [{ createdAt: "desc" }, { id: "desc" }],
     take: limit,
-    include: {
-      category: true,
-      images: { where: { isPrimary: true }, take: 1 },
-    },
+    include: cardInclude,
   });
 }
 
@@ -59,14 +82,81 @@ export function listShopProducts(categorySlug?: string) {
   return prisma.product.findMany({
     where: {
       active: true,
-      ...(categorySlug ? { category: { slug: categorySlug } } : {}),
+      ...(categorySlug ? productInCategory({ slug: categorySlug }) : {}),
     },
     orderBy: [{ createdAt: "desc" }, { id: "desc" }],
-    include: {
-      category: true,
-      images: { where: { isPrimary: true }, take: 1 },
-    },
+    include: cardInclude,
   });
+}
+
+const SHOP_ORDER_BY = {
+  recientes: [{ createdAt: "desc" }, { id: "desc" }],
+  "precio-asc": [{ individualPrice: "asc" }, { id: "desc" }],
+  "precio-desc": [{ individualPrice: "desc" }, { id: "desc" }],
+  nombre: [{ name: "asc" }, { id: "desc" }],
+} satisfies Record<ShopFilters["orden"], Prisma.ProductOrderByWithRelationInput[]>;
+
+const inStock: Prisma.ProductWhereInput = {
+  OR: [{ hasVariants: false }, { variants: { some: { stock: { gt: 0 } } } }],
+};
+
+function categoryScope(filters: ShopFilters): Prisma.ProductWhereInput {
+  return {
+    active: true,
+    ...(filters.categoria ? productInCategory({ slug: filters.categoria }) : {}),
+  };
+}
+
+// "Ver más" acumula páginas (page=2 muestra 48) en vez de paginar: invita a
+// seguir bajando sin perder lo que ya se vio.
+export async function searchShopProducts(filters: ShopFilters) {
+  const text = filters.q ? { contains: filters.q, mode: "insensitive" as const } : undefined;
+  const where: Prisma.ProductWhereInput = {
+    AND: [
+      categoryScope(filters),
+      text ? { OR: [{ name: text }, { description: text }, { category: { name: text } }] } : {},
+      filters.min !== undefined || filters.max !== undefined
+        ? { individualPrice: { gte: filters.min, lte: filters.max } }
+        : {},
+      filters.tallas.length > 0
+        ? { variants: { some: { size: { in: filters.tallas }, stock: { gt: 0 } } } }
+        : {},
+      filters.disponible ? inStock : {},
+    ],
+  };
+  const [items, total] = await Promise.all([
+    prisma.product.findMany({
+      where,
+      orderBy: SHOP_ORDER_BY[filters.orden],
+      take: filters.page * SHOP_PAGE_SIZE,
+      include: cardInclude,
+    }),
+    prisma.product.count({ where }),
+  ]);
+  return { items, total };
+}
+
+// Opciones de los filtros dentro de la categoría actual: tallas con stock y
+// rango de precios, para no ofrecer filtros que dan cero resultados.
+export async function getShopFilterOptions(filters: ShopFilters) {
+  const scope = categoryScope(filters);
+  const [variants, prices] = await Promise.all([
+    prisma.productVariant.findMany({
+      where: { stock: { gt: 0 }, product: scope },
+      distinct: ["size"],
+      select: { size: true },
+    }),
+    prisma.product.aggregate({
+      where: scope,
+      _min: { individualPrice: true },
+      _max: { individualPrice: true },
+    }),
+  ]);
+  return {
+    sizes: sortVariantsBySize(variants).map((variant) => variant.size),
+    minPrice: Math.floor(Number(prices._min.individualPrice ?? 0)),
+    maxPrice: Math.ceil(Number(prices._max.individualPrice ?? 0)),
+  };
 }
 
 type ProductForCard = {
@@ -74,18 +164,24 @@ type ProductForCard = {
   name: string;
   wholesalePrice: unknown;
   individualPrice: unknown;
-  category: { name: string };
+  createdAt: Date;
+  hasVariants: boolean;
+  category: { name: string; parent: { name: string } | null };
   images: { key: string }[];
+  variants: { stock: number }[];
 };
 
 export function toProductCardItem(product: ProductForCard): ProductCardItem {
   return {
     slug: product.slug,
     name: product.name,
-    categoryName: product.category.name,
+    categoryName: categoryLabel(product.category),
     wholesalePrice: Number(product.wholesalePrice),
     individualPrice: Number(product.individualPrice),
     imageUrl: product.images[0] ? r2PublicUrl(product.images[0].key) : null,
+    hoverImageUrl: product.images[1] ? r2PublicUrl(product.images[1].key) : null,
+    isNew: Date.now() - product.createdAt.getTime() < NEW_PRODUCT_DAYS * 86_400_000,
+    soldOut: product.hasVariants && product.variants.every((variant) => variant.stock <= 0),
   };
 }
 
@@ -96,10 +192,7 @@ export function toProductCardItem(product: ProductForCard): ProductCardItem {
 // tienda) esa categoría sola no siempre alcanza para un carrusel — se
 // completa con otros productos activos en vez de mostrar 1 solo resultado.
 export async function listRelatedProducts(categoryId: string, excludeProductId: string, limit = 8) {
-  const include = {
-    category: true,
-    images: { where: { isPrimary: true }, take: 1 },
-  } as const;
+  const include = cardInclude;
 
   const sameCategory = await prisma.product.findMany({
     where: { active: true, categoryId, id: { not: excludeProductId } },
@@ -129,7 +222,7 @@ export async function getProductBySlug(slug: string) {
     include: {
       images: { orderBy: { position: "asc" } },
       variants: { orderBy: { size: "asc" } },
-      category: true,
+      category: categoryWithParent,
     },
   });
   if (!product) return null;
@@ -142,7 +235,7 @@ export async function getProduct(id: string) {
     include: {
       images: { orderBy: { position: "asc" } },
       variants: { orderBy: { size: "asc" } },
-      category: true,
+      category: categoryWithParent,
     },
   });
   if (!product) return null;

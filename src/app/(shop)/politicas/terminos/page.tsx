@@ -5,7 +5,7 @@ import { WHOLESALE_ITEM_THRESHOLD } from "@/server/services/cart-service";
 export const metadata: Metadata = {
   title: "Términos y condiciones",
   description:
-    "Condiciones de compra en Glam Luxe by HP: precios, precio mayorista, reservas, pagos y envíos.",
+    "Condiciones de compra en Glam Luxe by HJ: precios, precio mayorista, reservas, pagos y envíos.",
   alternates: { canonical: "/politicas/terminos" },
 };
 
@@ -14,13 +14,13 @@ export default function TermsPage() {
     <PolicyPage
       href="/politicas/terminos"
       title="Términos y condiciones"
-      intro="Las reglas claras de cómo compras en Glam Luxe by HP. Al navegar el sitio o realizar un pedido, aceptas estos términos."
+      intro="Las reglas claras de cómo compras en Glam Luxe by HJ. Al navegar el sitio o realizar un pedido, aceptas estos términos."
       sections={[
         {
           id: "aceptacion",
           title: "Aceptación de los términos",
           body: [
-            "Estos términos regulan el uso del sitio y todas las compras realizadas en Glam Luxe by HP. Al crear una cuenta o confirmar un pedido declaras haberlos leído y aceptado.",
+            "Estos términos regulan el uso del sitio y todas las compras realizadas en Glam Luxe by HJ. Al crear una cuenta o confirmar un pedido declaras haberlos leído y aceptado.",
             "Durante el proceso de compra te pedimos aceptar estos términos de forma expresa; guardamos la fecha y hora de esa aceptación junto con tu pedido.",
           ],
         },
@@ -77,7 +77,7 @@ export default function TermsPage() {
           id: "propiedad",
           title: "Propiedad intelectual",
           body: [
-            "El nombre Glam Luxe by HP, su logotipo, las fotografías y los textos del sitio son propiedad de la marca y no pueden usarse sin autorización escrita.",
+            "El nombre Glam Luxe by HJ, su logotipo, las fotografías y los textos del sitio son propiedad de la marca y no pueden usarse sin autorización escrita.",
           ],
         },
         {

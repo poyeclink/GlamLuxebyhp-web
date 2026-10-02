@@ -11,6 +11,7 @@ import {
   toDayParam,
 } from "@/server/services/report-service";
 import { ReportDocument } from "@/server/pdf/ReportDocument";
+import { categoryLabel } from "@/server/services/category-service";
 
 export async function GET(request: NextRequest) {
   // proxy.ts ya protege /admin/*, pero un Route Handler se revalida solo
@@ -25,7 +26,7 @@ export async function GET(request: NextRequest) {
     filters.type === "ventas" ? getSalesReport(filters) : undefined,
     filters.type === "inventario" ? getInventoryReport(filters) : undefined,
     filters.categoryId
-      ? prisma.category.findUnique({ where: { id: filters.categoryId }, select: { name: true } })
+      ? prisma.category.findUnique({ where: { id: filters.categoryId }, select: { name: true, parent: { select: { name: true } } } })
       : null,
   ]);
 
@@ -33,7 +34,7 @@ export async function GET(request: NextRequest) {
   // DocumentProps — renderToBuffer solo acepta ese tipo exacto.
   const document = createElement(ReportDocument, {
     filters,
-    filterLabels: describeFilters(filters, category?.name),
+    filterLabels: describeFilters(filters, category ? categoryLabel(category) : undefined),
     generatedBy: session.name,
     sales,
     inventory,

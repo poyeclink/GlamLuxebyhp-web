@@ -99,7 +99,7 @@ export async function SiteFooter() {
 
   const [copy, categoryNames, companyLabels, legalLabels] = await Promise.all([
     tMany({
-      ctaEyebrow: "Glam Luxe by HP",
+      ctaEyebrow: "Glam Luxe by HJ",
       ctaA: "Moda que se nota en los",
       ctaB: "detalles",
       ctaText: "Al detalle o al por mayor, te acompañamos en cada pedido con atención personal.",

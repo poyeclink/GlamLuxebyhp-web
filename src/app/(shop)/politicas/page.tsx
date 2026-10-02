@@ -8,7 +8,7 @@ import { STOCK_IMAGES } from "@/lib/stock-images";
 export const metadata: Metadata = {
   title: "Políticas y términos",
   description:
-    "Términos y condiciones, política de privacidad y política de devoluciones de Glam Luxe by HP.",
+    "Términos y condiciones, política de privacidad y política de devoluciones de Glam Luxe by HJ.",
   alternates: { canonical: "/politicas" },
 };
 

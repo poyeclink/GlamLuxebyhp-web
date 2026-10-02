@@ -12,6 +12,7 @@ import {
 
 export type CartActionState = {
   error?: string;
+  added?: boolean;
 };
 
 const quantityField = z.coerce
@@ -48,7 +49,7 @@ export async function addToCartAction(
   }
 
   revalidatePath("/carrito");
-  return {};
+  return { added: true };
 }
 
 const quantitySchema = z.object({

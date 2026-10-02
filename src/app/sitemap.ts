@@ -22,7 +22,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   return [
     ...STATIC_PATHS.map((path) => ({ url: `${SITE_URL}${path}` })),
-    ...categories.map((category) => ({ url: `${SITE_URL}/tienda?categoria=${category.slug}` })),
+    ...categories
+      .flatMap((category) => [category, ...category.children])
+      .map((category) => ({ url: `${SITE_URL}/tienda?categoria=${category.slug}` })),
     ...products.map((product) => ({ url: `${SITE_URL}/producto/${product.slug}`, lastModified: product.createdAt })),
   ];
 }

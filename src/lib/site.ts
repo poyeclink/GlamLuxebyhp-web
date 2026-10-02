@@ -1,4 +1,4 @@
-export const SITE_NAME = "Glam Luxe by HP";
+export const SITE_NAME = "Glam Luxe by HJ";
 export const SITE_DESCRIPTION =
   "Ropa, bolsos y accesorios de alta calidad, seleccionados pieza por pieza. Compra al detalle o desbloquea precio mayorista desde 6 artículos.";
 export const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";

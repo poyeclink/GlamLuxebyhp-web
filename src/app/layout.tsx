@@ -6,7 +6,7 @@ import { ScrollReveal } from "@/components/motion/ScrollReveal";
 import { NavigationProgress } from "@/components/layout/NavigationProgress";
 import "./globals.css";
 
-// Pinyon Script no se carga: solo aparece en "by HP" y el logo ya es SVG en
+// Pinyon Script no se carga: solo aparece en "by HJ" y el logo ya es SVG en
 // trazos (src/components/brand/Logo.tsx) — una fuente menos que descargar.
 const inter = Inter({
   variable: "--font-inter",

@@ -16,18 +16,24 @@ type Category = {
   id: string;
   name: string;
   slug: string;
-  _count: { products: number };
+  parentId: string | null;
+  parent: { name: string } | null;
+  _count: { products: number; children: number };
 };
+
+type ParentOption = { id: string; name: string; slug: string };
 
 type ModalState = { mode: "create" } | { mode: "edit"; category: Category } | null;
 
 export function CategoriesManager({
   categories,
+  parents,
   search,
   page,
   totalPages,
 }: {
   categories: Category[];
+  parents: ParentOption[];
   search?: string;
   page: number;
   totalPages: number;
@@ -39,7 +45,7 @@ export function CategoriesManager({
       <AdminPageHeader
         eyebrow="Catálogo"
         title="Categorías"
-        description="Las categorías con productos activos aparecen solas en el menú de la tienda."
+        description="Las categorías con productos activos aparecen solas en el menú de la tienda. Las subcategorías (ej. Zapatos › Mujer) se muestran dentro de su categoría principal."
         action={
           <Button onClick={() => setModal({ mode: "create" })}>
             <Plus className="h-4 w-4" aria-hidden="true" />
@@ -63,6 +69,7 @@ export function CategoriesManager({
           <thead>
             <tr>
               <th>Nombre</th>
+              <th>Categoría principal</th>
               <th>Slug</th>
               <th>Productos</th>
               <th />
@@ -72,6 +79,12 @@ export function CategoriesManager({
             {categories.map((category) => (
               <tr key={category.id}>
                 <td className="font-medium text-foreground">{category.name}</td>
+                <td className="text-muted-foreground">
+                  {category.parent?.name ??
+                    (category._count.children > 0
+                      ? `Principal · ${category._count.children} sub`
+                      : "Principal")}
+                </td>
                 <td className="font-mono text-xs text-muted-foreground">{category.slug}</td>
                 <td className="text-muted-foreground">{category._count.products}</td>
                 <td>
@@ -114,8 +127,21 @@ export function CategoriesManager({
             }
             defaultValues={
               modal.mode === "edit"
-                ? { name: modal.category.name, slug: modal.category.slug }
+                ? {
+                    name: modal.category.name,
+                    slug: modal.category.slug,
+                    parentId: modal.category.parentId,
+                  }
                 : undefined
+            }
+            // Una categoría con subcategorías no puede volverse subcategoría
+            // (un solo nivel), así que ni se le ofrece el selector.
+            parents={
+              modal.mode === "edit"
+                ? modal.category._count.children > 0
+                  ? null
+                  : parents.filter((parent) => parent.id !== modal.category.id)
+                : parents
             }
             submitLabel={modal.mode === "edit" ? "Guardar cambios" : "Crear categoría"}
             onSuccess={() => setModal(null)}

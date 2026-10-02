@@ -1,4 +1,4 @@
-import { listCategoriesAdmin } from "@/server/services/category-service";
+import { listCategoriesAdmin, listParentCategories } from "@/server/services/category-service";
 import { CategoriesManager } from "@/components/admin/CategoriesManager";
 import { ADMIN_PAGE_SIZE } from "@/lib/utils";
 
@@ -9,11 +9,15 @@ export default async function AdminCategoriesPage({
   const search = typeof q === "string" && q.trim() !== "" ? q.trim() : undefined;
   const page = Math.max(Number(typeof pageParam === "string" ? pageParam : "1") || 1, 1);
 
-  const { items, total } = await listCategoriesAdmin({ search, page });
+  const [{ items, total }, parents] = await Promise.all([
+    listCategoriesAdmin({ search, page }),
+    listParentCategories(),
+  ]);
 
   return (
     <CategoriesManager
       categories={items}
+      parents={parents}
       search={search}
       page={page}
       totalPages={Math.max(1, Math.ceil(total / ADMIN_PAGE_SIZE))}

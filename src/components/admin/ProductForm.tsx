@@ -23,7 +23,7 @@ function slugify(value: string) {
 
 const initialState: ProductActionState = {};
 
-type Category = { id: string; name: string };
+type Category = { id: string; label: string };
 
 type ProductDefaultValues = {
   name: string;
@@ -97,7 +97,7 @@ export function ProductForm({
         </option>
         {categories.map((category) => (
           <option key={category.id} value={category.id}>
-            {category.name}
+            {category.label}
           </option>
         ))}
       </SelectField>

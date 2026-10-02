@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
+import { X } from "lucide-react";
 
 // Duración de la transición de entrada/salida — un solo lugar porque el
 // timeout que retrasa el desmontaje (abajo) tiene que coincidir con la
@@ -128,9 +129,7 @@ export function Modal({
             onClick={onClose}
             className="flex h-8 w-8 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
           >
-            <span className="material-symbols-outlined text-[20px] leading-none" aria-hidden="true">
-              close
-            </span>
+            <X className="h-5 w-5" aria-hidden="true" />
           </button>
         </div>
         <div className="flex-1 overflow-y-auto px-5 py-5">{children}</div>

@@ -10,6 +10,7 @@ import { ORDER_STATUS_LABELS } from "@/server/services/order-service";
 import { PAYMENT_METHOD_OPTIONS, isPaymentMethod } from "@/server/services/payment-service";
 import { LOW_STOCK_THRESHOLD } from "@/server/services/inventory-service";
 import { isUuid } from "@/lib/utils";
+import { categoryLabel, productInCategory } from "@/server/services/category-service";
 
 export type ReportType = "ventas" | "inventario";
 
@@ -240,7 +241,7 @@ export async function getSalesReport(filters: ReportFilters) {
           productName: true,
           quantity: true,
           unitPrice: true,
-          product: { select: { category: { select: { name: true } } } },
+          product: { select: { category: { select: { name: true, parent: { select: { name: true } } } } } },
         },
       },
     },
@@ -253,7 +254,7 @@ export async function getSalesReport(filters: ReportFilters) {
     items: order.items.map((item) => ({
       productName: item.productName,
       // Producto borrado después de la venta (OrderItem.productId -> null).
-      category: item.product?.category.name ?? "Sin categoría",
+      category: item.product ? categoryLabel(item.product.category) : "Sin categoría",
       quantity: item.quantity,
       lineTotal: Number(item.unitPrice) * item.quantity,
     })),
@@ -268,7 +269,7 @@ export type SalesReport = Awaited<ReturnType<typeof getSalesReport>>;
 
 export async function getInventoryReport(filters: ReportFilters) {
   const variantWhere: Prisma.ProductVariantWhereInput = {
-    ...(filters.categoryId ? { product: { categoryId: filters.categoryId } } : {}),
+    ...(filters.categoryId ? { product: productInCategory({ id: filters.categoryId }) } : {}),
     ...(filters.lowStockOnly ? { stock: { lte: LOW_STOCK_THRESHOLD } } : {}),
   };
   const [variants, movements] = await Promise.all([
@@ -284,7 +285,7 @@ export async function getInventoryReport(filters: ReportFilters) {
             name: true,
             active: true,
             wholesalePrice: true,
-            category: { select: { name: true } },
+            category: { select: { name: true, parent: { select: { name: true } } } },
           },
         },
       },
@@ -293,7 +294,7 @@ export async function getInventoryReport(filters: ReportFilters) {
       by: ["reason"],
       where: {
         createdAt: { gte: filters.from, lte: filters.to },
-        ...(filters.categoryId ? { variant: { product: { categoryId: filters.categoryId } } } : {}),
+        ...(filters.categoryId ? { variant: { product: productInCategory({ id: filters.categoryId }) } } : {}),
       },
       _sum: { quantityChange: true },
       _count: true,
@@ -303,7 +304,7 @@ export async function getInventoryReport(filters: ReportFilters) {
   const rows = variants.map((variant) => ({
     id: variant.id,
     product: variant.product.name,
-    category: variant.product.category.name,
+    category: categoryLabel(variant.product.category),
     active: variant.product.active,
     size: variant.size,
     stock: variant.stock,

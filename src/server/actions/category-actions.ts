@@ -22,6 +22,10 @@ const categorySchema = z.object({
     .trim()
     .toLowerCase()
     .regex(/^[a-z0-9]+(-[a-z0-9]+)*$/, "El slug solo puede tener minúsculas, números y guiones."),
+  parentId: z
+    .union([z.literal(""), z.string().uuid("Categoría principal inválida.")])
+    .optional()
+    .transform((value) => value || null),
 });
 
 export async function createCategoryAction(

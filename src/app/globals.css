@@ -169,15 +169,6 @@ body {
   }
 }
 
-@keyframes unveil {
-  from {
-    clip-path: inset(100% 0 0 0 round 2rem);
-  }
-  to {
-    clip-path: inset(0 0 0 0 round 2rem);
-  }
-}
-
 @keyframes settle {
   from {
     transform: scale(1.18);
@@ -189,10 +180,6 @@ body {
 
 @utility animate-rise {
   animation: rise 1s cubic-bezier(0.22, 1, 0.36, 1) both;
-}
-
-@utility animate-unveil {
-  animation: unveil 1.3s cubic-bezier(0.76, 0, 0.24, 1) both;
 }
 
 @utility animate-settle {
