@@ -7,7 +7,7 @@ import { FormError } from "@/components/ui/FormError";
 
 const initialState: AddressActionState = {};
 
-export function DeleteAddressButton({ addressId }: { addressId: string }) {
+export function DeleteAddressButton({ addressId, label }: { addressId: string; label: string }) {
   const [state, formAction] = useActionState(
     deleteAddressAction.bind(null, addressId),
     initialState,
@@ -16,7 +16,7 @@ export function DeleteAddressButton({ addressId }: { addressId: string }) {
   return (
     <form action={formAction} className="flex flex-col items-end gap-1">
       <Button type="submit" variant="ghost" size="sm">
-        Eliminar
+        {label}
       </Button>
       <FormError message={state.error} />
     </form>

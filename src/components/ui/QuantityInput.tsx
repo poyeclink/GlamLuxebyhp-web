@@ -10,12 +10,16 @@ export function QuantityInput({
   min = 1,
   max = 9999,
   className,
+  decreaseLabel = "Disminuir cantidad",
+  increaseLabel = "Aumentar cantidad",
 }: {
   name: string;
   defaultValue?: number;
   min?: number;
   max?: number;
   className?: string;
+  decreaseLabel?: string;
+  increaseLabel?: string;
 }) {
   const [value, setValue] = useState(defaultValue);
 
@@ -32,7 +36,7 @@ export function QuantityInput({
     >
       <button
         type="button"
-        aria-label="Disminuir cantidad"
+        aria-label={decreaseLabel}
         onClick={() => setValue((current) => clamp(current - 1))}
         disabled={value <= min}
         className="flex w-9 items-center justify-center text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
@@ -54,7 +58,7 @@ export function QuantityInput({
       />
       <button
         type="button"
-        aria-label="Aumentar cantidad"
+        aria-label={increaseLabel}
         onClick={() => setValue((current) => clamp(current + 1))}
         disabled={value >= max}
         className="flex w-9 items-center justify-center text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"

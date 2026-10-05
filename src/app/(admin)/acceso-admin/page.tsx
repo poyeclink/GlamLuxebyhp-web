@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowLeft, LockKeyhole } from "lucide-react";
 import { AdminLoginForm } from "@/components/auth/AdminLoginForm";
-import { Wordmark } from "@/components/brand/Logo";
+import { LogoPrincipal } from "@/components/brand/Logo";
 
 export const metadata: Metadata = { title: "Acceso administrativo", robots: { index: false } };
 
@@ -23,7 +23,7 @@ export default function AdminLoginPage() {
       />
 
       <div className="flex w-full max-w-md animate-fade-up flex-col items-center gap-10">
-        <Wordmark className="h-14 w-auto sm:h-16" />
+        <LogoPrincipal className="h-24 w-auto sm:h-28" />
 
         <div className="w-full rounded-[2rem] bg-background p-8 text-foreground shadow-[0_40px_80px_-30px_rgba(0,0,0,0.8)] sm:p-10">
           <div className="mb-8 flex flex-col gap-3">

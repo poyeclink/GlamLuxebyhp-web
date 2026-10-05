@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import { Monogram } from "@/components/brand/Logo";
+import { Isotipo } from "@/components/brand/Logo";
 import { cn } from "@/lib/utils";
 
 type GalleryImage = { id: string; url: string; alt: string };
@@ -31,7 +31,7 @@ export function ImageGallery({
           />
         ) : (
           <div className="flex h-full w-full items-center justify-center text-muted-foreground">
-            <Monogram className="h-28 w-28 text-muted-foreground/40" title="" aria-hidden="true" />
+            <Isotipo className="h-auto w-28 text-muted-foreground/40 [--logo-accent:currentColor]" title="" />
           </div>
         )}
       </div>
@@ -48,7 +48,7 @@ export function ImageGallery({
                 index === selected ? "border-primary" : "border-border",
               )}
             >
-              <Image src={image.url} alt={image.alt} fill className="object-cover" />
+              <Image src={image.url} alt={image.alt} fill sizes="64px" className="object-cover" />
             </button>
           ))}
         </div>

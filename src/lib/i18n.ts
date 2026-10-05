@@ -4,12 +4,14 @@ import { translate } from "@/server/services/translation-service";
 
 export const LOCALE_COOKIE_NAME = "glamluxe_locale";
 export type Locale = "es" | "en";
-// El sitio se autora en español — "es" nunca pasa por traducción, solo "en".
-export const DEFAULT_LOCALE: Locale = "es";
+// El sitio se autora en español ("es" nunca pasa por traducción), pero el
+// visitante lo ve en inglés salvo que elija español en el selector.
+export const SOURCE_LOCALE: Locale = "es";
+export const DEFAULT_LOCALE: Locale = "en";
 
 export const getLocale = cache(async (): Promise<Locale> => {
   const store = await cookies();
-  return store.get(LOCALE_COOKIE_NAME)?.value === "en" ? "en" : DEFAULT_LOCALE;
+  return store.get(LOCALE_COOKIE_NAME)?.value === "es" ? "es" : DEFAULT_LOCALE;
 });
 
 // cache(): memoiza por texto dentro de la misma request — una página que
@@ -17,7 +19,7 @@ export const getLocale = cache(async (): Promise<Locale> => {
 // (ni una consulta a Postgres) por repetición.
 export const t = cache(async (text: string): Promise<string> => {
   const locale = await getLocale();
-  if (locale === DEFAULT_LOCALE) return text;
+  if (locale === SOURCE_LOCALE) return text;
   return translate(text, locale);
 });
 

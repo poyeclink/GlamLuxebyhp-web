@@ -22,14 +22,14 @@ const BRAND = {
   danger: "#C62828",
 };
 
-// Mismos trazos que el Wordmark del sitio (versión sobre negro); se lee del
-// SVG público para no duplicar los paths generados. next.config.ts lo incluye
-// en el bundle de esta ruta (outputFileTracingIncludes).
-const WORDMARK_PATHS = [
+// Mismos trazos que el logo horizontal del sitio (versión sobre negro); se lee
+// del SVG público para no duplicar los paths. next.config.ts lo incluye en el
+// bundle de esta ruta (outputFileTracingIncludes).
+const LOGO_PATHS = [
   ...fs
-    .readFileSync(path.join(process.cwd(), "public/brand/wordmark-dark.svg"), "utf8")
-    .matchAll(/<path fill="([^"]+)" d="([^"]+)"/g),
-].map(([, fill, d]) => ({ fill, d }));
+    .readFileSync(path.join(process.cwd(), "public/brand/glamluxe-horizontal-color-oscuro.svg"), "utf8")
+    .matchAll(/<path ([^>]+)\/>/g),
+].map(([, attrs]) => Object.fromEntries([...attrs.matchAll(/([\w-]+)="([^"]*)"/g)].map(([, k, v]) => [k, v])));
 
 const styles = StyleSheet.create({
   page: {
@@ -420,9 +420,17 @@ export function ReportDocument({
     >
       <Page size="A4" style={styles.page}>
         <View style={styles.header}>
-          <Svg viewBox="0 0 916 253" style={{ width: 140, height: 39 }}>
-            {WORDMARK_PATHS.map((segment, index) => (
-              <Path key={index} d={segment.d} fill={segment.fill} />
+          <Svg viewBox="-3 11 664 170" style={{ width: 160, height: 41 }}>
+            {LOGO_PATHS.map((segment, index) => (
+              <Path
+                key={index}
+                d={segment.d}
+                fill={segment.fill ?? "none"}
+                stroke={segment.stroke}
+                strokeWidth={segment["stroke-width"]}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
             ))}
           </Svg>
           <View style={styles.headerRight}>

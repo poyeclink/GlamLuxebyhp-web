@@ -1,19 +1,20 @@
 import Link from "next/link";
 import { ShoppingBag, User } from "lucide-react";
 import { getSession } from "@/lib/session";
-import { getLocale, t } from "@/lib/i18n";
+import { getLocale, t, tMany } from "@/lib/i18n";
 import { resolveCartOwnerForRead } from "@/lib/cart-session";
 import { getCartItemCount } from "@/server/services/cart-service";
 import { listShopCategories } from "@/server/services/category-service";
 import { LogoutButton } from "@/components/auth/LogoutButton";
 import { Button } from "@/components/ui/Button";
-import { Wordmark } from "@/components/brand/Logo";
+import { LogoHorizontal } from "@/components/brand/Logo";
 import { MobileNav } from "@/components/layout/MobileNav";
 import { CategoryMenu } from "@/components/layout/CategoryMenu";
 import { LanguageSwitcher } from "@/components/layout/LanguageSwitcher";
 import { AccountMenu } from "@/components/layout/AccountMenu";
 import { HeaderShell } from "@/components/layout/HeaderShell";
 import { MainNav } from "@/components/layout/MainNav";
+import { SITE_NAME } from "@/lib/site";
 
 // Enlaces estáticos del sitio — a diferencia de las categorías (dinámicas,
 // ver CategoryMenu), estas páginas no dependen de datos del catálogo.
@@ -70,6 +71,7 @@ export async function SiteHeader() {
     staticLabels,
     promoTitle,
     promoText,
+    labels,
   ] = await Promise.all([
     t("Tienda"),
     t("Carrito"),
@@ -91,6 +93,7 @@ export async function SiteHeader() {
     Promise.all(STATIC_NAV_LINKS.map((link) => t(link.label))),
     t("Colección completa"),
     t("Bolsos, calzado, ropa y accesorios en un solo lugar."),
+    tMany({ home: "Inicio", mainNav: "Principal", openMenu: "Abrir menú", closeMenu: "Cerrar menú" }),
   ]);
 
   const navLinks = [
@@ -133,14 +136,15 @@ export async function SiteHeader() {
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-6 px-4 sm:px-6 lg:grid lg:h-20 lg:grid-cols-[1fr_auto_1fr]">
         <Link
           href="/"
-          aria-label="Glam Luxe by HJ — Inicio"
+          aria-label={`${SITE_NAME} — ${labels.home}`}
           className="w-fit shrink-0 text-foreground transition-opacity duration-300 hover:opacity-75"
         >
-          <Wordmark className="h-10 w-auto lg:h-12" />
+          <LogoHorizontal className="h-9 w-auto lg:h-11" />
         </Link>
 
         <div className="hidden lg:block">
           <MainNav
+            label={labels.mainNav}
             links={navLinks}
             categoriesSlot={
               <CategoryMenu
@@ -188,6 +192,7 @@ export async function SiteHeader() {
               label: category.name,
             }))}
             categoriesLabel={categoriesLabel}
+            labels={{ open: labels.openMenu, close: labels.closeMenu, home: labels.home }}
             authSlot={mobileAuthSlot}
           />
         </div>

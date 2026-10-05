@@ -1,12 +1,14 @@
 import type { Metadata } from "next";
+import { t } from "@/lib/i18n";
 import { PolicyPage } from "@/components/policies/PolicyPage";
 
-export const metadata: Metadata = {
-  title: "Política de privacidad",
-  description:
-    "Qué datos recopila Glam Luxe by HJ, para qué los usamos, con quién los compartimos y cómo ejercer tus derechos.",
-  alternates: { canonical: "/politicas/privacidad" },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const [title, description] = await Promise.all([
+    t("Política de privacidad"),
+    t("Qué datos recopila Glam Luxe by HJ, para qué los usamos, con quién los compartimos y cómo ejercer tus derechos."),
+  ]);
+  return { title, description, alternates: { canonical: "/politicas/privacidad" } };
+}
 
 export default function PrivacyPage() {
   return (

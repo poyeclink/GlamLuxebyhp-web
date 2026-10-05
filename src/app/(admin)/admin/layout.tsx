@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { AdminNavLinks } from "@/components/admin/AdminNavLinks";
-import { Wordmark } from "@/components/brand/Logo";
+import { LogoHorizontal } from "@/components/brand/Logo";
 import { AdminMobileNav } from "@/components/admin/AdminMobileNav";
 import { AdminUserCard } from "@/components/admin/AdminUserCard";
 import { getSession } from "@/lib/session";
@@ -29,7 +29,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
         <aside className="hidden shrink-0 flex-col bg-inverse text-inverse-foreground [--logo-accent:var(--inverse-accent)] md:sticky md:top-0 md:flex md:h-screen md:w-68">
           <div className="flex flex-col gap-2 px-6 pb-6 pt-8">
             <Link href="/admin" aria-label="Panel admin" className="w-fit">
-              <Wordmark className="h-11 w-auto" title="" />
+              <LogoHorizontal className="h-auto w-full max-w-52" title="" />
             </Link>
             <span className="eyebrow text-inverse-muted">Panel administrativo</span>
           </div>

@@ -2,12 +2,13 @@ import Image from "next/image";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import type { StockImage } from "@/lib/stock-images";
+import { t } from "@/lib/i18n";
 
 // Altura compartida por todos los heroes (Home incluida) para que el sitio
 // se sienta una sola pieza al navegar entre páginas.
 export const HERO_HEIGHT = "min-h-[34rem] lg:h-[40rem] lg:min-h-0";
 
-export function PageHero({
+export async function PageHero({
   eyebrow,
   title,
   description,
@@ -25,9 +26,11 @@ export function PageHero({
   overlapBottom?: boolean;
   children?: React.ReactNode;
 }) {
+  const alt = await t(image.alt);
+
   return (
     <section className={cn("relative isolate flex items-end overflow-hidden bg-inverse text-inverse-foreground", HERO_HEIGHT)}>
-      <Image src={image.src} alt={image.alt} fill priority sizes="100vw" className="-z-20 object-cover" />
+      <Image src={image.src} alt={alt} fill priority sizes="100vw" className="-z-20 object-cover" />
       {/* Degradado lateral + inferior: el texto siempre cae sobre Negro Noche
           legible, sin importar qué tan clara sea la foto. */}
       <div

@@ -4,7 +4,6 @@ import { useActionState } from "react";
 import { Radio } from "@/components/ui/Radio";
 import { FormError } from "@/components/ui/FormError";
 import { SubmitButton } from "@/components/ui/SubmitButton";
-import { PAYMENT_METHOD_OPTIONS } from "@/server/services/payment-service";
 import {
   selectCheckoutPaymentMethodAction,
   type CheckoutPaymentActionState,
@@ -15,9 +14,15 @@ const initialState: CheckoutPaymentActionState = {};
 export function PaymentMethodForm({
   addressId,
   termsAcceptedAt,
+  options,
+  submitLabel,
+  pendingLabel,
 }: {
   addressId: string;
   termsAcceptedAt: string;
+  options: { value: string; label: string }[];
+  submitLabel: string;
+  pendingLabel: string;
 }) {
   const [state, formAction] = useActionState(selectCheckoutPaymentMethodAction, initialState);
 
@@ -27,13 +32,20 @@ export function PaymentMethodForm({
       <input type="hidden" name="termsAcceptedAt" value={termsAcceptedAt} />
 
       <div className="flex flex-col gap-2">
-        {PAYMENT_METHOD_OPTIONS.map((option) => (
-          <Radio key={option.value} name="paymentMethod" value={option.value} label={option.label} />
+        {options.map((option) => (
+          <Radio
+            key={option.value}
+            name="paymentMethod"
+            value={option.value}
+            label={option.label}
+          />
         ))}
       </div>
 
       <FormError message={state.error} />
-      <SubmitButton className="sm:w-auto">Confirmar pedido</SubmitButton>
+      <SubmitButton className="sm:w-auto" pendingLabel={pendingLabel}>
+        {submitLabel}
+      </SubmitButton>
     </form>
   );
 }

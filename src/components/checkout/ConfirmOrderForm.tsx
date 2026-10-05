@@ -14,10 +14,14 @@ export function ConfirmOrderForm({
   addressId,
   termsAcceptedAt,
   paymentMethod,
+  submitLabel,
+  pendingLabel,
 }: {
   addressId: string;
   termsAcceptedAt: string;
   paymentMethod: string;
+  submitLabel: string;
+  pendingLabel: string;
 }) {
   const [state, formAction] = useActionState(confirmCheckoutOrderAction, initialState);
 
@@ -27,7 +31,9 @@ export function ConfirmOrderForm({
       <input type="hidden" name="termsAcceptedAt" value={termsAcceptedAt} />
       <input type="hidden" name="paymentMethod" value={paymentMethod} />
       <FormError message={state.error} />
-      <SubmitButton className="sm:w-auto">Confirmar pedido</SubmitButton>
+      <SubmitButton className="sm:w-auto" pendingLabel={pendingLabel}>
+        {submitLabel}
+      </SubmitButton>
     </form>
   );
 }

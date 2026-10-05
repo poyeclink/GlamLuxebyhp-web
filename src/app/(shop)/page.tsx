@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight, BadgeCheck, CalendarClock, ShieldCheck } from "lucide-react";
+import { SelloChrome } from "@/components/brand/Logo";
 import { ProductCard } from "@/components/shop/ProductCard";
 import { Button } from "@/components/ui/Button";
 import { SectionHeading } from "@/components/marketing/SectionHeading";
@@ -71,6 +72,8 @@ export default async function HomePage() {
   const [copy, navNames, topNames, latestItems, categoryItems] = await Promise.all([
     tMany({
       heroEyebrow: "Ropa, bolsos y accesorios",
+      heroAlt: STOCK_IMAGES.editorial.alt,
+      siteDescription: SITE_DESCRIPTION,
       heroTitleA: "El lujo que se nota,",
       heroTitleB: "al precio que buscas",
       heroText: "Piezas de alta calidad, seleccionadas una por una. Elige la tuya y recíbela en casa.",
@@ -122,9 +125,9 @@ export default async function HomePage() {
           "@context": "https://schema.org",
           "@type": "OnlineStore",
           name: SITE_NAME,
-          description: SITE_DESCRIPTION,
+          description: copy.siteDescription,
           url: SITE_URL,
-          logo: `${SITE_URL}/brand/emblem-light.svg`,
+          logo: `${SITE_URL}/icons/icon-512.png`,
           sameAs: [CONTACT.instagram, CONTACT.facebook, CONTACT.tiktok].filter(Boolean),
         }}
       />
@@ -135,7 +138,7 @@ export default async function HomePage() {
         <div className="absolute inset-0 -z-10 overflow-hidden lg:left-1/3">
           <Image
             src={STOCK_IMAGES.editorial.src}
-            alt={STOCK_IMAGES.editorial.alt}
+            alt={copy.heroAlt}
             fill
             priority
             sizes="(min-width: 1024px) 67vw, 100vw"
@@ -148,7 +151,7 @@ export default async function HomePage() {
         />
         <div className="mx-auto flex w-full max-w-7xl flex-col items-start gap-5 px-4 sm:px-6">
           <p className="eyebrow animate-fade-up text-inverse-accent">{copy.heroEyebrow}</p>
-          <h1 className="max-w-2xl font-display text-4xl leading-[1.05] sm:text-6xl">
+          <h1 className="max-w-3xl font-display text-4xl leading-[1.05] sm:text-6xl">
             <span className="block overflow-hidden pb-[0.08em]">
               <span className="block animate-rise [animation-delay:80ms]">{copy.heroTitleA}</span>
             </span>{" "}
@@ -228,7 +231,8 @@ export default async function HomePage() {
 
       <section className="bg-inverse text-inverse-foreground">
         <div className="mx-auto flex max-w-7xl flex-col gap-12 px-4 py-16 sm:px-6 sm:py-20">
-          <p className="mx-auto max-w-3xl text-center font-display text-3xl leading-tight sm:text-4xl">
+          <SelloChrome title="" className="mx-auto h-32 w-32 sm:h-40 sm:w-40" />
+          <p className="mx-auto -mt-4 max-w-3xl text-center font-display text-3xl leading-tight sm:text-4xl">
             “{copy.promiseQuote}”
           </p>
           <ul className="grid gap-8 sm:grid-cols-3">

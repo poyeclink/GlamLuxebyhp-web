@@ -13,11 +13,13 @@ export function Modal({
   open,
   onClose,
   title,
+  closeLabel = "Cerrar",
   children,
 }: {
   open: boolean;
   onClose: () => void;
   title: string;
+  closeLabel?: string;
   children: React.ReactNode;
 }) {
   const closeButtonRef = useRef<HTMLButtonElement>(null);
@@ -125,7 +127,7 @@ export function Modal({
           <button
             ref={closeButtonRef}
             type="button"
-            aria-label="Cerrar"
+            aria-label={closeLabel}
             onClick={onClose}
             className="flex h-8 w-8 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
           >

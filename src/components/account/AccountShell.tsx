@@ -2,6 +2,7 @@ import Link from "next/link";
 import { LogOut, MapPin, Package, User } from "lucide-react";
 import { logoutAction } from "@/server/actions/auth-actions";
 import { cn } from "@/lib/utils";
+import { t, tMany } from "@/lib/i18n";
 
 const ACCOUNT_LINKS = [
   { key: "perfil", href: "/perfil", label: "Mi perfil", icon: User },
@@ -14,7 +15,7 @@ const tabClass =
 
 // Server Component: la sección activa la pasa cada página (no hace falta
 // usePathname), y el banner es el mismo en perfil, pedidos y direcciones.
-export function AccountShell({
+export async function AccountShell({
   name,
   active,
   children,
@@ -23,6 +24,11 @@ export function AccountShell({
   active: (typeof ACCOUNT_LINKS)[number]["key"];
   children: React.ReactNode;
 }) {
+  const [copy, linkLabels] = await Promise.all([
+    tMany({ account: "Mi cuenta", hello: "Hola", logout: "Cerrar sesión" }),
+    Promise.all(ACCOUNT_LINKS.map((link) => t(link.label))),
+  ]);
+
   return (
     <div className="mx-auto flex w-full max-w-7xl flex-col gap-10 p-3 pb-20 sm:p-4 sm:pb-24">
       <div className="relative isolate overflow-hidden rounded-[2rem] bg-inverse px-6 pb-6 pt-10 text-inverse-foreground sm:px-10 sm:pt-12">
@@ -35,16 +41,16 @@ export function AccountShell({
             {name.charAt(0).toUpperCase()}
           </span>
           <div className="flex flex-col gap-1">
-            <span className="eyebrow text-inverse-accent">Mi cuenta</span>
-            <h1 className="font-display text-3xl sm:text-4xl">Hola, {name.split(" ")[0]}</h1>
+            <span className="eyebrow text-inverse-accent">{copy.account}</span>
+            <h1 className="font-display text-3xl sm:text-4xl">{copy.hello}, {name.split(" ")[0]}</h1>
           </div>
         </div>
 
         <nav
-          aria-label="Mi cuenta"
+          aria-label={copy.account}
           className="mt-10 flex gap-2 overflow-x-auto border-t border-inverse-border pt-5 [scrollbar-width:none]"
         >
-          {ACCOUNT_LINKS.map(({ key, href, label, icon: Icon }) => (
+          {ACCOUNT_LINKS.map(({ key, href, icon: Icon }, index) => (
             <Link
               key={key}
               href={href}
@@ -57,7 +63,7 @@ export function AccountShell({
               )}
             >
               <Icon className="h-4 w-4" aria-hidden="true" />
-              {label}
+              {linkLabels[index]}
             </Link>
           ))}
           <form action={logoutAction} className="ml-auto">
@@ -69,7 +75,7 @@ export function AccountShell({
               )}
             >
               <LogOut className="h-4 w-4" aria-hidden="true" />
-              Cerrar sesión
+              {copy.logout}
             </button>
           </form>
         </nav>

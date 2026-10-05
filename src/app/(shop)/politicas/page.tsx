@@ -2,15 +2,16 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowRight, FileText, RotateCcw, ShieldCheck } from "lucide-react";
 import { PageHero } from "@/components/marketing/PageHero";
-import { tMany } from "@/lib/i18n";
+import { t, tMany } from "@/lib/i18n";
 import { STOCK_IMAGES } from "@/lib/stock-images";
 
-export const metadata: Metadata = {
-  title: "Políticas y términos",
-  description:
-    "Términos y condiciones, política de privacidad y política de devoluciones de Glam Luxe by HJ.",
-  alternates: { canonical: "/politicas" },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const [title, description] = await Promise.all([
+    t("Políticas y términos"),
+    t("Términos y condiciones, política de privacidad y política de devoluciones de Glam Luxe by HJ."),
+  ]);
+  return { title, description, alternates: { canonical: "/politicas" } };
+}
 
 export default async function PoliciesIndexPage() {
   const c = await tMany({

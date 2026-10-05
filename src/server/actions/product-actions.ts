@@ -1,7 +1,7 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, updateTag } from "next/cache";
 import { z } from "zod";
 import { requireAdmin } from "@/lib/session";
 import {
@@ -16,6 +16,7 @@ import {
   assertValidImageFile,
 } from "@/server/services/product-image-service";
 import { createVariant } from "@/server/services/product-variant-service";
+import { SHOP_CATEGORIES_TAG } from "@/server/services/category-service";
 
 export type ProductActionState = {
   error?: string;
@@ -126,6 +127,7 @@ export async function createProductAction(
   }
 
   revalidatePath("/admin/productos");
+  updateTag(SHOP_CATEGORIES_TAG);
   if (creationPartiallyFailed) {
     revalidatePath(`/admin/productos/${product.id}/editar`);
     redirect(`/admin/productos/${product.id}/editar`);
@@ -153,6 +155,7 @@ export async function updateProductAction(
   }
 
   revalidatePath("/admin/productos");
+  updateTag(SHOP_CATEGORIES_TAG);
   revalidatePath(`/admin/productos/${id}/editar`);
   redirect("/admin/productos");
 }
@@ -171,5 +174,6 @@ export async function deleteProductAction(
   }
 
   revalidatePath("/admin/productos");
+  updateTag(SHOP_CATEGORIES_TAG);
   return {};
 }

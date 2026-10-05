@@ -4,7 +4,7 @@ import { listShopCategories } from "@/server/services/category-service";
 import { WHOLESALE_ITEM_THRESHOLD } from "@/server/services/cart-service";
 import { t, tMany } from "@/lib/i18n";
 import { CONTACT, SITE_NAME, whatsappUrl } from "@/lib/site";
-import { Emblem, Wordmark } from "@/components/brand/Logo";
+import { Sello, Wordmark } from "@/components/brand/Logo";
 import { Button } from "@/components/ui/Button";
 import { InstallAppCard } from "@/components/layout/InstallAppCard";
 import {
@@ -120,6 +120,7 @@ export async function SiteFooter() {
       appIosTitle: "Instala la app en tu iPhone",
       appIosStep1: "Toca el botón Compartir de Safari.",
       appIosStep2: "Elige “Agregar a pantalla de inicio”.",
+      home: "Inicio",
     }),
     Promise.all(visibleCategories.map((category) => t(category.name))),
     Promise.all(COMPANY_LINKS.map((link) => t(link.label))),
@@ -169,10 +170,10 @@ export async function SiteFooter() {
             <div className="flex items-center gap-5 lg:flex-col lg:items-start lg:gap-6">
               <Link
                 href="/"
-                aria-label={`${SITE_NAME} — Inicio`}
+                aria-label={`${SITE_NAME} — ${copy.home}`}
                 className="shrink-0 transition-transform duration-500 hover:scale-105"
               >
-                <Emblem className="h-16 w-16 sm:h-20 sm:w-20 lg:h-24 lg:w-24" title="" />
+                <Sello className="h-20 w-20 sm:h-24 sm:w-24 lg:h-28 lg:w-28" title="" />
               </Link>
               <p className="max-w-xs text-sm leading-relaxed text-inverse-muted">{copy.tagline}</p>
             </div>

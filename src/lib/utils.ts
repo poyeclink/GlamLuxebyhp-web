@@ -14,10 +14,14 @@ export function formatCurrency(amount: number) {
   return currencyFormatter.format(amount);
 }
 
-const dateFormatter = new Intl.DateTimeFormat("es-ES", { dateStyle: "medium" });
+const dateFormatters = {
+  es: new Intl.DateTimeFormat("es-ES", { dateStyle: "medium" }),
+  en: new Intl.DateTimeFormat("en-US", { dateStyle: "medium" }),
+};
 
-export function formatDate(date: Date) {
-  return dateFormatter.format(date);
+// El admin no pasa locale (siempre en español); la tienda pasa el de getLocale().
+export function formatDate(date: Date, locale: "es" | "en" = "es") {
+  return dateFormatters[locale].format(date);
 }
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;

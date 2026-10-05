@@ -7,7 +7,7 @@ import { ShopFilterForm } from "@/components/shop/ShopFilterForm";
 import { ShopToolbar } from "@/components/shop/ShopToolbar";
 import { Spotlight } from "@/components/motion/Spotlight";
 import { Marquee } from "@/components/motion/Marquee";
-import { Emblem } from "@/components/brand/Logo";
+import { Sello } from "@/components/brand/Logo";
 import { Button } from "@/components/ui/Button";
 import { listShopCategories } from "@/server/services/category-service";
 import {
@@ -16,9 +16,29 @@ import {
   toProductCardItem,
 } from "@/server/services/product-service";
 import { cn, filterPillClass } from "@/lib/utils";
-import { countActiveFilters, parseShopFilters, shopHref } from "@/lib/shop-filters";
+import {
+  SORT_OPTIONS,
+  countActiveFilters,
+  parseShopFilters,
+  shopHref,
+  type ShopSort,
+} from "@/lib/shop-filters";
+import { t, tMany } from "@/lib/i18n";
 
 type ShopCategory = Awaited<ReturnType<typeof listShopCategories>>[number];
+
+async function listTranslatedCategories() {
+  const categories = await listShopCategories();
+  return Promise.all(
+    categories.map(async (category) => ({
+      ...category,
+      name: await t(category.name),
+      children: await Promise.all(
+        category.children.map(async (child) => ({ ...child, name: await t(child.name) })),
+      ),
+    })),
+  );
+}
 
 // El slug puede ser de una categoría principal o de una subcategoría; en ambos
 // casos se devuelve la principal, para mostrar la fila de subcategorías.
@@ -34,20 +54,28 @@ function findCategory(categories: ShopCategory[], slug?: string) {
 export async function generateMetadata({ searchParams }: PageProps<"/tienda">): Promise<Metadata> {
   const { categoria } = await searchParams;
   const match =
-    typeof categoria === "string" ? findCategory(await listShopCategories(), categoria) : undefined;
+    typeof categoria === "string"
+      ? findCategory(await listTranslatedCategories(), categoria)
+      : undefined;
   const category = match && {
     slug: match.active.slug,
     name: match.sub ? `${match.root.name} · ${match.sub.name}` : match.root.name,
   };
+  const copy = await tMany({
+    shop: "Tienda",
+    categoryDescription:
+      "Compra {name} de alta calidad en Glam Luxe by HJ, al detalle o con precio mayorista.",
+    description: "Ropa, bolsos y accesorios de alta calidad, al detalle o por mayor.",
+  });
   return category
     ? {
-        title: `${category.name} — Tienda`,
-        description: `Compra ${category.name.toLowerCase()} de alta calidad en Glam Luxe by HJ, al detalle o con precio mayorista.`,
+        title: `${category.name} — ${copy.shop}`,
+        description: copy.categoryDescription.replace("{name}", category.name.toLowerCase()),
         alternates: { canonical: `/tienda?categoria=${category.slug}` },
       }
     : {
-        title: "Tienda",
-        description: "Ropa, bolsos y accesorios de alta calidad, al detalle o por mayor.",
+        title: copy.shop,
+        description: copy.description,
         alternates: { canonical: "/tienda" },
       };
 }
@@ -58,35 +86,96 @@ const pillRowClass =
 export default async function TiendaPage({ searchParams }: PageProps<"/tienda">) {
   const filters = parseShopFilters(await searchParams);
 
-  const [categories, { items, total }, options] = await Promise.all([
-    listShopCategories(),
+  const [categories, { items, total }, options, copy, filterCopy, sortLabels] = await Promise.all([
+    listTranslatedCategories(),
     searchShopProducts(filters),
     getShopFilterOptions(filters),
+    tMany({
+      breadcrumb: "Ruta",
+      home: "Inicio",
+      shop: "Tienda",
+      resultsFor: "Resultados para",
+      discover: "Descubre",
+      collection: "la colección",
+      searchIn: "Buscar en {name}...",
+      searchPlaceholder: "Buscar bolsos, zapatos, lentes...",
+      searchLabel: "Buscar productos",
+      search: "Buscar",
+      piece: "pieza",
+      pieces: "piezas",
+      explore: "Explorar",
+      all: "Todas",
+      allIn: "Todo en {name}",
+      products: "Productos",
+      noResults: "Sin resultados",
+      showing: "Mostrando {count} de {total}",
+      searchChip: "Búsqueda: {q}",
+      remove: "Quitar",
+      clearAll: "Limpiar todo",
+      categoryNotFound: "No encontramos esa categoría",
+      noMatches: "No hay piezas con estos filtros",
+      emptyHint: "Prueba con otra búsqueda, quita algún filtro o explora la colección completa.",
+      viewAll: "Ver toda la tienda",
+      seen: "Has visto {count} de {total} piezas",
+      more: "Ver más piezas",
+    }),
+    tMany({
+      sortBy: "Ordenar por",
+      price: "Precio individual",
+      from: "Desde",
+      to: "Hasta",
+      size: "Talla",
+      availability: "Disponibilidad",
+      inStock: "Solo con stock",
+      apply: "Aplicar filtros",
+      clear: "Limpiar",
+      filters: "Filtros",
+      sort: "Ordenar",
+      modalTitle: "Filtrar y ordenar",
+      close: "Cerrar",
+    }),
+    tMany(
+      Object.fromEntries(SORT_OPTIONS.map((option) => [option.value, option.label])) as Record<
+        ShopSort,
+        string
+      >,
+    ),
   ]);
+  const shopCopy = { ...filterCopy, sortLabels };
 
   const match = findCategory(categories, filters.categoria);
   const products = items.map(toProductCardItem);
   const hasMore = products.length < total;
 
-  const titleA = filters.q ? "Resultados para" : match?.sub ? match.root.name : "Descubre";
-  const titleB = filters.q ? `“${filters.q}”` : (match?.active.name ?? "la colección");
+  const titleA = filters.q ? copy.resultsFor : match?.sub ? match.root.name : copy.discover;
+  const titleB = filters.q ? `“${filters.q}”` : (match?.active.name ?? copy.collection);
 
   const chips = [
     ...(filters.q
-      ? [{ label: `Búsqueda: ${filters.q}`, href: shopHref(filters, { q: undefined }) }]
+      ? [
+          {
+            label: copy.searchChip.replace("{q}", filters.q),
+            href: shopHref(filters, { q: undefined }),
+          },
+        ]
       : []),
     ...(filters.min !== undefined
-      ? [{ label: `Desde $${filters.min}`, href: shopHref(filters, { min: undefined }) }]
+      ? [
+          {
+            label: `${filterCopy.from} $${filters.min}`,
+            href: shopHref(filters, { min: undefined }),
+          },
+        ]
       : []),
     ...(filters.max !== undefined
-      ? [{ label: `Hasta $${filters.max}`, href: shopHref(filters, { max: undefined }) }]
+      ? [{ label: `${filterCopy.to} $${filters.max}`, href: shopHref(filters, { max: undefined }) }]
       : []),
     ...filters.tallas.map((talla) => ({
-      label: `Talla ${talla}`,
+      label: `${filterCopy.size} ${talla}`,
       href: shopHref(filters, { tallas: filters.tallas.filter((item) => item !== talla) }),
     })),
     ...(filters.disponible
-      ? [{ label: "Solo con stock", href: shopHref(filters, { disponible: false }) }]
+      ? [{ label: filterCopy.inStock, href: shopHref(filters, { disponible: false }) }]
       : []),
   ];
   const clearAllHref = shopHref(filters, {
@@ -101,22 +190,21 @@ export default async function TiendaPage({ searchParams }: PageProps<"/tienda">)
     <>
       <section className="bg-inverse text-inverse-foreground [--logo-accent:var(--inverse-accent)]">
         <Spotlight className="bg-inverse">
-          <Emblem
-            aria-hidden="true"
+          <Sello
             title=""
             className="pointer-events-none absolute -right-28 top-1/2 h-[34rem] w-[34rem] -translate-y-1/2 animate-spin-slow text-inverse-foreground opacity-[0.06] motion-reduce:animate-none"
           />
           <div className="relative mx-auto flex max-w-7xl flex-col gap-8 px-4 py-14 sm:px-6 sm:py-20">
             <nav
-              aria-label="Ruta"
+              aria-label={copy.breadcrumb}
               className="eyebrow flex items-center gap-2 text-[0.625rem] text-inverse-muted"
             >
               <Link href="/" className="hover:text-inverse-foreground">
-                Inicio
+                {copy.home}
               </Link>
               <span aria-hidden="true">/</span>
               <Link href="/tienda" className="hover:text-inverse-foreground">
-                Tienda
+                {copy.shop}
               </Link>
               {match?.sub && (
                 <>
@@ -155,13 +243,15 @@ export default async function TiendaPage({ searchParams }: PageProps<"/tienda">)
                 name="q"
                 defaultValue={filters.q}
                 placeholder={
-                  match ? `Buscar en ${match.active.name}...` : "Buscar bolsos, zapatos, lentes..."
+                  match
+                    ? copy.searchIn.replace("{name}", match.active.name)
+                    : copy.searchPlaceholder
                 }
-                aria-label="Buscar productos"
+                aria-label={copy.searchLabel}
                 className="h-11 min-w-0 flex-1 bg-transparent text-base text-inverse-foreground outline-none placeholder:text-inverse-muted"
               />
               <Button type="submit" variant="inverse" className="h-11 rounded-full px-6">
-                Buscar
+                {copy.search}
               </Button>
             </Form>
 
@@ -170,13 +260,13 @@ export default async function TiendaPage({ searchParams }: PageProps<"/tienda">)
                 <strong className="text-2xl font-semibold tabular-nums text-inverse-foreground">
                   {total}
                 </strong>{" "}
-                {total === 1 ? "pieza" : "piezas"}
+                {total === 1 ? copy.piece : copy.pieces}
               </span>
               <a
                 href="#productos"
                 className="group ml-auto hidden items-center gap-3 text-[0.6875rem] font-semibold uppercase tracking-[0.2em] text-inverse-foreground sm:flex"
               >
-                Explorar
+                {copy.explore}
                 <span className="flex h-10 w-10 items-center justify-center rounded-full border border-inverse-border transition-colors group-hover:border-inverse-accent group-hover:text-inverse-accent">
                   <ArrowDown className="h-4 w-4 animate-bounce motion-reduce:animate-none" />
                 </span>
@@ -204,7 +294,7 @@ export default async function TiendaPage({ searchParams }: PageProps<"/tienda">)
               scroll={false}
               className={filterPillClass(!filters.categoria)}
             >
-              Todas
+              {copy.all}
             </Link>
             {categories.map((category) => (
               <Link
@@ -225,7 +315,7 @@ export default async function TiendaPage({ searchParams }: PageProps<"/tienda">)
                 scroll={false}
                 className={cn(filterPillClass(!match.sub), "px-3 py-1 text-xs")}
               >
-                Todo en {match.root.name}
+                {copy.allIn.replace("{name}", match.root.name)}
               </Link>
               {match.root.children.map((child) => (
                 <Link
@@ -249,26 +339,31 @@ export default async function TiendaPage({ searchParams }: PageProps<"/tienda">)
               options={options}
               idPrefix="d"
               autoSubmit
+              copy={shopCopy}
             />
           </aside>
 
-          <section aria-label="Productos" className="flex min-w-0 flex-col gap-6">
+          <section aria-label={copy.products} className="flex min-w-0 flex-col gap-6">
             <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border pb-4">
               <p className="text-sm text-muted-foreground">
-                {total === 0 ? (
-                  "Sin resultados"
-                ) : (
-                  <>
-                    Mostrando <span className="font-medium text-foreground">{products.length}</span>{" "}
-                    de <span className="font-medium text-foreground">{total}</span>
-                  </>
-                )}
+                {total === 0
+                  ? copy.noResults
+                  : copy.showing.split(/(\{count\}|\{total\})/).map((part, index) =>
+                      part === "{count}" || part === "{total}" ? (
+                        <span key={index} className="font-medium text-foreground">
+                          {part === "{count}" ? products.length : total}
+                        </span>
+                      ) : (
+                        part
+                      ),
+                    )}
               </p>
               <div className="flex items-center gap-2">
                 <ShopToolbar
                   filters={filters}
                   options={options}
                   activeCount={countActiveFilters(filters)}
+                  copy={shopCopy}
                 />
               </div>
             </div>
@@ -283,7 +378,10 @@ export default async function TiendaPage({ searchParams }: PageProps<"/tienda">)
                     className="group flex items-center gap-1.5 rounded-full bg-accent-soft px-3 py-1.5 text-xs font-medium text-foreground transition-colors hover:bg-foreground hover:text-background"
                   >
                     {chip.label}
-                    <X className="h-3 w-3 opacity-60 group-hover:opacity-100" aria-label="Quitar" />
+                    <X
+                      className="h-3 w-3 opacity-60 group-hover:opacity-100"
+                      aria-label={copy.remove}
+                    />
                   </Link>
                 ))}
                 <Link
@@ -291,7 +389,7 @@ export default async function TiendaPage({ searchParams }: PageProps<"/tienda">)
                   scroll={false}
                   className="px-2 text-xs font-medium text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
                 >
-                  Limpiar todo
+                  {copy.clearAll}
                 </Link>
               </div>
             )}
@@ -300,15 +398,11 @@ export default async function TiendaPage({ searchParams }: PageProps<"/tienda">)
               <div className="flex flex-col items-center gap-4 rounded-2xl border border-dashed border-border px-6 py-16 text-center">
                 <Search className="h-8 w-8 text-muted-foreground/60" aria-hidden="true" />
                 <p className="font-display text-2xl text-foreground">
-                  {filters.categoria && !match
-                    ? "No encontramos esa categoría"
-                    : "No hay piezas con estos filtros"}
+                  {filters.categoria && !match ? copy.categoryNotFound : copy.noMatches}
                 </p>
-                <p className="max-w-sm text-sm text-muted-foreground">
-                  Prueba con otra búsqueda, quita algún filtro o explora la colección completa.
-                </p>
+                <p className="max-w-sm text-sm text-muted-foreground">{copy.emptyHint}</p>
                 <Link href="/tienda" scroll={false}>
-                  <Button variant="outline">Ver toda la tienda</Button>
+                  <Button variant="outline">{copy.viewAll}</Button>
                 </Link>
               </div>
             ) : (
@@ -328,11 +422,13 @@ export default async function TiendaPage({ searchParams }: PageProps<"/tienda">)
                   />
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  Has visto {products.length} de {total} piezas
+                  {copy.seen
+                    .replace("{count}", String(products.length))
+                    .replace("{total}", String(total))}
                 </p>
                 <Link href={shopHref(filters, { page: filters.page + 1 })} scroll={false}>
                   <Button variant="outline" size="lg">
-                    Ver más piezas
+                    {copy.more}
                   </Button>
                 </Link>
               </div>

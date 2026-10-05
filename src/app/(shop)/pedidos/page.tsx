@@ -5,24 +5,46 @@ import { Button } from "@/components/ui/Button";
 import { AccountSection, AccountShell } from "@/components/account/AccountShell";
 import { OrderStatusBadge } from "@/components/orders/OrderStatusBadge";
 import { requireCustomer } from "@/lib/session";
-import { listOrdersForCustomer } from "@/server/services/order-service";
+import { ORDER_STATUS_LABELS, listOrdersForCustomer } from "@/server/services/order-service";
 import { formatCurrency, formatDate } from "@/lib/utils";
+import { getLocale, t, tMany } from "@/lib/i18n";
 
-export const metadata: Metadata = { title: "Mis pedidos" };
+export async function generateMetadata(): Promise<Metadata> {
+  return { title: await t("Mis pedidos") };
+}
 
 export default async function OrderHistoryPage() {
   const session = await requireCustomer();
-  const orders = await listOrdersForCustomer(session.userId);
+  const [orders, locale, copy, statusLabels] = await Promise.all([
+    listOrdersForCustomer(session.userId),
+    getLocale(),
+    tMany({
+      title: "Mis pedidos",
+      emptyDescription: "Aquí verás el estado de cada compra.",
+      countOne: "{count} pedido en tu historial.",
+      countMany: "{count} pedidos en tu historial.",
+      emptyTitle: "Todavía no has hecho ningún pedido",
+      emptyText: "Explora la colección y arma tu primer pedido, al detalle o al por mayor.",
+      cta: "Ir a la tienda",
+      order: "Pedido #{id}",
+      itemOne: "artículo",
+      itemMany: "artículos",
+    }),
+    tMany(ORDER_STATUS_LABELS),
+  ]);
 
   return (
     <AccountShell name={session.name} active="pedidos">
       <AccountSection
         icon={Package}
-        title="Mis pedidos"
+        title={copy.title}
         description={
           orders.length === 0
-            ? "Aquí verás el estado de cada compra."
-            : `${orders.length} ${orders.length === 1 ? "pedido" : "pedidos"} en tu historial.`
+            ? copy.emptyDescription
+            : (orders.length === 1 ? copy.countOne : copy.countMany).replace(
+                "{count}",
+                String(orders.length),
+              )
         }
       >
         {orders.length === 0 ? (
@@ -30,15 +52,11 @@ export default async function OrderHistoryPage() {
             <span className="flex h-14 w-14 items-center justify-center rounded-full bg-accent-soft text-accent">
               <Package className="h-6 w-6" aria-hidden="true" />
             </span>
-            <p className="font-display text-2xl text-foreground">
-              Todavía no has hecho ningún pedido
-            </p>
-            <p className="max-w-sm text-sm text-muted-foreground">
-              Explora la colección y arma tu primer pedido, al detalle o al por mayor.
-            </p>
+            <p className="font-display text-2xl text-foreground">{copy.emptyTitle}</p>
+            <p className="max-w-sm text-sm text-muted-foreground">{copy.emptyText}</p>
             <Link href="/tienda" className="mt-2">
               <Button>
-                Ir a la tienda
+                {copy.cta}
                 <ArrowRight className="h-4 w-4" aria-hidden="true" />
               </Button>
             </Link>
@@ -56,15 +74,15 @@ export default async function OrderHistoryPage() {
                   </span>
                   <span className="flex min-w-0 flex-1 flex-col gap-0.5">
                     <span className="font-display text-lg text-foreground">
-                      Pedido #{order.id.slice(0, 8)}
+                      {copy.order.replace("{id}", order.id.slice(0, 8))}
                     </span>
                     <span className="text-xs text-muted-foreground">
-                      {formatDate(order.createdAt)} · {order._count.items}{" "}
-                      {order._count.items === 1 ? "artículo" : "artículos"}
+                      {formatDate(order.createdAt, locale)} · {order._count.items}{" "}
+                      {order._count.items === 1 ? copy.itemOne : copy.itemMany}
                     </span>
                   </span>
                   <span className="flex flex-col items-end gap-1.5 sm:flex-row sm:items-center sm:gap-6">
-                    <OrderStatusBadge status={order.status} />
+                    <OrderStatusBadge status={order.status} label={statusLabels[order.status]} />
                     <span className="text-sm font-medium text-foreground sm:w-24 sm:text-right">
                       {formatCurrency(Number(order.total))}
                     </span>

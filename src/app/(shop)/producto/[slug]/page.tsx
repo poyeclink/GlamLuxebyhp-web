@@ -14,11 +14,11 @@ import {
   listRelatedProducts,
   toProductCardItem,
 } from "@/server/services/product-service";
-import { categoryLabel } from "@/server/services/category-service";
 import { RESERVATION_DAYS } from "@/server/services/order-service";
 import { r2PublicUrl } from "@/lib/r2";
 import { SITE_NAME, SITE_URL } from "@/lib/site";
 import { JsonLd } from "@/components/seo/JsonLd";
+import { t, tMany } from "@/lib/i18n";
 
 const TRUST = [
   { icon: ShieldCheck, label: "Pago seguro" },
@@ -52,16 +52,23 @@ export async function generateMetadata({
   const { slug } = await params;
   const product = await getProduct(slug);
   if (!product) return {};
-  const description = product.description.slice(0, 160);
   const image = product.images.find((img) => img.isPrimary) ?? product.images[0];
+  const [title, fullDescription, alt] = await Promise.all([
+    t(product.name),
+    t(product.description),
+    t(image?.alt ?? product.name),
+  ]);
+  const description = fullDescription.slice(0, 160);
   return {
-    title: product.name,
+    title,
     description,
     alternates: { canonical: `/producto/${product.slug}` },
     openGraph: {
-      title: product.name,
+      title,
       description,
-      images: image ? [{ url: r2PublicUrl(image.key), alt: image.alt ?? product.name }] : undefined,
+      // Definir openGraph en la página reemplaza la imagen de marca del layout:
+      // sin foto propia se vuelve a poner, o el link compartido sale sin preview.
+      images: image ? [{ url: r2PublicUrl(image.key), alt }] : ["/opengraph-image"],
     },
   };
 }
@@ -71,11 +78,60 @@ export default async function ProductoPage({ params }: PageProps<"/producto/[slu
   const product = await getProduct(slug);
   if (!product) notFound();
 
-  const images = product.images.map((image) => ({
-    id: image.id,
-    url: r2PublicUrl(image.key),
-    alt: image.alt ?? product.name,
-  }));
+  const [
+    copy,
+    cartCopy,
+    relatedCopy,
+    name,
+    description,
+    categoryName,
+    parentName,
+    trust,
+    purchaseInfo,
+    images,
+  ] = await Promise.all([
+    tMany({
+      breadcrumb: "Ruta",
+      shop: "Tienda",
+      boxed: "Viene en caja",
+      description: "Descripción",
+    }),
+    tMany({
+      size: "Talla",
+      quantity: "Cantidad",
+      soldOut: "Agotado",
+      add: "Agregar al carrito",
+      added: "Agregado a tu carrito",
+      viewCart: "Ver carrito",
+      pending: "Agregando…",
+      decrease: "Disminuir cantidad",
+      increase: "Aumentar cantidad",
+    }),
+    tMany({
+      title: "Productos que te podrían interesar",
+      previous: "Ver anteriores",
+      next: "Ver siguientes",
+    }),
+    t(product.name),
+    t(product.description),
+    t(product.category.name),
+    product.category.parent ? t(product.category.parent.name) : undefined,
+    Promise.all(TRUST.map(async (item) => ({ ...item, label: await t(item.label) }))),
+    Promise.all(
+      PURCHASE_INFO.map(async (item) => ({
+        question: await t(item.question),
+        answer: await t(item.answer),
+      })),
+    ),
+    Promise.all(
+      product.images.map(async (image) => ({
+        id: image.id,
+        url: r2PublicUrl(image.key),
+        alt: await t(image.alt ?? product.name),
+      })),
+    ),
+  ]);
+  const categoryText = parentName ? `${parentName} › ${categoryName}` : categoryName;
   const initialIndex = Math.max(
     product.images.findIndex((image) => image.isPrimary),
     0,
@@ -93,23 +149,45 @@ export default async function ProductoPage({ params }: PageProps<"/producto/[slu
         data={{
           "@context": "https://schema.org",
           "@type": "Product",
-          name: product.name,
-          description: product.description,
+          name,
+          description,
+          sku: product.slug,
           image: images.map((image) => image.url),
-          category: categoryLabel(product.category),
+          category: categoryText,
           brand: { "@type": "Brand", name: SITE_NAME },
           offers: {
             "@type": "Offer",
             url: `${SITE_URL}/producto/${product.slug}`,
             priceCurrency: "USD",
             price: Number(product.individualPrice),
+            itemCondition: "https://schema.org/NewCondition",
             availability: inStock ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
+            seller: { "@type": "Organization", name: SITE_NAME },
           },
         }}
       />
-      <nav aria-label="Ruta" className="text-sm text-muted-foreground">
+      <JsonLd
+        data={{
+          "@context": "https://schema.org",
+          "@type": "BreadcrumbList",
+          itemListElement: [
+            { name: copy.shop, path: "/tienda" },
+            ...(product.category.parent
+              ? [{ name: parentName, path: `/tienda?categoria=${product.category.parent.slug}` }]
+              : []),
+            { name: categoryName, path: `/tienda?categoria=${product.category.slug}` },
+            { name, path: `/producto/${product.slug}` },
+          ].map((crumb, index) => ({
+            "@type": "ListItem",
+            position: index + 1,
+            name: crumb.name,
+            item: `${SITE_URL}${crumb.path}`,
+          })),
+        }}
+      />
+      <nav aria-label={copy.breadcrumb} className="text-sm text-muted-foreground">
         <Link href="/tienda" className="hover:text-foreground">
-          Tienda
+          {copy.shop}
         </Link>
         {product.category.parent && (
           <>
@@ -118,13 +196,13 @@ export default async function ProductoPage({ params }: PageProps<"/producto/[slu
               href={`/tienda?categoria=${product.category.parent.slug}`}
               className="hover:text-foreground"
             >
-              {product.category.parent.name}
+              {parentName}
             </Link>
           </>
         )}
         <span className="mx-2">/</span>
         <Link href={`/tienda?categoria=${product.category.slug}`} className="hover:text-foreground">
-          {product.category.name}
+          {categoryName}
         </Link>
       </nav>
 
@@ -132,9 +210,9 @@ export default async function ProductoPage({ params }: PageProps<"/producto/[slu
         <ImageGallery images={images} initialIndex={initialIndex} />
 
         <div className="flex flex-col gap-5">
-          <p className="eyebrow text-accent">{categoryLabel(product.category)}</p>
+          <p className="eyebrow text-accent">{categoryText}</p>
           <h1 className="font-display text-3xl leading-tight text-foreground sm:text-4xl">
-            {product.name}
+            {name}
           </h1>
           <PriceDual
             wholesalePrice={Number(product.wholesalePrice)}
@@ -144,7 +222,7 @@ export default async function ProductoPage({ params }: PageProps<"/producto/[slu
           {product.boxed ? (
             <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
               <Package className="h-4 w-4" />
-              Viene en caja
+              {copy.boxed}
             </div>
           ) : null}
 
@@ -153,12 +231,16 @@ export default async function ProductoPage({ params }: PageProps<"/producto/[slu
               productId={product.id}
               hasVariants={product.hasVariants}
               variants={product.variants}
+              copy={cartCopy}
             />
           </div>
 
           <ul className="grid grid-cols-3 gap-2 text-center text-xs text-muted-foreground">
-            {TRUST.map(({ icon: Icon, label }) => (
-              <li key={label} className="flex flex-col items-center gap-1.5 rounded-md bg-muted/60 px-2 py-3">
+            {trust.map(({ icon: Icon, label }) => (
+              <li
+                key={label}
+                className="flex flex-col items-center gap-1.5 rounded-md bg-muted/60 px-2 py-3"
+              >
                 <Icon className="h-5 w-5 text-accent" />
                 {label}
               </li>
@@ -167,14 +249,14 @@ export default async function ProductoPage({ params }: PageProps<"/producto/[slu
 
           <Accordion
             items={[
-              ...(product.description ? [{ question: "Descripción", answer: product.description }] : []),
-              ...PURCHASE_INFO,
+              ...(product.description ? [{ question: copy.description, answer: description }] : []),
+              ...purchaseInfo,
             ]}
           />
         </div>
       </div>
 
-      <RelatedProducts itemCount={relatedProducts.length}>
+      <RelatedProducts itemCount={relatedProducts.length} copy={relatedCopy}>
         {relatedProducts.map((product) => (
           <div key={product.slug} className="w-[45%] shrink-0 snap-start sm:w-[30%] lg:w-[22%]">
             <ProductCard product={product} />

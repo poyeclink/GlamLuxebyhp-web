@@ -71,21 +71,34 @@ export function ScrollReveal() {
     }
     window.addEventListener("beforeprint", revealAll);
 
-    const frame = requestAnimationFrame(() => {
-      for (const root of document.querySelectorAll("main, footer")) {
+    function scan(roots: Iterable<Element>) {
+      for (const root of roots) {
         const units: HTMLElement[] = [];
         collect(root, root.clientWidth, units);
         for (const unit of units) {
-          if (unit.getBoundingClientRect().top < window.innerHeight) continue;
+          if (pending.has(unit) || unit.getBoundingClientRect().top < window.innerHeight) continue;
           unit.style.opacity = "0";
           pending.add(unit);
           observer.observe(unit);
         }
       }
+    }
+
+    let frame = requestAnimationFrame(() => scan(document.querySelectorAll("main, footer")));
+
+    // Con loading.tsx la ruta cambia mientras se ve el esqueleto y la página
+    // real llega después por streaming: se vuelve a partir `main` cuando su
+    // contenido se reemplaza.
+    const main = document.querySelector("main");
+    const mutations = new MutationObserver(() => {
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(() => main && scan([main]));
     });
+    if (main) mutations.observe(main, { childList: true });
 
     return () => {
       cancelAnimationFrame(frame);
+      mutations.disconnect();
       window.removeEventListener("beforeprint", revealAll);
       revealAll();
     };

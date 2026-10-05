@@ -2,6 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { requireCustomer } from "@/lib/session";
+import { t } from "@/lib/i18n";
 import {
   createAddress,
   getAddressForEdit,
@@ -19,7 +20,7 @@ export async function createCheckoutAddressAction(
   const session = await requireCustomer();
 
   const parsed = await parseAddressInput(formData);
-  if ("error" in parsed) return parsed;
+  if ("error" in parsed) return { error: await t(parsed.error) };
 
   const address = await createAddress(session.userId, parsed.data);
   redirect(`/checkout/resumen?addressId=${address.id}`);
@@ -37,17 +38,18 @@ export async function acceptCheckoutTermsAction(
   if (cart.items.length === 0) redirect("/carrito");
 
   if (formData.get("termsAccepted") !== "on") {
-    return { error: "Debes aceptar los términos para continuar." };
+    return { error: await t("Debes aceptar los términos para continuar.") };
   }
 
   const addressId = formData.get("addressId");
-  if (typeof addressId !== "string") return { error: "Selecciona una dirección de envío." };
+  if (typeof addressId !== "string")
+    return { error: await t("Selecciona una dirección de envío.") };
 
   // Revalida dueño aquí (no confiar en el addressId de la página, que ya lo
   // validó, ni en el que viaje de vuelta en este POST): el mismo cuidado que
   // documenta CLAUDE.md para cualquier consumidor de este query param.
   const address = await getAddressForEdit(session.userId, addressId);
-  if (!address) return { error: "Esta dirección ya no está disponible." };
+  if (!address) return { error: await t("Esta dirección ya no está disponible.") };
 
   const termsAcceptedAt = new Date().toISOString();
   redirect(
@@ -67,22 +69,23 @@ export async function selectCheckoutPaymentMethodAction(
   if (cart.items.length === 0) redirect("/carrito");
 
   const addressId = formData.get("addressId");
-  if (typeof addressId !== "string") return { error: "Selecciona una dirección de envío." };
+  if (typeof addressId !== "string")
+    return { error: await t("Selecciona una dirección de envío.") };
 
   // termsAcceptedAt solo viaja como señal de "paso 2 completado" (ver
   // CLAUDE.md) — si falta, el cliente saltó el paso de términos.
   const termsAcceptedAt = formData.get("termsAcceptedAt");
   if (typeof termsAcceptedAt !== "string" || termsAcceptedAt.length === 0) {
-    return { error: "Debes completar el paso anterior del checkout." };
+    return { error: await t("Debes completar el paso anterior del checkout.") };
   }
 
   const paymentMethod = formData.get("paymentMethod");
   if (!isPaymentMethod(paymentMethod)) {
-    return { error: "Selecciona un método de pago." };
+    return { error: await t("Selecciona un método de pago.") };
   }
 
   const address = await getAddressForEdit(session.userId, addressId);
-  if (!address) return { error: "Esta dirección ya no está disponible." };
+  if (!address) return { error: await t("Esta dirección ya no está disponible.") };
 
   redirect(
     `/checkout/confirmar?addressId=${address.id}` +
@@ -103,20 +106,21 @@ export async function confirmCheckoutOrderAction(
   if (cart.items.length === 0) redirect("/carrito");
 
   const addressId = formData.get("addressId");
-  if (typeof addressId !== "string") return { error: "Selecciona una dirección de envío." };
+  if (typeof addressId !== "string")
+    return { error: await t("Selecciona una dirección de envío.") };
 
   const termsAcceptedAt = formData.get("termsAcceptedAt");
   if (typeof termsAcceptedAt !== "string" || termsAcceptedAt.length === 0) {
-    return { error: "Debes completar el paso anterior del checkout." };
+    return { error: await t("Debes completar el paso anterior del checkout.") };
   }
 
   const paymentMethod = formData.get("paymentMethod");
   if (!isPaymentMethod(paymentMethod)) {
-    return { error: "Selecciona un método de pago." };
+    return { error: await t("Selecciona un método de pago.") };
   }
 
   const address = await getAddressForEdit(session.userId, addressId);
-  if (!address) return { error: "Esta dirección ya no está disponible." };
+  if (!address) return { error: await t("Esta dirección ya no está disponible.") };
 
   let order;
   try {
@@ -135,7 +139,7 @@ export async function confirmCheckoutOrderAction(
       paymentMethod,
     });
   } catch (error) {
-    if (error instanceof OrderError) return { error: error.message };
+    if (error instanceof OrderError) return { error: await t(error.message) };
     throw error;
   }
 

@@ -1,13 +1,15 @@
 import type { Metadata } from "next";
+import { t } from "@/lib/i18n";
 import { PolicyPage } from "@/components/policies/PolicyPage";
 import { WHOLESALE_ITEM_THRESHOLD } from "@/server/services/cart-service";
 
-export const metadata: Metadata = {
-  title: "Términos y condiciones",
-  description:
-    "Condiciones de compra en Glam Luxe by HJ: precios, precio mayorista, reservas, pagos y envíos.",
-  alternates: { canonical: "/politicas/terminos" },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const [title, description] = await Promise.all([
+    t("Términos y condiciones"),
+    t("Condiciones de compra en Glam Luxe by HJ: precios, precio mayorista, reservas, pagos y envíos."),
+  ]);
+  return { title, description, alternates: { canonical: "/politicas/terminos" } };
+}
 
 export default function TermsPage() {
   return (

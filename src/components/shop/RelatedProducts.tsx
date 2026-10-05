@@ -9,7 +9,15 @@ import { cn } from "@/lib/utils";
 // usa PriceDual, que ahora depende de next/headers (i18n) — importarlo desde
 // este Client Component metería ese código server-only en el bundle del
 // navegador y rompería la página con un error de build.
-export function RelatedProducts({ itemCount, children }: { itemCount: number; children: ReactNode }) {
+export function RelatedProducts({
+  itemCount,
+  copy,
+  children,
+}: {
+  itemCount: number;
+  copy: { title: string; previous: string; next: string };
+  children: ReactNode;
+}) {
   const scrollerRef = useRef<HTMLDivElement>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(false);
@@ -44,13 +52,11 @@ export function RelatedProducts({ itemCount, children }: { itemCount: number; ch
   return (
     <section className="flex flex-col gap-4 border-t border-border pt-10">
       <div className="flex items-center justify-between">
-        <h2 className="font-display text-xl text-foreground">
-          Productos que te podrían interesar
-        </h2>
+        <h2 className="font-display text-xl text-foreground">{copy.title}</h2>
         <div className="flex gap-2">
           <button
             type="button"
-            aria-label="Ver anteriores"
+            aria-label={copy.previous}
             onClick={() => scrollByPage(-1)}
             disabled={!canScrollLeft}
             className="flex h-8 w-8 items-center justify-center rounded-full border border-border text-muted-foreground transition-colors hover:border-foreground hover:text-foreground disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:border-border disabled:hover:text-muted-foreground"
@@ -59,7 +65,7 @@ export function RelatedProducts({ itemCount, children }: { itemCount: number; ch
           </button>
           <button
             type="button"
-            aria-label="Ver siguientes"
+            aria-label={copy.next}
             onClick={() => scrollByPage(1)}
             disabled={!canScrollRight}
             className="flex h-8 w-8 items-center justify-center rounded-full border border-border text-muted-foreground transition-colors hover:border-foreground hover:text-foreground disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:border-border disabled:hover:text-muted-foreground"

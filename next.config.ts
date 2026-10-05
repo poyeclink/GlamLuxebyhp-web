@@ -8,7 +8,7 @@ const nextConfig: NextConfig = {
   // El PDF de reportes lee los trazos del logo desde public/ con fs; sin esto
   // el archivo no viaja en el bundle serverless de esa ruta.
   outputFileTracingIncludes: {
-    "/admin/reportes/pdf": ["./public/brand/wordmark-dark.svg"],
+    "/admin/reportes/pdf": ["./public/brand/glamluxe-horizontal-color-oscuro.svg"],
   },
   images: {
     remotePatterns: [

@@ -15,16 +15,30 @@ type VariantOption = {
   stock: number;
 };
 
+export type AddToCartCopy = {
+  size: string;
+  quantity: string;
+  soldOut: string;
+  add: string;
+  added: string;
+  viewCart: string;
+  decrease: string;
+  increase: string;
+  pending: string;
+};
+
 const initialState: CartActionState = {};
 
 export function AddToCartForm({
   productId,
   hasVariants,
   variants,
+  copy,
 }: {
   productId: string;
   hasVariants: boolean;
   variants: VariantOption[];
+  copy: AddToCartCopy;
 }) {
   const [state, formAction] = useActionState(addToCartAction.bind(null, productId), initialState);
   const soldOut = hasVariants && variants.length > 0 && variants.every((v) => v.stock === 0);
@@ -33,7 +47,7 @@ export function AddToCartForm({
     <form action={formAction} className="flex flex-col gap-5">
       {hasVariants && variants.length > 0 ? (
         <fieldset className="flex flex-col gap-2">
-          <legend className="mb-2 text-sm font-medium text-foreground">Talla</legend>
+          <legend className="mb-2 text-sm font-medium text-foreground">{copy.size}</legend>
           <div className="flex flex-wrap gap-2">
             {variants.map((variant) => (
               <label key={variant.id} className="relative">
@@ -55,22 +69,32 @@ export function AddToCartForm({
       ) : null}
 
       <div className="flex flex-col gap-1.5">
-        <Label htmlFor="quantity">Cantidad</Label>
-        <QuantityInput name="quantity" defaultValue={1} min={1} className="h-12" />
+        <Label htmlFor="quantity">{copy.quantity}</Label>
+        <QuantityInput
+          name="quantity"
+          defaultValue={1}
+          min={1}
+          className="h-12"
+          decreaseLabel={copy.decrease}
+          increaseLabel={copy.increase}
+        />
       </div>
 
-      <SubmitButton size="lg" disabled={soldOut}>
-        {soldOut ? "Agotado" : "Agregar al carrito"}
+      <SubmitButton size="lg" disabled={soldOut} pendingLabel={copy.pending}>
+        {soldOut ? copy.soldOut : copy.add}
       </SubmitButton>
       <FormError message={state.error} />
       {state.added && !state.error ? (
         <p className="flex items-center justify-between gap-3 rounded-md bg-accent-soft px-4 py-3 text-sm text-foreground">
           <span className="flex items-center gap-2">
             <Check className="h-4 w-4 text-accent" />
-            Agregado a tu carrito
+            {copy.added}
           </span>
-          <Link href="/carrito" className="font-semibold text-accent underline-offset-4 hover:underline">
-            Ver carrito
+          <Link
+            href="/carrito"
+            className="font-semibold text-accent underline-offset-4 hover:underline"
+          >
+            {copy.viewCart}
           </Link>
         </p>
       ) : null}

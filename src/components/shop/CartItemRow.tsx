@@ -22,9 +22,17 @@ export type CartLineItem = {
   imageUrl: string | null;
 };
 
+export type CartItemRowCopy = {
+  size: string;
+  each: string;
+  update: string;
+  remove: string;
+  pending: string;
+};
+
 const initialState: CartActionState = {};
 
-export function CartItemRow({ item }: { item: CartLineItem }) {
+export function CartItemRow({ item, copy }: { item: CartLineItem; copy: CartItemRowCopy }) {
   const [state, formAction] = useActionState(
     updateCartItemQuantityAction.bind(null, item.id),
     initialState,
@@ -40,7 +48,13 @@ export function CartItemRow({ item }: { item: CartLineItem }) {
     <div className="grid grid-cols-[5rem_minmax(0,1fr)] gap-x-4 gap-y-3 border-b border-border py-5 sm:grid-cols-[6rem_minmax(0,1fr)_auto_6rem] sm:items-center sm:gap-x-6">
       <div className="relative row-span-3 aspect-[4/5] w-20 overflow-hidden rounded-xl bg-muted sm:row-span-1 sm:w-24">
         {item.imageUrl ? (
-          <Image src={item.imageUrl} alt={item.productName} fill className="object-cover" />
+          <Image
+            src={item.imageUrl}
+            alt={item.productName}
+            fill
+            sizes="96px"
+            className="object-cover"
+          />
         ) : null}
       </div>
 
@@ -49,9 +63,13 @@ export function CartItemRow({ item }: { item: CartLineItem }) {
           {item.productName}
         </span>
         {item.variantSize ? (
-          <span className="text-sm text-muted-foreground">Talla: {item.variantSize}</span>
+          <span className="text-sm text-muted-foreground">
+            {copy.size}: {item.variantSize}
+          </span>
         ) : null}
-        <span className="text-sm text-muted-foreground">{formatCurrency(item.unitPrice)} c/u</span>
+        <span className="text-sm text-muted-foreground">
+          {formatCurrency(item.unitPrice)} {copy.each}
+        </span>
         <FormError message={state.error} />
         <FormError message={removeState.error} />
       </div>
@@ -66,13 +84,13 @@ export function CartItemRow({ item }: { item: CartLineItem }) {
             className="w-20"
             required
           />
-          <SubmitButton variant="outline" size="sm" className="w-auto">
-            Actualizar
+          <SubmitButton variant="outline" size="sm" className="w-auto" pendingLabel={copy.pending}>
+            {copy.update}
           </SubmitButton>
         </form>
         <form action={removeAction}>
-          <SubmitButton variant="ghost" size="sm" className="w-auto">
-            Eliminar
+          <SubmitButton variant="ghost" size="sm" className="w-auto" pendingLabel={copy.pending}>
+            {copy.remove}
           </SubmitButton>
         </form>
       </div>

@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { requireCustomer, setSessionCookie } from "@/lib/session";
 import { updateProfile } from "@/server/services/user-service";
+import { t } from "@/lib/i18n";
 
 export type ProfileActionState = {
   error?: string;
@@ -27,7 +28,7 @@ export async function updateProfileAction(
 
   const parsed = profileSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) {
-    return { error: parsed.error.issues[0]?.message ?? "Datos inválidos." };
+    return { error: await t(parsed.error.issues[0]?.message ?? "Datos inválidos.") };
   }
 
   const updated = await updateProfile(session.userId, parsed.data);

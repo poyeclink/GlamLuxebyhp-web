@@ -1,13 +1,15 @@
 import type { MetadataRoute } from "next";
 import { SITE_DESCRIPTION, SITE_NAME } from "@/lib/site";
+import { getLocale, t } from "@/lib/i18n";
 
-export default function manifest(): MetadataRoute.Manifest {
+export default async function manifest(): Promise<MetadataRoute.Manifest> {
+  const [lang, description] = await Promise.all([getLocale(), t(SITE_DESCRIPTION)]);
   return {
     id: "/",
     name: SITE_NAME,
     short_name: "Glam Luxe",
-    description: SITE_DESCRIPTION,
-    lang: "es",
+    description,
+    lang,
     start_url: "/",
     scope: "/",
     display: "standalone",

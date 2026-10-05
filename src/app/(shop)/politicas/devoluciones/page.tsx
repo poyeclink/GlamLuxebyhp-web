@@ -1,12 +1,14 @@
 import type { Metadata } from "next";
+import { t } from "@/lib/i18n";
 import { PolicyPage } from "@/components/policies/PolicyPage";
 
-export const metadata: Metadata = {
-  title: "Política de devoluciones",
-  description:
-    "Venta final con garantía de daño de fábrica: cómo reportar una pieza defectuosa dentro de las primeras 24 horas.",
-  alternates: { canonical: "/politicas/devoluciones" },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const [title, description] = await Promise.all([
+    t("Política de devoluciones"),
+    t("Venta final con garantía de daño de fábrica: cómo reportar una pieza defectuosa dentro de las primeras 24 horas."),
+  ]);
+  return { title, description, alternates: { canonical: "/politicas/devoluciones" } };
+}
 
 export default function ReturnPolicyPage() {
   return (

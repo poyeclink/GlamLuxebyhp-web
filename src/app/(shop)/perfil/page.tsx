@@ -4,31 +4,51 @@ import { MapPin, Plus, User } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { AccountSection, AccountShell } from "@/components/account/AccountShell";
-import { AddressSummary } from "@/components/account/AddressSummary";
+import { ADDRESS_SUMMARY_COPY, AddressSummary } from "@/components/account/AddressSummary";
 import { DeleteAddressButton } from "@/components/account/DeleteAddressButton";
 import { ProfileForm } from "@/components/account/ProfileForm";
 import { requireCustomer } from "@/lib/session";
+import { t, tMany } from "@/lib/i18n";
 import { listAddresses } from "@/server/services/address-service";
 import { getCustomerProfile } from "@/server/services/user-service";
 
-export const metadata: Metadata = { title: "Mi perfil" };
+export async function generateMetadata(): Promise<Metadata> {
+  return { title: await t("Mi perfil") };
+}
 
 export default async function PerfilPage() {
   const session = await requireCustomer();
-  const [profile, addresses] = await Promise.all([
+  const [profile, addresses, copy, addressCopy] = await Promise.all([
     getCustomerProfile(session.userId),
     listAddresses(session.userId),
+    tMany({
+      personalData: "Datos personales",
+      addresses: "Direcciones",
+      addressesText: "Las usamos para agilizar tu checkout.",
+      edit: "Editar",
+      delete: "Eliminar",
+      addAddress: "Agregar dirección",
+      noAddresses: "Todavía no tienes direcciones guardadas.",
+      email: "Correo",
+      name: "Nombre",
+      optional: "Opcional",
+      saved: "Datos actualizados.",
+      submit: "Guardar cambios",
+      pending: "Enviando…",
+    }),
+    tMany(ADDRESS_SUMMARY_COPY),
   ]);
 
   return (
     <AccountShell name={session.name} active="perfil">
       <div className="flex flex-col gap-14">
-        <AccountSection icon={User} title="Datos personales" description={profile.email}>
+        <AccountSection icon={User} title={copy.personalData} description={profile.email}>
           <Card>
             <CardContent className="p-6 sm:p-8">
               <ProfileForm
                 email={profile.email}
                 defaultValues={{ name: profile.name, whatsapp: profile.whatsapp }}
+                copy={copy}
               />
             </CardContent>
           </Card>
@@ -37,8 +57,8 @@ export default async function PerfilPage() {
         <AccountSection
           id="direcciones"
           icon={MapPin}
-          title="Direcciones"
-          description="Las usamos para agilizar tu checkout."
+          title={copy.addresses}
+          description={copy.addressesText}
         >
           <div className="grid gap-4 sm:grid-cols-2">
             {addresses.map((address) => (
@@ -47,14 +67,14 @@ export default async function PerfilPage() {
                 className="hover-lift hover:border-foreground/30 hover:shadow-[0_20px_40px_-28px_rgba(10,10,11,0.45)]"
               >
                 <CardContent className="flex h-full flex-col gap-4 p-5">
-                  <AddressSummary address={address} />
+                  <AddressSummary address={address} copy={addressCopy} />
                   <div className="mt-auto flex items-center gap-2 border-t border-border pt-4">
                     <Link href={`/perfil/direcciones/${address.id}/editar`}>
                       <Button variant="outline" size="sm">
-                        Editar
+                        {copy.edit}
                       </Button>
                     </Link>
-                    <DeleteAddressButton addressId={address.id} />
+                    <DeleteAddressButton addressId={address.id} label={copy.delete} />
                   </div>
                 </CardContent>
               </Card>
@@ -66,11 +86,9 @@ export default async function PerfilPage() {
               <span className="flex h-11 w-11 items-center justify-center rounded-full bg-inverse text-inverse-accent transition-transform duration-300 group-hover:rotate-90">
                 <Plus className="h-5 w-5" aria-hidden="true" />
               </span>
-              <span className="text-sm font-medium text-foreground">Agregar dirección</span>
+              <span className="text-sm font-medium text-foreground">{copy.addAddress}</span>
               {addresses.length === 0 && (
-                <span className="text-xs text-muted-foreground">
-                  Todavía no tienes direcciones guardadas.
-                </span>
+                <span className="text-xs text-muted-foreground">{copy.noAddresses}</span>
               )}
             </Link>
           </div>

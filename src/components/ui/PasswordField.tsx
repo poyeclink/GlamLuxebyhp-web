@@ -11,8 +11,14 @@ export function PasswordField({
   id,
   name,
   className,
+  showLabel = "Mostrar contraseña",
+  hideLabel = "Ocultar contraseña",
   ...props
-}: Omit<ComponentProps<"input">, "type"> & { label: string }) {
+}: Omit<ComponentProps<"input">, "type"> & {
+  label: string;
+  showLabel?: string;
+  hideLabel?: string;
+}) {
   const [visible, setVisible] = useState(false);
   const fieldId = id ?? name;
 
@@ -30,7 +36,7 @@ export function PasswordField({
         <button
           type="button"
           onClick={() => setVisible((value) => !value)}
-          aria-label={visible ? "Ocultar contraseña" : "Mostrar contraseña"}
+          aria-label={visible ? hideLabel : showLabel}
           aria-pressed={visible}
           className="absolute right-1.5 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
         >

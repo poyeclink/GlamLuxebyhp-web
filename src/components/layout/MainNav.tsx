@@ -11,9 +11,11 @@ export const navItemClass =
   "relative flex h-11 items-center gap-1.5 text-[0.6875rem] font-semibold uppercase tracking-[0.24em] text-foreground/60 transition-colors duration-300 hover:text-foreground aria-[current=page]:text-foreground aria-expanded:text-foreground after:absolute after:inset-x-0 after:bottom-2.5 after:h-px after:scale-x-0 after:bg-foreground after:transition-[scale] after:duration-500 after:ease-[cubic-bezier(0.22,1,0.36,1)] hover:after:scale-x-100 aria-expanded:after:scale-x-100 aria-[current=page]:after:scale-x-100 aria-[current=page]:after:bg-accent";
 
 export function MainNav({
+  label,
   links,
   categoriesSlot,
 }: {
+  label: string;
   links: NavLink[];
   categoriesSlot: React.ReactNode;
 }) {
@@ -31,7 +33,7 @@ export function MainNav({
   );
 
   return (
-    <nav aria-label="Principal" className="flex items-center justify-center gap-7 xl:gap-9">
+    <nav aria-label={label} className="flex items-center justify-center gap-7 xl:gap-9">
       {renderLink(first)}
       {categoriesSlot}
       {rest.map(renderLink)}

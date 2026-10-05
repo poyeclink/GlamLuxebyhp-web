@@ -1,9 +1,10 @@
 import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
-import { Monogram } from "@/components/brand/Logo";
+import { Isotipo } from "@/components/brand/Logo";
 import { PriceDual } from "@/components/ui/PriceDual";
 import { cn } from "@/lib/utils";
+import { t, tMany } from "@/lib/i18n";
 
 export type ProductCardItem = {
   slug: string;
@@ -17,13 +18,15 @@ export type ProductCardItem = {
   soldOut?: boolean;
 };
 
-export function ProductCard({
-  product,
-  ctaLabel = "Ver producto",
-}: {
-  product: ProductCardItem;
-  ctaLabel?: string;
-}) {
+export async function ProductCard({ product }: { product: ProductCardItem }) {
+  const [copy, name, categoryName] = await Promise.all([
+    tMany({ cta: "Ver producto", soldOut: "Agotado", isNew: "Nuevo" }),
+    t(product.name),
+    Promise.all(product.categoryName.split(" › ").map((part) => t(part))).then((parts) =>
+      parts.join(" › "),
+    ),
+  ]);
+
   return (
     <Link
       href={`/producto/${product.slug}`}
@@ -33,7 +36,7 @@ export function ProductCard({
         {product.imageUrl ? (
           <Image
             src={product.imageUrl}
-            alt={product.name}
+            alt={name}
             fill
             sizes="(min-width: 1024px) 25vw, (min-width: 640px) 33vw, 50vw"
             className={cn(
@@ -44,7 +47,7 @@ export function ProductCard({
           />
         ) : (
           <div className="flex h-full items-center justify-center text-muted-foreground/40">
-            <Monogram className="h-20 w-20" title="" aria-hidden="true" />
+            <Isotipo className="h-auto w-20 [--logo-accent:currentColor]" title="" />
           </div>
         )}
         {product.imageUrl && product.hoverImageUrl && (
@@ -65,20 +68,18 @@ export function ProductCard({
                 : "bg-inverse text-inverse-foreground",
             )}
           >
-            {product.soldOut ? "Agotado" : "Nuevo"}
+            {product.soldOut ? copy.soldOut : copy.isNew}
           </span>
         )}
         <span className="absolute inset-x-3 bottom-3 flex translate-y-3 items-center justify-center gap-2 rounded-full bg-background/95 py-2.5 text-xs font-semibold text-foreground opacity-0 shadow-lg transition-all duration-500 group-hover:translate-y-0 group-hover:opacity-100 group-focus-visible:translate-y-0 group-focus-visible:opacity-100">
-          {ctaLabel}
+          {copy.cta}
           <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
         </span>
       </div>
       <div className="flex flex-col gap-1.5">
-        <span className="eyebrow text-[0.6875rem] text-muted-foreground">
-          {product.categoryName}
-        </span>
+        <span className="eyebrow text-[0.6875rem] text-muted-foreground">{categoryName}</span>
         <span className="font-medium text-foreground transition-colors group-hover:text-accent">
-          {product.name}
+          {name}
         </span>
         <PriceDual
           wholesalePrice={product.wholesalePrice}

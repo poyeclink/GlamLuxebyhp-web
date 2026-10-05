@@ -12,13 +12,13 @@ import {
   Sparkles,
   Truck,
 } from "lucide-react";
-import { Emblem } from "@/components/brand/Logo";
+import { Sello } from "@/components/brand/Logo";
 import { PageHero } from "@/components/marketing/PageHero";
 import { SectionHeading } from "@/components/marketing/SectionHeading";
 import { Spotlight } from "@/components/motion/Spotlight";
 import { Button } from "@/components/ui/Button";
 import { Tabs } from "@/components/ui/Tabs";
-import { tMany } from "@/lib/i18n";
+import { t, tMany } from "@/lib/i18n";
 import { STOCK_IMAGES, type StockImage } from "@/lib/stock-images";
 import { WHOLESALE_ITEM_THRESHOLD } from "@/server/services/cart-service";
 
@@ -43,7 +43,7 @@ function Eyebrow({ children, inverse }: { children: React.ReactNode; inverse?: b
   );
 }
 
-function AudiencePanel({
+async function AudiencePanel({
   image,
   text,
   points,
@@ -52,12 +52,14 @@ function AudiencePanel({
   text: string;
   points: string[];
 }) {
+  const alt = await t(image.alt);
+
   return (
     <div className="grid items-center gap-8 rounded-3xl bg-background p-4 shadow-[0_30px_80px_-50px_rgba(10,10,11,0.5)] md:grid-cols-[1fr_1.1fr] md:p-5">
       <div className="group relative aspect-[4/3] overflow-hidden rounded-2xl md:aspect-[4/5]">
         <Image
           src={image.src}
-          alt={image.alt}
+          alt={alt}
           fill
           sizes="(min-width: 768px) 40vw, 100vw"
           className="object-cover transition-transform duration-1000 group-hover:scale-105"
@@ -87,6 +89,10 @@ function AudiencePanel({
 
 export default async function AboutPage() {
   const c = await tMany({
+    embroideryAlt: STOCK_IMAGES.embroidery.alt,
+    tailoringAlt: STOCK_IMAGES.tailoring.alt,
+    blousesAlt: STOCK_IMAGES.blouses.alt,
+    monochromeCoatAlt: STOCK_IMAGES.monochromeCoat.alt,
     home: "Inicio",
     eyebrow: "Nosotros",
     title: "Moda de alta calidad, elegida con criterio",
@@ -188,7 +194,7 @@ export default async function AboutPage() {
           <div className="group relative aspect-[4/5] overflow-hidden rounded-[2rem] bg-inverse">
             <Image
               src={STOCK_IMAGES.embroidery.src}
-              alt={STOCK_IMAGES.embroidery.alt}
+              alt={c.embroideryAlt}
               fill
               sizes="(min-width: 1024px) 40vw, 100vw"
               className="object-cover transition-transform duration-1000 group-hover:scale-105"
@@ -232,7 +238,7 @@ export default async function AboutPage() {
             ))}
           </dl>
           <div className="flex items-center gap-4">
-            <Emblem className="h-14 w-14 shrink-0 text-foreground" />
+            <Sello className="h-16 w-16 shrink-0 text-foreground" />
             <div className="flex flex-col">
               <span className="font-display text-lg text-foreground">{c.signature}</span>
               <span className="text-xs text-muted-foreground">{c.signatureRole}</span>
@@ -247,7 +253,7 @@ export default async function AboutPage() {
             <div className="group relative aspect-[4/5] overflow-hidden rounded-3xl bg-inverse">
               <Image
                 src={STOCK_IMAGES.tailoring.src}
-                alt={STOCK_IMAGES.tailoring.alt}
+                alt={c.tailoringAlt}
                 fill
                 sizes="(min-width: 1024px) 45vw, 100vw"
                 className="object-cover transition-transform duration-1000 group-hover:scale-105"
@@ -257,7 +263,7 @@ export default async function AboutPage() {
               <div className="relative aspect-square">
                 <Image
                   src={STOCK_IMAGES.blouses.src}
-                  alt={STOCK_IMAGES.blouses.alt}
+                  alt={c.blousesAlt}
                   fill
                   sizes="(min-width: 1024px) 22vw, 50vw"
                   className="object-cover transition-transform duration-1000 group-hover:scale-110"
@@ -265,7 +271,7 @@ export default async function AboutPage() {
               </div>
             </div>
             <div className="absolute left-4 top-4 flex h-20 w-20 items-center justify-center rounded-full bg-inverse/85 p-2 text-inverse-foreground backdrop-blur-sm [--logo-accent:var(--inverse-accent)]">
-              <Emblem className="h-full w-full" />
+              <Sello className="h-full w-full" />
             </div>
           </div>
 
@@ -393,7 +399,7 @@ export default async function AboutPage() {
       <section className="group relative isolate overflow-hidden bg-inverse text-inverse-foreground">
         <Image
           src={STOCK_IMAGES.monochromeCoat.src}
-          alt={STOCK_IMAGES.monochromeCoat.alt}
+          alt={c.monochromeCoatAlt}
           fill
           sizes="100vw"
           className="-z-20 object-cover opacity-60 transition-transform duration-[2000ms] group-hover:scale-105"

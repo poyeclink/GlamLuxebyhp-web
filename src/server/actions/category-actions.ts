@@ -1,10 +1,11 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, updateTag } from "next/cache";
 import { z } from "zod";
 import { requireAdmin } from "@/lib/session";
 import {
   CategoryError,
+  SHOP_CATEGORIES_TAG,
   createCategory,
   deleteCategory,
   updateCategory,
@@ -50,6 +51,7 @@ export async function createCategoryAction(
   // (no en una página aparte) — revalidar y devolver éxito basta para que la
   // lista se refresque y el modal se cierre solo.
   revalidatePath("/admin/categorias");
+  updateTag(SHOP_CATEGORIES_TAG);
   return { success: true };
 }
 
@@ -73,6 +75,7 @@ export async function updateCategoryAction(
   }
 
   revalidatePath("/admin/categorias");
+  updateTag(SHOP_CATEGORIES_TAG);
   return { success: true };
 }
 
@@ -90,5 +93,6 @@ export async function deleteCategoryAction(
   }
 
   revalidatePath("/admin/categorias");
+  updateTag(SHOP_CATEGORIES_TAG);
   return {};
 }

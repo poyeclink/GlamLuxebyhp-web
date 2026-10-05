@@ -1,12 +1,13 @@
 import Image from "next/image";
 import Link from "next/link";
 import { Check } from "lucide-react";
-import { Emblem } from "@/components/brand/Logo";
+import { LogoPrincipal } from "@/components/brand/Logo";
 import type { StockImage } from "@/lib/stock-images";
+import { t } from "@/lib/i18n";
 
 // Pantalla dividida para login/registro: foto de marca en Negro Noche (solo
 // desde lg:, en móvil el formulario ocupa todo) + formulario.
-export function AuthShell({
+export async function AuthShell({
   eyebrow,
   title,
   subtitle,
@@ -23,12 +24,16 @@ export function AuthShell({
   image: StockImage;
   children: React.ReactNode;
 }) {
+  const homeLabel = await t("Inicio");
+
+  const alt = await t(image.alt);
+
   return (
     <div className="mx-auto grid w-full max-w-7xl gap-4 p-3 sm:p-4 lg:min-h-[calc(100vh-5rem)] lg:grid-cols-[1.05fr_1fr]">
       <aside className="relative isolate hidden flex-col justify-between overflow-hidden rounded-[2rem] bg-inverse p-12 text-inverse-foreground [--logo-accent:var(--inverse-accent)] lg:flex">
         <Image
           src={image.src}
-          alt={image.alt}
+          alt={alt}
           fill
           sizes="50vw"
           className="-z-20 object-cover opacity-60"
@@ -39,10 +44,10 @@ export function AuthShell({
         />
         <Link
           href="/"
-          aria-label="Inicio"
+          aria-label={homeLabel}
           className="w-fit transition-transform duration-500 hover:scale-105"
         >
-          <Emblem className="h-20 w-20" title="" />
+          <LogoPrincipal className="h-24 w-auto" />
         </Link>
         <div className="flex max-w-md flex-col gap-8">
           <p className="font-display text-5xl leading-[1.1]">{brandTitle}</p>

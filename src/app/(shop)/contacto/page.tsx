@@ -88,6 +88,8 @@ function CardAction({
 
 export default async function ContactPage() {
   const c = await tMany({
+    leatherToteAlt: STOCK_IMAGES.leatherTote.alt,
+    shopWindowAlt: STOCK_IMAGES.shopWindow.alt,
     home: "Inicio",
     eyebrow: "Contacto",
     title: "Estamos para ayudarte",
@@ -335,7 +337,7 @@ export default async function ContactPage() {
         <div className="group relative aspect-[4/3] overflow-hidden rounded-3xl bg-muted lg:aspect-[5/4]">
           <Image
             src={STOCK_IMAGES.leatherTote.src}
-            alt={STOCK_IMAGES.leatherTote.alt}
+            alt={c.leatherToteAlt}
             fill
             sizes="(min-width: 1024px) 50vw, 100vw"
             className="object-cover transition-transform duration-1000 group-hover:scale-105"
@@ -407,7 +409,7 @@ export default async function ContactPage() {
             >
               <Image
                 src={STOCK_IMAGES.shopWindow.src}
-                alt={STOCK_IMAGES.shopWindow.alt}
+                alt={c.shopWindowAlt}
                 fill
                 sizes="(min-width: 1024px) 35vw, 100vw"
                 className="-z-20 object-cover transition-transform duration-1000 group-hover:scale-110"

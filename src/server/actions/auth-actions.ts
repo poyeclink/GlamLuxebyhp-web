@@ -11,6 +11,7 @@ import {
 import { setSessionCookie, clearSessionCookie } from "@/lib/session";
 import { getCartSessionToken, clearCartSessionToken } from "@/lib/cart-session";
 import { mergeGuestCartIntoUser } from "@/server/services/cart-service";
+import { t } from "@/lib/i18n";
 
 export type AuthActionState = {
   error?: string;
@@ -47,7 +48,7 @@ export async function registerAction(
 ): Promise<AuthActionState> {
   const parsed = registerSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) {
-    return { error: parsed.error.issues[0]?.message ?? "Datos inválidos." };
+    return { error: await t(parsed.error.issues[0]?.message ?? "Datos inválidos.") };
   }
 
   try {
@@ -55,7 +56,7 @@ export async function registerAction(
     await setSessionCookie({ userId: user.id, role: user.role, name: user.name });
     await mergeGuestCartOnAuth(user.id);
   } catch (error) {
-    if (error instanceof AuthError) return { error: error.message };
+    if (error instanceof AuthError) return { error: await t(error.message) };
     throw error;
   }
 
@@ -68,7 +69,7 @@ export async function loginAction(
 ): Promise<AuthActionState> {
   const parsed = loginSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) {
-    return { error: parsed.error.issues[0]?.message ?? "Datos inválidos." };
+    return { error: await t(parsed.error.issues[0]?.message ?? "Datos inválidos.") };
   }
 
   try {
@@ -76,7 +77,7 @@ export async function loginAction(
     await setSessionCookie({ userId: user.id, role: user.role, name: user.name });
     await mergeGuestCartOnAuth(user.id);
   } catch (error) {
-    if (error instanceof AuthError) return { error: error.message };
+    if (error instanceof AuthError) return { error: await t(error.message) };
     throw error;
   }
 

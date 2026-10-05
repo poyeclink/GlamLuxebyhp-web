@@ -1,3 +1,4 @@
+import { unstable_cache } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { ADMIN_PAGE_SIZE } from "@/lib/utils";
 
@@ -79,13 +80,22 @@ export async function listFeaturedCategories(limit = 6) {
 // Árbol para la navegación de la tienda: categorías principales con productos
 // activos (propios o de alguna subcategoría) y, dentro, solo las
 // subcategorías que tienen productos activos.
-export function listShopCategories() {
-  return prisma.category.findMany({
-    where: { parentId: null, OR: [hasActiveProducts, { children: { some: hasActiveProducts } }] },
-    orderBy: { name: "asc" },
-    include: { children: { where: hasActiveProducts, orderBy: { name: "asc" } } },
-  });
-}
+// Cacheado entre requests: lo piden el header, el footer y la página en cada
+// navegación. Las acciones de categoría y producto lo invalidan con
+// updateTag(SHOP_CATEGORIES_TAG); los 5 minutos son solo una red de seguridad
+// (cambios hechos directo en la base, fuera del admin).
+export const SHOP_CATEGORIES_TAG = "shop-categories";
+
+export const listShopCategories = unstable_cache(
+  () =>
+    prisma.category.findMany({
+      where: { parentId: null, OR: [hasActiveProducts, { children: { some: hasActiveProducts } }] },
+      orderBy: { name: "asc" },
+      include: { children: { where: hasActiveProducts, orderBy: { name: "asc" } } },
+    }),
+  ["shop-categories"],
+  { tags: [SHOP_CATEGORIES_TAG], revalidate: 300 },
+);
 
 type CategoryInput = {
   name: string;

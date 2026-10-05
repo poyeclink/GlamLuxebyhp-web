@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireCustomer } from "@/lib/session";
+import { t } from "@/lib/i18n";
 import {
   AddressError,
   createAddress,
@@ -22,7 +23,7 @@ export async function createAddressAction(
   const session = await requireCustomer();
 
   const parsed = await parseAddressInput(formData);
-  if ("error" in parsed) return parsed;
+  if ("error" in parsed) return { error: await t(parsed.error) };
 
   await createAddress(session.userId, parsed.data);
   redirect("/perfil");
@@ -36,12 +37,12 @@ export async function updateAddressAction(
   const session = await requireCustomer();
 
   const parsed = await parseAddressInput(formData);
-  if ("error" in parsed) return parsed;
+  if ("error" in parsed) return { error: await t(parsed.error) };
 
   try {
     await updateAddress(session.userId, id, parsed.data);
   } catch (error) {
-    if (error instanceof AddressError) return { error: error.message };
+    if (error instanceof AddressError) return { error: await t(error.message) };
     throw error;
   }
 
@@ -57,7 +58,7 @@ export async function deleteAddressAction(
   try {
     await deleteAddress(session.userId, id);
   } catch (error) {
-    if (error instanceof AddressError) return { error: error.message };
+    if (error instanceof AddressError) return { error: await t(error.message) };
     throw error;
   }
 

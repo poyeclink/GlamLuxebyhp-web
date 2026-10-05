@@ -1,7 +1,10 @@
 import { Building2, Home } from "lucide-react";
 
+export const ADDRESS_SUMMARY_COPY = { casa: "Casa", apartamento: "Apartamento" };
+
 export function AddressSummary({
   address,
+  copy = ADDRESS_SUMMARY_COPY,
 }: {
   address: {
     fullName: string;
@@ -12,6 +15,7 @@ export function AddressSummary({
     addressType: "casa" | "apartamento";
     whatsapp: string;
   };
+  copy?: typeof ADDRESS_SUMMARY_COPY;
 }) {
   const TypeIcon = address.addressType === "casa" ? Home : Building2;
 
@@ -24,7 +28,7 @@ export function AddressSummary({
       </span>
       <span className="flex items-center gap-1.5 text-muted-foreground">
         <TypeIcon className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-        {address.addressType === "casa" ? "Casa" : "Apartamento"} · {address.whatsapp}
+        {copy[address.addressType]} · {address.whatsapp}
       </span>
     </div>
   );

@@ -6,17 +6,23 @@ import { SlidersHorizontal } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
 import { Select } from "@/components/ui/Select";
-import { ShopFilterForm, type ShopFilterOptions } from "@/components/shop/ShopFilterForm";
+import {
+  ShopFilterForm,
+  type ShopFilterCopy,
+  type ShopFilterOptions,
+} from "@/components/shop/ShopFilterForm";
 import { SORT_OPTIONS, shopHref, type ShopFilters, type ShopSort } from "@/lib/shop-filters";
 
 export function ShopToolbar({
   filters,
   options,
   activeCount,
+  copy,
 }: {
   filters: ShopFilters;
   options: ShopFilterOptions;
   activeCount: number;
+  copy: ShopFilterCopy & { filters: string; sort: string; modalTitle: string; close: string };
 }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -25,7 +31,7 @@ export function ShopToolbar({
     <>
       <Button variant="outline" size="sm" onClick={() => setOpen(true)} className="lg:hidden">
         <SlidersHorizontal className="h-4 w-4" aria-hidden="true" />
-        Filtros
+        {copy.filters}
         {activeCount > 0 && (
           <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-accent px-1 text-[0.625rem] text-accent-foreground">
             {activeCount}
@@ -34,7 +40,7 @@ export function ShopToolbar({
       </Button>
 
       <label className="hidden items-center gap-2 text-xs text-muted-foreground sm:flex">
-        Ordenar
+        {copy.sort}
         <Select
           value={filters.orden}
           onChange={(event) =>
@@ -46,13 +52,18 @@ export function ShopToolbar({
         >
           {SORT_OPTIONS.map((option) => (
             <option key={option.value} value={option.value}>
-              {option.label}
+              {copy.sortLabels[option.value]}
             </option>
           ))}
         </Select>
       </label>
 
-      <Modal open={open} onClose={() => setOpen(false)} title="Filtrar y ordenar">
+      <Modal
+        open={open}
+        onClose={() => setOpen(false)}
+        title={copy.modalTitle}
+        closeLabel={copy.close}
+      >
         <ShopFilterForm
           key={shopHref(filters)}
           filters={filters}
@@ -60,6 +71,7 @@ export function ShopToolbar({
           idPrefix="m"
           showSort
           onSubmitted={() => setOpen(false)}
+          copy={copy}
         />
       </Modal>
     </>

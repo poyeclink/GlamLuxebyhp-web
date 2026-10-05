@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { resolveCartOwnerForWrite } from "@/lib/cart-session";
+import { t } from "@/lib/i18n";
 import {
   CartError,
   addToCart,
@@ -38,13 +39,13 @@ export async function addToCartAction(
     quantity: formData.get("quantity"),
   });
   if (!parsed.success) {
-    return { error: parsed.error.issues[0]?.message ?? "Datos inválidos." };
+    return { error: await t(parsed.error.issues[0]?.message ?? "Datos inválidos.") };
   }
 
   try {
     await addToCart(owner, productId, parsed.data.variantId ?? null, parsed.data.quantity);
   } catch (error) {
-    if (error instanceof CartError) return { error: error.message };
+    if (error instanceof CartError) return { error: await t(error.message) };
     throw error;
   }
 
@@ -65,13 +66,13 @@ export async function updateCartItemQuantityAction(
 
   const parsed = quantitySchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) {
-    return { error: parsed.error.issues[0]?.message ?? "Datos inválidos." };
+    return { error: await t(parsed.error.issues[0]?.message ?? "Datos inválidos.") };
   }
 
   try {
     await updateCartItemQuantity(owner, itemId, parsed.data.quantity);
   } catch (error) {
-    if (error instanceof CartError) return { error: error.message };
+    if (error instanceof CartError) return { error: await t(error.message) };
     throw error;
   }
 
@@ -88,7 +89,7 @@ export async function removeCartItemAction(
   try {
     await removeCartItem(owner, itemId);
   } catch (error) {
-    if (error instanceof CartError) return { error: error.message };
+    if (error instanceof CartError) return { error: await t(error.message) };
     throw error;
   }
 

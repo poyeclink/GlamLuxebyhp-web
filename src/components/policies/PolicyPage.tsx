@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { t, tMany } from "@/lib/i18n";
+import { getLocale, t, tMany } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 import { PageHero } from "@/components/marketing/PageHero";
 import { PolicyToc } from "@/components/policies/PolicyToc";
@@ -54,9 +54,9 @@ export async function PolicyPage({
     Promise.all(POLICY_LINKS.map((link) => t(link.label))),
   ]);
 
-  const updatedAt = new Intl.DateTimeFormat("es-ES", { dateStyle: "long" }).format(
-    POLICIES_UPDATED_AT,
-  );
+  const updatedAt = new Intl.DateTimeFormat((await getLocale()) === "es" ? "es-ES" : "en-US", {
+    dateStyle: "long",
+  }).format(POLICIES_UPDATED_AT);
 
   return (
     <>

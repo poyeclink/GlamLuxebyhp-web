@@ -11,20 +11,29 @@ const initialState: ProfileActionState = {};
 export function ProfileForm({
   email,
   defaultValues,
+  copy,
 }: {
   email: string;
   defaultValues: { name: string; whatsapp: string | null };
+  copy: {
+    email: string;
+    name: string;
+    optional: string;
+    saved: string;
+    submit: string;
+    pending: string;
+  };
 }) {
   const [state, formAction] = useActionState(updateProfileAction, initialState);
 
   return (
     <form action={formAction} className="flex flex-col gap-4">
       <div className="flex flex-col gap-1.5">
-        <span className="text-sm font-medium text-foreground">Correo</span>
+        <span className="text-sm font-medium text-foreground">{copy.email}</span>
         <span className="text-sm text-muted-foreground">{email}</span>
       </div>
       <TextField
-        label="Nombre"
+        label={copy.name}
         name="name"
         type="text"
         defaultValue={defaultValues.name}
@@ -35,13 +44,15 @@ export function ProfileForm({
         name="whatsapp"
         type="tel"
         defaultValue={defaultValues.whatsapp ?? ""}
-        placeholder="Opcional"
+        placeholder={copy.optional}
       />
       <FormError message={state.error} />
       {state.success && !state.error ? (
-        <p className="text-sm text-muted-foreground">Datos actualizados.</p>
+        <p className="text-sm text-muted-foreground">{copy.saved}</p>
       ) : null}
-      <SubmitButton className="sm:w-auto">Guardar cambios</SubmitButton>
+      <SubmitButton className="sm:w-auto" pendingLabel={copy.pending}>
+        {copy.submit}
+      </SubmitButton>
     </form>
   );
 }

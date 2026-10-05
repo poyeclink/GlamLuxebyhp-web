@@ -10,21 +10,39 @@ import { FormError } from "@/components/ui/FormError";
 
 const initialState: AuthActionState = {};
 
-export function LoginForm() {
+export type LoginFormCopy = {
+  email: string;
+  password: string;
+  showPassword: string;
+  hidePassword: string;
+  submit: string;
+  pending: string;
+  noAccount: string;
+  register: string;
+};
+
+export function LoginForm({ copy }: { copy: LoginFormCopy }) {
   const [state, formAction] = useActionState(loginAction, initialState);
 
   return (
     <form action={formAction} className="flex flex-col gap-5">
-      <TextField label="Correo" name="email" type="email" autoComplete="email" required />
-      <PasswordField label="Contraseña" name="password" autoComplete="current-password" required />
+      <TextField label={copy.email} name="email" type="email" autoComplete="email" required />
+      <PasswordField
+        label={copy.password}
+        name="password"
+        autoComplete="current-password"
+        showLabel={copy.showPassword}
+        hideLabel={copy.hidePassword}
+        required
+      />
       <FormError message={state.error} />
-      <SubmitButton size="lg" className="mt-1">
-        Iniciar sesión
+      <SubmitButton size="lg" className="mt-1" pendingLabel={copy.pending}>
+        {copy.submit}
       </SubmitButton>
       <p className="text-center text-sm text-muted-foreground">
-        ¿No tienes cuenta?{" "}
+        {copy.noAccount}{" "}
         <Link href="/registro" className="font-medium text-accent hover:underline">
-          Regístrate
+          {copy.register}
         </Link>
       </p>
     </form>

@@ -4,8 +4,12 @@
 // Get a free hosted Postgres database in seconds: `npx create-db`
 
 generator client {
-  provider = "prisma-client"
-  output   = "../src/generated/prisma"
+  provider        = "prisma-client"
+  output          = "../src/generated/prisma"
+  // Los include (categoría → padre, imágenes, variantes) salen en UNA consulta
+  // con JOIN en vez de una por relación en serie: cada ida y vuelta a Supabase
+  // cuesta lo mismo que la consulta entera.
+  previewFeatures = ["relationJoins"]
 }
 
 datasource db {

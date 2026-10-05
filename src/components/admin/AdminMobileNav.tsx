@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { Wordmark } from "@/components/brand/Logo";
+import { LogoHorizontal } from "@/components/brand/Logo";
 import { AdminNavLinks } from "@/components/admin/AdminNavLinks";
 
 export function AdminMobileNav({ userCard }: { userCard: React.ReactNode }) {
@@ -24,7 +24,7 @@ export function AdminMobileNav({ userCard }: { userCard: React.ReactNode }) {
     <div className="sticky top-0 z-40 bg-inverse text-inverse-foreground [--logo-accent:var(--inverse-accent)] md:hidden">
       <div className="flex h-16 items-center justify-between px-4">
         <Link href="/admin" aria-label="Panel admin" onClick={() => setOpen(false)}>
-          <Wordmark className="h-9 w-auto" title="" />
+          <LogoHorizontal className="h-9 w-auto" title="" />
         </Link>
         <button
           type="button"

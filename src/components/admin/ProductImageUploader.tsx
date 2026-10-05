@@ -37,7 +37,13 @@ function ProductImageCard({ productId, image }: { productId: string; image: Prod
   return (
     <div className="flex flex-col gap-2 rounded-md border border-border p-2">
       <div className="relative aspect-square overflow-hidden rounded-md bg-muted">
-        <Image src={image.url} alt={image.alt ?? ""} fill className="object-cover" />
+        <Image
+          src={image.url}
+          alt={image.alt ?? ""}
+          fill
+          sizes="(min-width: 768px) 12rem, 50vw"
+          className="object-cover"
+        />
       </div>
 
       {image.isPrimary ? (

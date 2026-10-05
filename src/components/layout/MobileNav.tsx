@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ArrowUpRight, X } from "lucide-react";
-import { Emblem, Wordmark } from "@/components/brand/Logo";
+import { Isotipo, LogoHorizontal } from "@/components/brand/Logo";
 import { cn } from "@/lib/utils";
 
 type NavLink = {
@@ -16,11 +16,13 @@ export function MobileNav({
   links,
   categoryLinks,
   categoriesLabel,
+  labels,
   authSlot,
 }: {
   links: NavLink[];
   categoryLinks: NavLink[];
   categoriesLabel: string;
+  labels: { open: string; close: string; home: string };
   authSlot: React.ReactNode;
 }) {
   const [open, setOpen] = useState(false);
@@ -54,7 +56,7 @@ export function MobileNav({
     <div className="lg:hidden">
       <button
         type="button"
-        aria-label="Abrir menú"
+        aria-label={labels.open}
         aria-expanded={open}
         onClick={() => setOpen(true)}
         className="group -mr-2 flex h-10 w-10 flex-col items-end justify-center gap-1.5 px-2"
@@ -79,19 +81,18 @@ export function MobileNav({
           aria-hidden="true"
           className="pointer-events-none absolute -right-24 -top-24 -z-10 h-80 w-80 rounded-full bg-inverse-accent/15 blur-3xl"
         />
-        <Emblem
-          aria-hidden="true"
+        <Isotipo
           title=""
-          className="pointer-events-none absolute -bottom-24 -right-24 -z-10 h-80 w-80 text-inverse-border/60 [--logo-accent:var(--inverse-border)]"
+          className="pointer-events-none absolute -bottom-16 -right-20 -z-10 h-72 w-auto opacity-60 [--logo-accent:var(--inverse-border)]"
         />
 
         <div className="flex h-16 shrink-0 items-center justify-between border-b border-inverse-border px-4 sm:px-6">
-          <Link href="/" onClick={close} aria-label="Inicio">
-            <Wordmark className="h-10 w-auto text-inverse-foreground" />
+          <Link href="/" onClick={close} aria-label={labels.home}>
+            <LogoHorizontal className="h-9 w-auto text-inverse-foreground" />
           </Link>
           <button
             type="button"
-            aria-label="Cerrar menú"
+            aria-label={labels.close}
             onClick={close}
             className="flex h-10 w-10 items-center justify-center rounded-full border border-inverse-border transition-colors duration-300 hover:border-inverse-accent hover:text-inverse-accent"
           >

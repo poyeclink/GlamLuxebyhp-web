@@ -7,9 +7,22 @@ import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { cn } from "@/lib/utils";
-import { SORT_OPTIONS, shopHref, type ShopFilters } from "@/lib/shop-filters";
+import { SORT_OPTIONS, shopHref, type ShopFilters, type ShopSort } from "@/lib/shop-filters";
 
 export type ShopFilterOptions = { sizes: string[]; minPrice: number; maxPrice: number };
+
+export type ShopFilterCopy = {
+  sortBy: string;
+  price: string;
+  from: string;
+  to: string;
+  size: string;
+  availability: string;
+  inStock: string;
+  apply: string;
+  clear: string;
+  sortLabels: Record<ShopSort, string>;
+};
 
 function Group({ title, children }: { title: string; children: React.ReactNode }) {
   return (
@@ -27,6 +40,7 @@ export function ShopFilterForm({
   autoSubmit = false,
   showSort = false,
   onSubmitted,
+  copy,
 }: {
   filters: ShopFilters;
   options: ShopFilterOptions;
@@ -34,6 +48,7 @@ export function ShopFilterForm({
   autoSubmit?: boolean;
   showSort?: boolean;
   onSubmitted?: () => void;
+  copy: ShopFilterCopy;
 }) {
   const clearHref = shopHref(filters, {
     min: undefined,
@@ -62,21 +77,21 @@ export function ShopFilterForm({
       )}
 
       {showSort && (
-        <Group title="Ordenar por">
-          <Select name="orden" defaultValue={filters.orden} aria-label="Ordenar por">
+        <Group title={copy.sortBy}>
+          <Select name="orden" defaultValue={filters.orden} aria-label={copy.sortBy}>
             {SORT_OPTIONS.map((option) => (
               <option key={option.value} value={option.value}>
-                {option.label}
+                {copy.sortLabels[option.value]}
               </option>
             ))}
           </Select>
         </Group>
       )}
 
-      <Group title="Precio individual">
+      <Group title={copy.price}>
         <div className="grid grid-cols-2 gap-2">
           <label className="flex flex-col gap-1 text-xs text-muted-foreground">
-            Desde
+            {copy.from}
             <Input
               type="number"
               name="min"
@@ -88,7 +103,7 @@ export function ShopFilterForm({
             />
           </label>
           <label className="flex flex-col gap-1 text-xs text-muted-foreground">
-            Hasta
+            {copy.to}
             <Input
               type="number"
               name="max"
@@ -103,7 +118,7 @@ export function ShopFilterForm({
       </Group>
 
       {options.sizes.length > 0 && (
-        <Group title="Talla">
+        <Group title={copy.size}>
           <div className="flex flex-wrap gap-2">
             {options.sizes.map((size) => {
               const id = `${idPrefix}-talla-${size}`;
@@ -127,7 +142,7 @@ export function ShopFilterForm({
         </Group>
       )}
 
-      <Group title="Disponibilidad">
+      <Group title={copy.availability}>
         <label
           htmlFor={`${idPrefix}-disponible`}
           className="flex cursor-pointer items-center gap-3 text-sm text-foreground"
@@ -143,7 +158,7 @@ export function ShopFilterForm({
           <span className="flex h-5 w-5 items-center justify-center rounded border border-input text-transparent transition-colors peer-checked:border-foreground peer-checked:bg-foreground peer-checked:text-background peer-focus-visible:ring-2 peer-focus-visible:ring-ring">
             <Check className="h-3.5 w-3.5" strokeWidth={3} />
           </span>
-          Solo con stock
+          {copy.inStock}
         </label>
       </Group>
 
@@ -154,7 +169,7 @@ export function ShopFilterForm({
           variant={autoSubmit ? "outline" : "primary"}
           className={cn(!autoSubmit && "flex-1")}
         >
-          Aplicar filtros
+          {copy.apply}
         </Button>
         <Link
           href={clearHref}
@@ -162,7 +177,7 @@ export function ShopFilterForm({
           onClick={onSubmitted}
           className="text-xs font-medium text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
         >
-          Limpiar
+          {copy.clear}
         </Link>
       </div>
     </Form>

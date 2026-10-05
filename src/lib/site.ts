@@ -1,7 +1,13 @@
 export const SITE_NAME = "Glam Luxe by HJ";
 export const SITE_DESCRIPTION =
   "Ropa, bolsos y accesorios de alta calidad, seleccionados pieza por pieza. Compra al detalle o desbloquea precio mayorista desde 6 artículos.";
-export const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+// Sin NEXT_PUBLIC_SITE_URL, en Vercel se usa el dominio de producción que la
+// plataforma inyecta: si no, canonical, sitemap y OG apuntarían a localhost.
+export const SITE_URL =
+  process.env.NEXT_PUBLIC_SITE_URL ??
+  (process.env.VERCEL_PROJECT_PRODUCTION_URL
+    ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
+    : "http://localhost:3000");
 
 // Canales de contacto opcionales: vacío = ese canal simplemente no se muestra
 // (mismo criterio que el footer desde que existe NEXT_PUBLIC_WHATSAPP_NUMBER).
