@@ -19,17 +19,20 @@ export function AdjustStockForm({ variantId }: { variantId: string }) {
 
   return (
     <form action={formAction} className="flex flex-col gap-2">
-      <div className="flex flex-wrap items-end gap-2">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:gap-2">
         <div className="flex flex-col gap-1.5">
           <label htmlFor={`delta-${variantId}`} className="text-sm font-medium text-foreground">
             Ajuste (+/-)
           </label>
+          {/* Sin inputMode="numeric": el teclado numérico de iOS no tiene signo
+              menos y no se podría restar stock desde el iPhone. */}
           <Input
             id={`delta-${variantId}`}
             name="delta"
             type="number"
+            step="1"
             placeholder="ej. -2 o 10"
-            className="w-28"
+            className="sm:w-28"
             required
           />
         </div>
@@ -39,7 +42,7 @@ export function AdjustStockForm({ variantId }: { variantId: string }) {
           </label>
           <Input id={`note-${variantId}`} name="note" placeholder="Motivo del ajuste" />
         </div>
-        <SubmitButton className="w-auto" variant="outline">
+        <SubmitButton className="sm:w-auto" variant="outline">
           Ajustar
         </SubmitButton>
       </div>

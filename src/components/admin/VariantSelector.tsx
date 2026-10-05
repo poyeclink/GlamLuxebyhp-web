@@ -39,10 +39,11 @@ export function VariantSelector() {
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex flex-wrap gap-x-4 gap-y-2">
+      <div className="grid grid-cols-4 gap-x-4 sm:flex sm:flex-wrap sm:gap-y-2">
         {PRESET_SIZES.map((size) => (
           <Checkbox
             key={size}
+            id={`preset-size-${size}`}
             label={size}
             checked={size in presetStock}
             onChange={(event) => togglePreset(size, event.target.checked)}
@@ -57,14 +58,16 @@ export function VariantSelector() {
               <input type="hidden" name="variantSize" value={size} />
               <span className="w-10 text-sm font-medium text-foreground">{size}</span>
               <Input
+                aria-label={`Stock de ${size}`}
                 name="variantStock"
                 type="number"
+                inputMode="numeric"
                 min="0"
                 value={presetStock[size]}
                 onChange={(event) =>
                   setPresetStock((current) => ({ ...current, [size]: event.target.value }))
                 }
-                className="w-24"
+                className="w-28 sm:w-24"
                 required
               />
               <span className="text-xs text-muted-foreground">en stock</span>
@@ -81,22 +84,26 @@ export function VariantSelector() {
               placeholder="Talla (ej. 38)"
               value={row.size}
               onChange={(event) => updateCustomRow(row.id, { size: event.target.value })}
-              className="w-32"
+              aria-label="Talla"
+              className="min-w-0 flex-1 sm:w-32 sm:flex-none"
               required
             />
             <Input
               name="variantStock"
               type="number"
+              inputMode="numeric"
               min="0"
               value={row.stock}
+              aria-label="Stock"
               onChange={(event) => updateCustomRow(row.id, { stock: event.target.value })}
-              className="w-24"
+              className="w-24 shrink-0"
               required
             />
             <Button
               type="button"
               variant="ghost"
               size="sm"
+              className="w-10 shrink-0 px-0 sm:w-8"
               onClick={() => removeCustomRow(row.id)}
               aria-label={`Quitar talla ${row.size || "personalizada"}`}
             >
@@ -110,7 +117,13 @@ export function VariantSelector() {
           </div>
         ))}
 
-        <Button type="button" variant="outline" size="sm" className="w-fit" onClick={addCustomRow}>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          className="w-full sm:w-fit"
+          onClick={addCustomRow}
+        >
           Agregar talla personalizada
         </Button>
       </div>

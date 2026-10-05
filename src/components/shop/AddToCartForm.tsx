@@ -80,9 +80,14 @@ export function AddToCartForm({
         />
       </div>
 
-      <SubmitButton size="lg" disabled={soldOut} pendingLabel={copy.pending}>
-        {soldOut ? copy.soldOut : copy.add}
-      </SubmitButton>
+      {/* En el teléfono la foto empuja el botón fuera de pantalla: queda fijo
+          abajo mientras el formulario está a la vista y vuelve a su sitio al
+          pasar de largo (sticky dentro del form, sin JS). */}
+      <div className="sticky bottom-0 z-10 -mx-4 border-t border-border bg-background/95 px-4 pt-3 pb-[calc(env(safe-area-inset-bottom)+0.75rem)] md:static md:mx-0 md:border-0 md:bg-transparent md:p-0">
+        <SubmitButton size="lg" disabled={soldOut} pendingLabel={copy.pending}>
+          {soldOut ? copy.soldOut : copy.add}
+        </SubmitButton>
+      </div>
       <FormError message={state.error} />
       {state.added && !state.error ? (
         <p className="flex items-center justify-between gap-3 rounded-md bg-accent-soft px-4 py-3 text-sm text-foreground">

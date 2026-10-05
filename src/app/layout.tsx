@@ -51,6 +51,10 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export const viewport: Viewport = {
   themeColor: "#ffffff",
+  // Sin "cover", env(safe-area-inset-bottom) vale 0 en iPhone y las barras
+  // fijas inferiores (agregar al carrito, pestañas del admin) quedan bajo la
+  // barra de inicio.
+  viewportFit: "cover",
 };
 
 export default async function RootLayout({ children }: LayoutProps<"/">) {

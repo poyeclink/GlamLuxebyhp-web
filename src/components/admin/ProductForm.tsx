@@ -119,6 +119,7 @@ export function ProductForm({
           label="Precio mayorista"
           name="wholesalePrice"
           type="number"
+          inputMode="decimal"
           step="0.01"
           min="0"
           defaultValue={defaultValues?.wholesalePrice}
@@ -128,6 +129,7 @@ export function ProductForm({
           label="Precio individual"
           name="individualPrice"
           type="number"
+          inputMode="decimal"
           step="0.01"
           min="0"
           defaultValue={defaultValues?.individualPrice}
@@ -135,7 +137,8 @@ export function ProductForm({
         />
       </div>
 
-      <div className="flex flex-col gap-2">
+      <fieldset className="flex flex-col divide-y divide-border rounded-xl border border-border px-4 sm:py-1 sm:*:py-2">
+        <legend className="sr-only">Opciones del producto</legend>
         <Checkbox label="Viene en caja" name="boxed" defaultChecked={defaultValues?.boxed} />
         <Checkbox
           label="Tiene variantes de talla"
@@ -148,7 +151,7 @@ export function ProductForm({
           name="active"
           defaultChecked={defaultValues?.active ?? true}
         />
-      </div>
+      </fieldset>
 
       {isCreating && hasVariants && (
         <div className="flex flex-col gap-1.5">
@@ -165,8 +168,13 @@ export function ProductForm({
         </div>
       )}
 
-      <FormError message={state.error} />
-      <SubmitButton className="sm:w-auto">{submitLabel}</SubmitButton>
+      {/* Queda pegada justo encima de la barra de pestañas del admin móvil (4rem +
+          safe area) y rebasa el padding de la tarjeta que envuelve al formulario
+          (p-4 / sm:p-8 en las páginas de producto) para cubrir todo su ancho. */}
+      <div className="sticky bottom-[calc(4rem+env(safe-area-inset-bottom))] z-10 -mx-4 flex flex-col gap-3 border-t border-border bg-background/95 px-4 py-3 sm:-mx-8 sm:px-8 md:static md:mx-0 md:border-0 md:bg-transparent md:p-0">
+        <FormError message={state.error} />
+        <SubmitButton className="md:w-auto md:self-start">{submitLabel}</SubmitButton>
+      </div>
     </form>
   );
 }

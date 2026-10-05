@@ -1,9 +1,11 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { after } from "next/server";
 import { z } from "zod";
 import { requireAdmin } from "@/lib/session";
 import { OrderError, updateOrderStatus } from "@/server/services/order-service";
+import { sendOrderStatusEmail } from "@/server/email/notifications";
 
 export type OrderActionState = {
   error?: string;
@@ -27,6 +29,7 @@ export async function updateOrderStatusAction(
 
   try {
     await updateOrderStatus(orderId, parsed.data.status);
+    after(() => sendOrderStatusEmail(orderId));
   } catch (error) {
     if (error instanceof OrderError) return { error: error.message };
     throw error;

@@ -27,24 +27,30 @@ function VariantRow({ productId, variant }: { productId: string; variant: Varian
   );
 
   return (
-    <div className="flex flex-col gap-1 border-b border-border py-2">
-      <div className="flex items-center gap-2">
-        <form action={formAction} className="flex items-center gap-2">
-          <Input name="size" defaultValue={variant.size} className="w-20" required />
-          <Input
-            name="stock"
-            type="number"
-            min="0"
-            defaultValue={variant.stock}
-            className="w-24"
-            required
-          />
-          <SubmitButton variant="outline" size="sm" className="w-auto">
+    <div className="flex flex-col gap-2 rounded-xl border border-border p-3 sm:rounded-none sm:border-0 sm:border-b sm:px-0 sm:py-2">
+      <div className="grid grid-cols-2 gap-2 sm:flex sm:items-center">
+        <form action={formAction} className="contents">
+          <label className="flex flex-col gap-1 sm:w-20">
+            <span className="text-xs text-muted-foreground sm:sr-only">Talla</span>
+            <Input name="size" defaultValue={variant.size} required />
+          </label>
+          <label className="flex flex-col gap-1 sm:w-24">
+            <span className="text-xs text-muted-foreground sm:sr-only">Stock</span>
+            <Input
+              name="stock"
+              type="number"
+              inputMode="numeric"
+              min="0"
+              defaultValue={variant.stock}
+              required
+            />
+          </label>
+          <SubmitButton variant="outline" size="sm" className="sm:w-auto">
             Guardar
           </SubmitButton>
         </form>
-        <form action={deleteVariantAction.bind(null, variant.id, productId)}>
-          <Button type="submit" variant="ghost" size="sm">
+        <form action={deleteVariantAction.bind(null, variant.id, productId)} className="contents">
+          <Button type="submit" variant="ghost" size="sm" className="text-destructive">
             Eliminar
           </Button>
         </form>
@@ -67,15 +73,24 @@ export function VariantManager({
   );
 
   return (
-    <div className="flex flex-col gap-2">
+    <div className="flex flex-col gap-3 sm:gap-2">
       {variants.map((variant) => (
         <VariantRow key={variant.id} productId={productId} variant={variant} />
       ))}
 
-      <form action={formAction} className="flex items-center gap-2 pt-2">
-        <Input name="size" placeholder="Talla" className="w-20" required />
-        <Input name="stock" type="number" min="0" placeholder="Stock" className="w-24" required />
-        <SubmitButton className="w-auto">Agregar talla</SubmitButton>
+      <form action={formAction} className="grid grid-cols-2 gap-2 pt-2 sm:flex sm:items-center">
+        <Input name="size" placeholder="Talla" aria-label="Talla" className="sm:w-20" required />
+        <Input
+          name="stock"
+          type="number"
+          inputMode="numeric"
+          min="0"
+          placeholder="Stock"
+          aria-label="Stock"
+          className="sm:w-24"
+          required
+        />
+        <SubmitButton className="col-span-2 sm:w-auto">Agregar talla</SubmitButton>
       </form>
       <FormError message={state.error} />
     </div>

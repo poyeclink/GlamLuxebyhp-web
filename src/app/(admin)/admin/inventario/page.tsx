@@ -2,6 +2,7 @@ import Link from "next/link";
 import { listVariantsWithStock, LOW_STOCK_THRESHOLD } from "@/server/services/inventory-service";
 import { Badge } from "@/components/ui/Badge";
 import { DataTable } from "@/components/ui/DataTable";
+import { AdminCardList, AdminListCard } from "@/components/admin/AdminListCard";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { SearchInput } from "@/components/ui/SearchInput";
 import { Pagination } from "@/components/ui/Pagination";
@@ -36,44 +37,63 @@ export default async function AdminInventoryPage({ searchParams }: PageProps<"/a
             : "Todavía no hay tallas registradas."}
         </p>
       ) : (
-        <DataTable>
-          <thead>
-            <tr>
-              <th>Producto</th>
-              <th>Talla</th>
-              <th>Stock</th>
-              <th />
-            </tr>
-          </thead>
-          <tbody>
+        <>
+          <AdminCardList>
             {variants.map((variant) => (
-              <tr key={variant.id}>
-                <td className="font-medium text-foreground">
-                  {variant.product.name}
-                  {!variant.product.active && (
-                    <span className="ml-2 text-xs text-muted-foreground">(inactivo)</span>
-                  )}
-                </td>
-                <td className="text-muted-foreground">{variant.size}</td>
-                <td>
+              <AdminListCard
+                key={variant.id}
+                href={`/admin/inventario/${variant.id}`}
+                title={variant.product.name}
+                badge={
                   <Badge
                     variant={variant.stock <= LOW_STOCK_THRESHOLD ? "destructive" : "secondary"}
                   >
-                    {variant.stock}
+                    {variant.stock === 0 ? "Agotado" : `${variant.stock} unid.`}
                   </Badge>
-                </td>
-                <td className="text-right">
-                  <Link
-                    href={`/admin/inventario/${variant.id}`}
-                    className="text-sm font-medium text-accent hover:underline"
-                  >
-                    Ver historial
-                  </Link>
-                </td>
-              </tr>
+                }
+                meta={`Talla ${variant.size}${variant.product.active ? "" : " · inactivo"}`}
+              />
             ))}
-          </tbody>
-        </DataTable>
+          </AdminCardList>
+          <DataTable className="hidden md:block">
+            <thead>
+              <tr>
+                <th>Producto</th>
+                <th>Talla</th>
+                <th>Stock</th>
+                <th />
+              </tr>
+            </thead>
+            <tbody>
+              {variants.map((variant) => (
+                <tr key={variant.id}>
+                  <td className="font-medium text-foreground">
+                    {variant.product.name}
+                    {!variant.product.active && (
+                      <span className="ml-2 text-xs text-muted-foreground">(inactivo)</span>
+                    )}
+                  </td>
+                  <td className="text-muted-foreground">{variant.size}</td>
+                  <td>
+                    <Badge
+                      variant={variant.stock <= LOW_STOCK_THRESHOLD ? "destructive" : "secondary"}
+                    >
+                      {variant.stock}
+                    </Badge>
+                  </td>
+                  <td className="text-right">
+                    <Link
+                      href={`/admin/inventario/${variant.id}`}
+                      className="text-sm font-medium text-accent hover:underline"
+                    >
+                      Ver historial
+                    </Link>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </DataTable>
+        </>
       )}
 
       <Pagination

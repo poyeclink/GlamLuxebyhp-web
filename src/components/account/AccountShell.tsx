@@ -11,7 +11,7 @@ const ACCOUNT_LINKS = [
 ] as const;
 
 const tabClass =
-  "flex shrink-0 items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition-colors duration-300";
+  "flex min-h-10 shrink-0 items-center gap-2 whitespace-nowrap rounded-full px-4 py-2 text-sm font-medium transition-colors duration-300 active:bg-inverse-border/60";
 
 // Server Component: la sección activa la pasa cada página (no hace falta
 // usePathname), y el banner es el mismo en perfil, pedidos y direcciones.
@@ -30,8 +30,8 @@ export async function AccountShell({
   ]);
 
   return (
-    <div className="mx-auto flex w-full max-w-7xl flex-col gap-10 p-3 pb-20 sm:p-4 sm:pb-24">
-      <div className="relative isolate overflow-hidden rounded-[2rem] bg-inverse px-6 pb-6 pt-10 text-inverse-foreground sm:px-10 sm:pt-12">
+    <div className="mx-auto flex w-full max-w-7xl flex-col gap-8 p-3 pb-16 sm:gap-10 sm:p-4 sm:pb-24">
+      <div className="relative isolate overflow-hidden rounded-[2rem] bg-inverse px-5 pb-5 pt-8 text-inverse-foreground sm:px-10 sm:pb-6 sm:pt-12">
         <div
           aria-hidden="true"
           className="absolute -right-24 -top-24 -z-10 h-80 w-80 rounded-full bg-inverse-accent/15 blur-3xl"
@@ -40,7 +40,7 @@ export async function AccountShell({
           <span className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full border border-inverse-accent/50 bg-inverse-border/50 font-display text-3xl text-inverse-accent">
             {name.charAt(0).toUpperCase()}
           </span>
-          <div className="flex flex-col gap-1">
+          <div className="flex min-w-0 flex-col gap-1">
             <span className="eyebrow text-inverse-accent">{copy.account}</span>
             <h1 className="font-display text-3xl sm:text-4xl">{copy.hello}, {name.split(" ")[0]}</h1>
           </div>
@@ -48,7 +48,7 @@ export async function AccountShell({
 
         <nav
           aria-label={copy.account}
-          className="mt-10 flex gap-2 overflow-x-auto border-t border-inverse-border pt-5 [scrollbar-width:none]"
+          className="mt-8 flex gap-2 overflow-x-auto overscroll-x-contain border-t border-inverse-border pt-5 [scrollbar-width:none] max-sm:-mx-5 max-sm:px-5 sm:mt-10 [&::-webkit-scrollbar]:hidden"
         >
           {ACCOUNT_LINKS.map(({ key, href, icon: Icon }, index) => (
             <Link

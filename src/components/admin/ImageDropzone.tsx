@@ -54,22 +54,28 @@ export function ImageDropzone({ name }: { name: string }) {
           addFiles(event.dataTransfer.files);
         }}
         className={cn(
-          "flex cursor-pointer flex-col items-center justify-center gap-1.5 rounded-lg border-2 border-dashed px-4 py-8 text-center transition-colors",
+          "flex min-h-36 cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed px-4 py-6 text-center transition-colors outline-none focus-visible:border-ring active:bg-muted/60 [-webkit-tap-highlight-color:transparent]",
           isDragging
             ? "border-ring bg-secondary"
             : "border-input hover:border-ring hover:bg-muted/50",
         )}
       >
         <span
-          className="material-symbols-outlined text-3xl text-muted-foreground"
+          className="material-symbols-outlined flex h-12 w-12 items-center justify-center rounded-full bg-muted text-[26px] text-foreground"
           aria-hidden="true"
         >
-          upload
+          add_photo_alternate
         </span>
-        <p className="text-sm text-foreground">
-          Arrastra imágenes aquí o <span className="underline">haz clic para seleccionar</span>
+        <p className="text-base font-medium text-foreground sm:text-sm">
+          Agregar fotos
+          <span className="hidden font-normal text-muted-foreground md:inline">
+            {" "}
+            o arrástralas aquí
+          </span>
         </p>
-        <p className="text-xs text-muted-foreground">JPEG, PNG o WEBP, máx. 5MB cada una.</p>
+        <p className="text-xs text-muted-foreground">
+          Desde la galería o la cámara · JPEG, PNG o WEBP, máx. 5MB cada una.
+        </p>
       </div>
 
       <input
@@ -83,21 +89,21 @@ export function ImageDropzone({ name }: { name: string }) {
       />
 
       {files.length > 0 && (
-        <ul className="flex flex-wrap gap-2">
+        <ul className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
           {files.map((file, index) => (
             <li
               key={`${file.name}-${index}`}
-              className="flex items-center gap-1.5 rounded-md border border-border py-1 pl-2.5 pr-1.5 text-xs text-foreground"
+              className="flex min-w-0 items-center gap-1.5 rounded-md border border-border py-0.5 pl-3 pr-0.5 text-sm text-foreground sm:text-xs"
             >
-              {file.name}
+              <span className="min-w-0 flex-1 truncate">{file.name}</span>
               <button
                 type="button"
                 onClick={() => removeFile(index)}
                 aria-label={`Quitar ${file.name}`}
-                className="flex h-4 w-4 items-center justify-center text-muted-foreground hover:text-foreground"
+                className="flex h-10 w-10 shrink-0 items-center justify-center rounded text-muted-foreground hover:text-foreground sm:h-6 sm:w-6"
               >
                 <span
-                  className="material-symbols-outlined text-[14px] leading-none"
+                  className="material-symbols-outlined text-[18px] leading-none sm:text-[14px]"
                   aria-hidden="true"
                 >
                   close

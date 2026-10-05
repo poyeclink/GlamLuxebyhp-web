@@ -2,9 +2,11 @@ import Link from "next/link";
 import { listOrdersForAdmin } from "@/server/services/order-service";
 import { DataTable } from "@/components/ui/DataTable";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
+import { AdminCardList, AdminListCard } from "@/components/admin/AdminListCard";
 import { OrderStatusBadge } from "@/components/orders/OrderStatusBadge";
 import { SearchInput } from "@/components/ui/SearchInput";
 import { Pagination } from "@/components/ui/Pagination";
+import { paymentMethodLabel } from "@/server/services/report-service";
 import { ADMIN_PAGE_SIZE, filterPillClass, formatCurrency, formatDate } from "@/lib/utils";
 import type { OrderStatus } from "@/generated/prisma/client";
 
@@ -57,7 +59,7 @@ export default async function AdminOrdersPage({ searchParams }: PageProps<"/admi
           hiddenParams={rawStatus ? { estado: rawStatus } : undefined}
         />
 
-        <div className="flex flex-wrap gap-2">
+        <div className="-mx-4 flex gap-2 overflow-x-auto px-4 [scrollbar-width:none] md:mx-0 md:flex-wrap md:px-0 [&::-webkit-scrollbar]:hidden">
           <Link
             href={`/admin/pedidos${searchQueryString ? `?${searchQueryString}` : ""}`}
             className={filterPillClass(!isFiltering)}
@@ -85,39 +87,55 @@ export default async function AdminOrdersPage({ searchParams }: PageProps<"/admi
               : "No hay pedidos con ese filtro."}
         </p>
       ) : (
-        <DataTable>
-          <thead>
-            <tr>
-              <th>Cliente</th>
-              <th>Fecha</th>
-              <th>Método de pago</th>
-              <th>Total</th>
-              <th>Estado</th>
-              <th />
-            </tr>
-          </thead>
-          <tbody>
+        <>
+          <AdminCardList>
             {orders.map((order) => (
-              <tr key={order.id}>
-                <td className="font-medium text-foreground">{order.fullName}</td>
-                <td className="text-muted-foreground">{formatDate(order.createdAt)}</td>
-                <td className="capitalize text-muted-foreground">{order.paymentMethod}</td>
-                <td className="text-foreground">{formatCurrency(Number(order.total))}</td>
-                <td>
-                  <OrderStatusBadge status={order.status} />
-                </td>
-                <td className="text-right">
-                  <Link
-                    href={`/admin/pedidos/${order.id}`}
-                    className="text-sm font-medium text-accent hover:underline"
-                  >
-                    Ver detalle
-                  </Link>
-                </td>
-              </tr>
+              <AdminListCard
+                key={order.id}
+                href={`/admin/pedidos/${order.id}`}
+                title={order.fullName}
+                badge={<OrderStatusBadge status={order.status} />}
+                meta={`${formatDate(order.createdAt)} · ${paymentMethodLabel(order.paymentMethod)}`}
+                aside={formatCurrency(Number(order.total))}
+              />
             ))}
-          </tbody>
-        </DataTable>
+          </AdminCardList>
+          <DataTable className="hidden md:block">
+            <thead>
+              <tr>
+                <th>Cliente</th>
+                <th>Fecha</th>
+                <th>Método de pago</th>
+                <th>Total</th>
+                <th>Estado</th>
+                <th />
+              </tr>
+            </thead>
+            <tbody>
+              {orders.map((order) => (
+                <tr key={order.id}>
+                  <td className="font-medium text-foreground">{order.fullName}</td>
+                  <td className="text-muted-foreground">{formatDate(order.createdAt)}</td>
+                  <td className="text-muted-foreground">
+                    {paymentMethodLabel(order.paymentMethod)}
+                  </td>
+                  <td className="text-foreground">{formatCurrency(Number(order.total))}</td>
+                  <td>
+                    <OrderStatusBadge status={order.status} />
+                  </td>
+                  <td className="text-right">
+                    <Link
+                      href={`/admin/pedidos/${order.id}`}
+                      className="text-sm font-medium text-accent hover:underline"
+                    >
+                      Ver detalle
+                    </Link>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </DataTable>
+        </>
       )}
 
       <Pagination

@@ -40,7 +40,7 @@ export async function PageHero({
       <div className={cn("mx-auto w-full max-w-7xl px-4 pt-24 sm:px-6", overlapBottom ? "pb-28 lg:pb-32" : "pb-14 lg:pb-20")}>
         <div className="flex max-w-2xl animate-fade-up flex-col gap-5">
           {breadcrumb && (
-            <nav aria-label="Ruta" className="flex items-center gap-2 text-xs text-inverse-muted">
+            <nav aria-label="Ruta" className="flex items-center gap-2 text-xs text-inverse-muted [&_a]:-my-3 [&_a]:inline-block [&_a]:py-3">
               <Link href="/" className="transition-colors hover:text-inverse-foreground">
                 {breadcrumb.home}
               </Link>

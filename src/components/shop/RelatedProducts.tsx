@@ -59,7 +59,7 @@ export function RelatedProducts({
             aria-label={copy.previous}
             onClick={() => scrollByPage(-1)}
             disabled={!canScrollLeft}
-            className="flex h-8 w-8 items-center justify-center rounded-full border border-border text-muted-foreground transition-colors hover:border-foreground hover:text-foreground disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:border-border disabled:hover:text-muted-foreground"
+            className="flex h-10 w-10 items-center sm:h-8 sm:w-8 justify-center rounded-full border border-border text-muted-foreground transition-colors hover:border-foreground hover:text-foreground disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:border-border disabled:hover:text-muted-foreground"
           >
             <ChevronLeft className="h-4 w-4" />
           </button>
@@ -68,7 +68,7 @@ export function RelatedProducts({
             aria-label={copy.next}
             onClick={() => scrollByPage(1)}
             disabled={!canScrollRight}
-            className="flex h-8 w-8 items-center justify-center rounded-full border border-border text-muted-foreground transition-colors hover:border-foreground hover:text-foreground disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:border-border disabled:hover:text-muted-foreground"
+            className="flex h-10 w-10 items-center sm:h-8 sm:w-8 justify-center rounded-full border border-border text-muted-foreground transition-colors hover:border-foreground hover:text-foreground disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:border-border disabled:hover:text-muted-foreground"
           >
             <ChevronRight className="h-4 w-4" />
           </button>

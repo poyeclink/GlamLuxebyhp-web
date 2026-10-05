@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Checkbox } from "@/components/ui/Checkbox";
 import { DataTable } from "@/components/ui/DataTable";
+import { AdminCardList, AdminListCard } from "@/components/admin/AdminListCard";
 import { SelectField } from "@/components/ui/SelectField";
 import { TextField } from "@/components/ui/TextField";
 import { listCategories } from "@/server/services/category-service";
@@ -27,7 +28,7 @@ import {
   type ReportType,
   type SalesReport,
 } from "@/server/services/report-service";
-import { cn, formatCurrency, formatDate } from "@/lib/utils";
+import { cn, filterPillClass, formatCurrency, formatDate } from "@/lib/utils";
 
 export const metadata: Metadata = { title: "Reportes" };
 
@@ -79,7 +80,7 @@ function Kpi({
   return (
     <div
       className={cn(
-        "flex flex-col gap-2 rounded-2xl border p-5",
+        "flex min-w-0 flex-col gap-2 rounded-2xl border p-4 sm:p-5",
         featured
           ? "border-inverse bg-inverse text-inverse-foreground"
           : "border-border bg-background",
@@ -93,7 +94,9 @@ function Kpi({
       >
         {label}
       </span>
-      <span className="text-3xl font-semibold tracking-tight tabular-nums">{value}</span>
+      <span className="text-[1.375rem] font-semibold tracking-tight tabular-nums sm:text-3xl">
+        {value}
+      </span>
       <span className={cn("text-xs", featured ? "text-inverse-muted" : "text-muted-foreground")}>
         {hint}
       </span>
@@ -127,7 +130,7 @@ function BreakdownCard({
           {rows.map((row) => (
             <li key={row.key} className="flex flex-col gap-1.5">
               <div className="flex items-baseline justify-between gap-3 text-sm">
-                <span className="truncate text-foreground">{row.label}</span>
+                <span className="min-w-0 truncate text-foreground">{row.label}</span>
                 <span className="shrink-0 font-medium tabular-nums text-foreground">
                   {formatCurrency(row.amount)}
                 </span>
@@ -149,6 +152,12 @@ function BreakdownCard({
       )}
     </div>
   );
+}
+
+function StockBadge({ stock }: { stock: number }) {
+  if (stock === 0) return <Badge variant="destructive">Agotado</Badge>;
+  if (stock <= LOW_STOCK_THRESHOLD) return <Badge variant="accent">Bajo</Badge>;
+  return <Badge variant="secondary">OK</Badge>;
 }
 
 export default async function AdminReportsPage({ searchParams }: PageProps<"/admin/reportes">) {
@@ -179,7 +188,7 @@ export default async function AdminReportsPage({ searchParams }: PageProps<"/adm
         }
       />
 
-      <div className="grid gap-4 sm:grid-cols-2">
+      <div className="grid grid-cols-2 gap-3 sm:gap-4">
         {REPORT_TYPES.map((type) => {
           const active = type.value === filters.type;
           return (
@@ -188,7 +197,7 @@ export default async function AdminReportsPage({ searchParams }: PageProps<"/adm
               href={withChanges(filters, { type: type.value })}
               aria-current={active ? "page" : undefined}
               className={cn(
-                "group hover-lift flex items-start gap-4 rounded-2xl border p-5",
+                "group hover-lift flex flex-col items-start gap-3 rounded-2xl border p-4 sm:flex-row sm:gap-4 sm:p-5",
                 active
                   ? "border-inverse bg-inverse text-inverse-foreground"
                   : "border-border bg-background hover:border-foreground/30",
@@ -212,7 +221,10 @@ export default async function AdminReportsPage({ searchParams }: PageProps<"/adm
               <span className="flex flex-col gap-1">
                 <span className="font-display text-xl">{type.label}</span>
                 <span
-                  className={cn("text-sm", active ? "text-inverse-muted" : "text-muted-foreground")}
+                  className={cn(
+                    "hidden text-sm sm:block",
+                    active ? "text-inverse-muted" : "text-muted-foreground",
+                  )}
                 >
                   {type.text}
                 </span>
@@ -228,32 +240,30 @@ export default async function AdminReportsPage({ searchParams }: PageProps<"/adm
         className="flex flex-col gap-5 rounded-2xl border border-border bg-background p-5 sm:p-6"
       >
         <input type="hidden" name="tipo" value={filters.type} />
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="mr-1 text-sm font-medium text-foreground">Período rápido:</span>
-          {quickRanges(now).map((range) => {
-            const active =
-              range.desde === toDayParam(filters.from) && range.hasta === toDayParam(filters.to);
-            return (
-              <Link
-                key={range.label}
-                href={withChanges(filters, {
-                  from: new Date(`${range.desde}T00:00:00.000Z`),
-                  to: new Date(`${range.hasta}T00:00:00.000Z`),
-                })}
-                className={cn(
-                  "rounded-full border px-3.5 py-1.5 text-xs font-medium transition-colors",
-                  active
-                    ? "border-foreground bg-foreground text-background"
-                    : "border-border text-muted-foreground hover:border-foreground/40 hover:text-foreground",
-                )}
-              >
-                {range.label}
-              </Link>
-            );
-          })}
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+          <span className="text-sm font-medium text-foreground sm:mr-1">Período rápido:</span>
+          <div className="-mx-5 flex gap-2 overflow-x-auto px-5 [scrollbar-width:none] sm:mx-0 sm:flex-wrap sm:px-0 [&::-webkit-scrollbar]:hidden">
+            {quickRanges(now).map((range) => {
+              const active =
+                range.desde === toDayParam(filters.from) && range.hasta === toDayParam(filters.to);
+              return (
+                <Link
+                  key={range.label}
+                  href={withChanges(filters, {
+                    from: new Date(`${range.desde}T00:00:00.000Z`),
+                    to: new Date(`${range.hasta}T00:00:00.000Z`),
+                  })}
+                  aria-current={active ? "true" : undefined}
+                  className={cn(filterPillClass(active), "whitespace-nowrap")}
+                >
+                  {range.label}
+                </Link>
+              );
+            })}
+          </div>
         </div>
 
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <TextField
             label="Desde"
             name="desde"
@@ -306,7 +316,7 @@ export default async function AdminReportsPage({ searchParams }: PageProps<"/adm
                   </option>
                 ))}
               </SelectField>
-              <div className="flex items-end pb-3">
+              <div className="flex items-end sm:pb-3">
                 <Checkbox
                   label={`Solo stock bajo (${LOW_STOCK_THRESHOLD} o menos)`}
                   name="stockBajo"
@@ -326,13 +336,15 @@ export default async function AdminReportsPage({ searchParams }: PageProps<"/adm
               </Badge>
             ))}
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-col-reverse gap-2 sm:flex-row">
             <Link href={`/admin/reportes?tipo=${filters.type}`}>
-              <Button type="button" variant="ghost">
+              <Button type="button" variant="ghost" className="w-full sm:w-auto">
                 Limpiar
               </Button>
             </Link>
-            <Button type="submit">Aplicar filtros</Button>
+            <Button type="submit" className="w-full sm:w-auto">
+              Aplicar filtros
+            </Button>
           </div>
         </div>
       </form>
@@ -345,7 +357,7 @@ export default async function AdminReportsPage({ searchParams }: PageProps<"/adm
 
       {sales && (
         <>
-          <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+          <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
             <Kpi
               featured
               label="Ventas cobradas"
@@ -369,7 +381,7 @@ export default async function AdminReportsPage({ searchParams }: PageProps<"/adm
             />
           </div>
 
-          <div className="grid gap-4 lg:grid-cols-2">
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
             <BreakdownCard
               title="Pedidos por estado"
               rows={sales.summary.byStatus}
@@ -410,43 +422,57 @@ export default async function AdminReportsPage({ searchParams }: PageProps<"/adm
                 No hay pedidos con estos filtros.
               </p>
             ) : (
-              <DataTable>
-                <thead>
-                  <tr>
-                    <th>Fecha</th>
-                    <th>Cliente</th>
-                    <th>Método</th>
-                    <th>Tipo</th>
-                    <th>Estado</th>
-                    <th className="text-right">Total</th>
-                  </tr>
-                </thead>
-                <tbody>
+              <>
+                <AdminCardList>
                   {sales.orders.slice(0, PREVIEW_ROWS).map((order) => (
-                    <tr key={order.id}>
-                      <td className="text-muted-foreground">{formatDate(order.createdAt)}</td>
-                      <td>
-                        <Link
-                          href={`/admin/pedidos/${order.id}`}
-                          className="font-medium text-foreground hover:text-accent"
-                        >
-                          {order.fullName}
-                        </Link>
-                      </td>
-                      <td className="text-muted-foreground">
-                        {paymentMethodLabel(order.paymentMethod)}
-                      </td>
-                      <td className="text-muted-foreground">{TIER_LABELS[order.pricingTier]}</td>
-                      <td>
-                        <OrderStatusBadge status={order.status} />
-                      </td>
-                      <td className="text-right font-medium tabular-nums text-foreground">
-                        {formatCurrency(order.total)}
-                      </td>
-                    </tr>
+                    <AdminListCard
+                      key={order.id}
+                      href={`/admin/pedidos/${order.id}`}
+                      title={order.fullName}
+                      badge={<OrderStatusBadge status={order.status} />}
+                      meta={`${formatDate(order.createdAt)} · ${paymentMethodLabel(order.paymentMethod)} · ${TIER_LABELS[order.pricingTier]}`}
+                      aside={<span className="tabular-nums">{formatCurrency(order.total)}</span>}
+                    />
                   ))}
-                </tbody>
-              </DataTable>
+                </AdminCardList>
+                <DataTable className="hidden md:block">
+                  <thead>
+                    <tr>
+                      <th>Fecha</th>
+                      <th>Cliente</th>
+                      <th>Método</th>
+                      <th>Tipo</th>
+                      <th>Estado</th>
+                      <th className="text-right">Total</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {sales.orders.slice(0, PREVIEW_ROWS).map((order) => (
+                      <tr key={order.id}>
+                        <td className="text-muted-foreground">{formatDate(order.createdAt)}</td>
+                        <td>
+                          <Link
+                            href={`/admin/pedidos/${order.id}`}
+                            className="font-medium text-foreground hover:text-accent"
+                          >
+                            {order.fullName}
+                          </Link>
+                        </td>
+                        <td className="text-muted-foreground">
+                          {paymentMethodLabel(order.paymentMethod)}
+                        </td>
+                        <td className="text-muted-foreground">{TIER_LABELS[order.pricingTier]}</td>
+                        <td>
+                          <OrderStatusBadge status={order.status} />
+                        </td>
+                        <td className="text-right font-medium tabular-nums text-foreground">
+                          {formatCurrency(order.total)}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </DataTable>
+              </>
             )}
           </section>
         </>
@@ -454,7 +480,7 @@ export default async function AdminReportsPage({ searchParams }: PageProps<"/adm
 
       {inventory && (
         <>
-          <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+          <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
             <Kpi
               featured
               label="Valor del inventario"
@@ -478,7 +504,7 @@ export default async function AdminReportsPage({ searchParams }: PageProps<"/adm
             />
           </div>
 
-          <div className="grid gap-4 sm:grid-cols-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-4">
             {inventory.summary.movements.map((movement) => (
               <div
                 key={movement.reason}
@@ -509,49 +535,57 @@ export default async function AdminReportsPage({ searchParams }: PageProps<"/adm
                 No hay tallas con estos filtros.
               </p>
             ) : (
-              <DataTable>
-                <thead>
-                  <tr>
-                    <th>Producto</th>
-                    <th>Categoría</th>
-                    <th>Talla</th>
-                    <th>Estado</th>
-                    <th className="text-right">Stock</th>
-                    <th className="text-right">Valor</th>
-                  </tr>
-                </thead>
-                <tbody>
+              <>
+                <AdminCardList>
                   {inventory.rows.slice(0, PREVIEW_ROWS).map((row) => (
-                    <tr key={row.id}>
-                      <td className="font-medium text-foreground">
-                        <Link href={`/admin/inventario/${row.id}`} className="hover:text-accent">
-                          {row.product}
-                        </Link>
-                        {!row.active && (
-                          <span className="ml-2 text-xs font-normal text-muted-foreground">
-                            (inactivo)
-                          </span>
-                        )}
-                      </td>
-                      <td className="text-muted-foreground">{row.category}</td>
-                      <td className="text-muted-foreground">{row.size}</td>
-                      <td>
-                        {row.stock === 0 ? (
-                          <Badge variant="destructive">Agotado</Badge>
-                        ) : row.stock <= LOW_STOCK_THRESHOLD ? (
-                          <Badge variant="accent">Bajo</Badge>
-                        ) : (
-                          <Badge variant="secondary">OK</Badge>
-                        )}
-                      </td>
-                      <td className="text-right tabular-nums text-foreground">{row.stock}</td>
-                      <td className="text-right tabular-nums text-foreground">
-                        {formatCurrency(row.value)}
-                      </td>
-                    </tr>
+                    <AdminListCard
+                      key={row.id}
+                      href={`/admin/inventario/${row.id}`}
+                      title={row.product}
+                      badge={<StockBadge stock={row.stock} />}
+                      meta={`${row.category} · Talla ${row.size} · ${row.stock} unid.${row.active ? "" : " · inactivo"}`}
+                      aside={<span className="tabular-nums">{formatCurrency(row.value)}</span>}
+                    />
                   ))}
-                </tbody>
-              </DataTable>
+                </AdminCardList>
+                <DataTable className="hidden md:block">
+                  <thead>
+                    <tr>
+                      <th>Producto</th>
+                      <th>Categoría</th>
+                      <th>Talla</th>
+                      <th>Estado</th>
+                      <th className="text-right">Stock</th>
+                      <th className="text-right">Valor</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {inventory.rows.slice(0, PREVIEW_ROWS).map((row) => (
+                      <tr key={row.id}>
+                        <td className="font-medium text-foreground">
+                          <Link href={`/admin/inventario/${row.id}`} className="hover:text-accent">
+                            {row.product}
+                          </Link>
+                          {!row.active && (
+                            <span className="ml-2 text-xs font-normal text-muted-foreground">
+                              (inactivo)
+                            </span>
+                          )}
+                        </td>
+                        <td className="text-muted-foreground">{row.category}</td>
+                        <td className="text-muted-foreground">{row.size}</td>
+                        <td>
+                          <StockBadge stock={row.stock} />
+                        </td>
+                        <td className="text-right tabular-nums text-foreground">{row.stock}</td>
+                        <td className="text-right tabular-nums text-foreground">
+                          {formatCurrency(row.value)}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </DataTable>
+              </>
             )}
           </section>
         </>

@@ -197,7 +197,7 @@ export default async function TiendaPage({ searchParams }: PageProps<"/tienda">)
           <div className="relative mx-auto flex max-w-7xl flex-col gap-8 px-4 py-14 sm:px-6 sm:py-20">
             <nav
               aria-label={copy.breadcrumb}
-              className="eyebrow flex items-center gap-2 text-[0.625rem] text-inverse-muted"
+              className="eyebrow flex items-center gap-2 text-[0.625rem] text-inverse-muted [&_a]:-my-3 [&_a]:inline-block [&_a]:py-3"
             >
               <Link href="/" className="hover:text-inverse-foreground">
                 {copy.home}

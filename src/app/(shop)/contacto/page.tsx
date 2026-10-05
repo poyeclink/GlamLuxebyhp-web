@@ -26,6 +26,7 @@ import { Spotlight } from "@/components/motion/Spotlight";
 
 import { tMany } from "@/lib/i18n";
 import { CONTACT, whatsappUrl } from "@/lib/site";
+import { ADMIN_INBOX, isMailConfigured } from "@/lib/mailer";
 import { STOCK_IMAGES } from "@/lib/stock-images";
 import { WHOLESALE_ITEM_THRESHOLD } from "@/server/services/cart-service";
 
@@ -78,7 +79,7 @@ function CardAction({
     <a
       href={href}
       {...(external ? { target: "_blank", rel: "noopener noreferrer" } : {})}
-      className="inline-flex w-fit items-center gap-2 text-sm font-medium text-foreground"
+      className="-my-2.5 inline-flex w-fit items-center gap-2 py-2.5 text-sm font-medium text-foreground"
     >
       <span className="border-b border-foreground pb-0.5">{label}</span>
       <ArrowUpRight className="h-4 w-4 transition-transform duration-300 group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
@@ -87,6 +88,7 @@ function CardAction({
 }
 
 export default async function ContactPage() {
+  const canSubmit = isMailConfigured() && Boolean(ADMIN_INBOX);
   const c = await tMany({
     leatherToteAlt: STOCK_IMAGES.leatherTote.alt,
     shopWindowAlt: STOCK_IMAGES.shopWindow.alt,
@@ -108,8 +110,9 @@ export default async function ContactPage() {
     useForm: "Usar el formulario",
     formEyebrow: "Escríbenos",
     formTitle: "Cuéntanos qué necesitas",
-    formText:
-      "Completa el formulario y lo abriremos listo para enviar. Mientras más detalles nos des, más rápido podremos ayudarte.",
+    formText: canSubmit
+      ? "Completa el formulario y te responderemos por correo. Mientras más detalles nos des, más rápido podremos ayudarte."
+      : "Completa el formulario y lo abriremos listo para enviar. Mientras más detalles nos des, más rápido podremos ayudarte.",
     tipsTitle: "Para ayudarte más rápido, incluye:",
     tip1: "Tu número de pedido, si ya compraste",
     tip2: "El producto y la talla que te interesan",
@@ -121,6 +124,14 @@ export default async function ContactPage() {
     topicWholesale: "Compra mayorista",
     topicProduct: "Información de un producto",
     topicOther: "Otro",
+    email: "Tu correo",
+    phone: "Teléfono",
+    optional: "Opcional",
+    send: "Enviar mensaje",
+    pending: "Enviando…",
+    sentTitle: "¡Mensaje enviado!",
+    sentText: "Gracias por escribirnos. Te responderemos al correo que nos dejaste lo antes posible.",
+    submitHint: "Usamos tus datos solo para responder tu mensaje.",
     message: "Mensaje",
     placeholder: "Cuéntanos en qué te podemos ayudar…",
     sendWhatsapp: "Enviar por WhatsApp",
@@ -282,10 +293,19 @@ export default async function ContactPage() {
         </div>
         <div className="rounded-3xl border border-border bg-background p-6 shadow-[0_30px_80px_-40px_rgba(10,10,11,0.35)] sm:p-10">
           <ContactForm
+            canSubmit={canSubmit}
             whatsappNumber={CONTACT.whatsapp}
             email={CONTACT.email}
             copy={{
               name: c.name,
+              email: c.email,
+              phone: c.phone,
+              optional: c.optional,
+              send: c.send,
+              pending: c.pending,
+              sentTitle: c.sentTitle,
+              sentText: c.sentText,
+              submitHint: c.submitHint,
               topic: c.topic,
               topics: [c.topicOrder, c.topicWholesale, c.topicProduct, c.topicOther],
               message: c.message,

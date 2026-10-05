@@ -31,7 +31,7 @@ function ArrowLink({ href, children }: { href: string; children: React.ReactNode
   return (
     <Link
       href={href}
-      className="group inline-flex items-center gap-2 text-sm font-medium text-foreground"
+      className="group -my-2.5 inline-flex items-center gap-2 py-2.5 text-sm font-medium text-foreground"
     >
       <span className="relative after:absolute after:inset-x-0 after:-bottom-0.5 after:h-px after:origin-left after:bg-foreground after:transition-transform after:duration-300 group-hover:after:scale-x-0">
         {children}

@@ -18,17 +18,23 @@ export const ADMIN_LINKS = [
 // que todas las demás rutas empiezan con ese mismo prefijo); el resto usa
 // startsWith para que una subruta como /admin/pedidos/[id] también resalte
 // "Pedidos" en el nav.
-function isActiveLink(pathname: string, href: string) {
+export function isActiveLink(pathname: string, href: string) {
   if (href === "/admin") return pathname === "/admin";
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
-export function AdminNavLinks({ onNavigate }: { onNavigate?: () => void }) {
+export function AdminNavLinks({
+  links = ADMIN_LINKS,
+  onNavigate,
+}: {
+  links?: typeof ADMIN_LINKS;
+  onNavigate?: () => void;
+}) {
   const pathname = usePathname();
 
   return (
     <>
-      {ADMIN_LINKS.map((link) => {
+      {links.map((link) => {
         const active = isActiveLink(pathname, link.href);
         return (
           <Link
@@ -37,7 +43,7 @@ export function AdminNavLinks({ onNavigate }: { onNavigate?: () => void }) {
             onClick={onNavigate}
             aria-current={active ? "page" : undefined}
             className={cn(
-              "group relative flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors duration-300",
+              "group relative flex items-center gap-3 rounded-lg px-3 py-3 text-sm font-medium transition-colors duration-300 active:bg-inverse-border/60 md:py-2.5",
               active
                 ? "bg-inverse-foreground/10 text-inverse-foreground"
                 : "text-inverse-muted hover:bg-inverse-border/60 hover:text-inverse-foreground",

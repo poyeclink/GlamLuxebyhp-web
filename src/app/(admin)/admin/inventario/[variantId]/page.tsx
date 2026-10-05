@@ -34,7 +34,7 @@ export default async function AdminInventoryVariantPage({
         title={variant.product.name}
       />
 
-      <div className="flex items-center justify-between rounded-2xl bg-inverse p-6 text-inverse-foreground">
+      <div className="flex items-center justify-between rounded-2xl bg-inverse p-5 text-inverse-foreground sm:p-6">
         <span className="eyebrow text-inverse-muted">Stock actual</span>
         <span className="text-5xl font-semibold leading-none tracking-tight tabular-nums">{variant.stock}</span>
       </div>
@@ -52,14 +52,14 @@ export default async function AdminInventoryVariantPage({
         {logs.length === 0 ? (
           <p className="text-sm text-muted-foreground">Todavía no hay movimientos registrados.</p>
         ) : (
-          <ul className="flex flex-col divide-y divide-border rounded-2xl border border-border bg-background px-5">
+          <ul className="flex flex-col divide-y divide-border rounded-2xl border border-border bg-background px-4 sm:px-5">
             {logs.map((log) => (
               <li key={log.id} className="flex flex-col gap-1 py-3 text-sm">
-                <div className="flex items-center justify-between gap-4">
+                <div className="flex items-center justify-between gap-3">
                   <Badge variant={log.quantityChange < 0 ? "destructive" : "secondary"}>
                     {REASON_LABELS[log.reason]}
                   </Badge>
-                  <span className="text-foreground">
+                  <span className="shrink-0 tabular-nums text-foreground">
                     {log.quantityChange > 0 ? "+" : ""}
                     {log.quantityChange} → stock {log.stockAfter}
                   </span>

@@ -16,14 +16,14 @@ export function AdminUserCard({ name }: { name: string }) {
       <Link
         href="/"
         target="_blank"
-        className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-inverse-muted transition-colors hover:bg-inverse-border/60 hover:text-inverse-foreground"
+        className="flex items-center gap-3 rounded-lg px-3 py-3 text-sm text-inverse-muted transition-colors hover:bg-inverse-border/60 hover:text-inverse-foreground active:bg-inverse-border/60 md:py-2"
       >
         <span className="material-symbols-outlined text-[20px] leading-none" aria-hidden="true">
           storefront
         </span>
         Ver tienda
       </Link>
-      <AdminLogoutButton className="w-full" />
+      <AdminLogoutButton className="w-full py-3 active:bg-inverse-border/60 md:py-2" />
     </div>
   );
 }

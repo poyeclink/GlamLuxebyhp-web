@@ -1,8 +1,14 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import { after } from "next/server";
 import { requireCustomer } from "@/lib/session";
-import { t } from "@/lib/i18n";
+import { getLocale, t } from "@/lib/i18n";
+import {
+  notifyAdminNewOrder,
+  notifyLowStockFromOrder,
+  sendOrderStatusEmail,
+} from "@/server/email/notifications";
 import {
   createAddress,
   getAddressForEdit,
@@ -137,11 +143,20 @@ export async function confirmCheckoutOrderAction(
         zip: address.zip,
       },
       paymentMethod,
+      locale: await getLocale(),
     });
   } catch (error) {
     if (error instanceof OrderError) return { error: await t(error.message) };
     throw error;
   }
 
+  const orderId = order.id;
+  after(() =>
+    Promise.all([
+      sendOrderStatusEmail(orderId),
+      notifyAdminNewOrder(orderId),
+      notifyLowStockFromOrder(orderId),
+    ]),
+  );
   redirect(`/pedidos/${order.id}`);
 }

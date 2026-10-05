@@ -8,6 +8,15 @@ export class InventoryError extends Error {}
 // solo lugar, igual que WHOLESALE_ITEM_THRESHOLD en cart-service.ts.
 export const LOW_STOCK_THRESHOLD = 5;
 
+// Avisa al entrar en stock bajo y otra vez al agotarse, no en cada movimiento
+// mientras ya está bajo.
+export function crossedLowStock(stockBefore: number, stockAfter: number) {
+  return (
+    (stockBefore > LOW_STOCK_THRESHOLD && stockAfter <= LOW_STOCK_THRESHOLD) ||
+    (stockBefore > 0 && stockAfter === 0)
+  );
+}
+
 type LogInventoryChangeInput = {
   variantId: string;
   reason: InventoryLogReason;

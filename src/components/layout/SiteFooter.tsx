@@ -37,7 +37,7 @@ function FooterColumn({ title, children }: { title: string; children: React.Reac
   return (
     <div className="flex flex-col gap-4">
       <span className="eyebrow text-inverse-foreground">{title}</span>
-      <div className="flex flex-col gap-3">{children}</div>
+      <div className="flex flex-col gap-1 sm:gap-3">{children}</div>
     </div>
   );
 }
@@ -55,7 +55,7 @@ function FooterLink({
     <Link
       href={href}
       {...(external ? { target: "_blank", rel: "noopener noreferrer" } : {})}
-      className="group flex max-w-full items-center text-sm text-inverse-muted transition-colors duration-300 hover:text-inverse-foreground"
+      className="group flex min-h-10 max-w-full items-center text-sm text-inverse-muted sm:min-h-0 transition-colors duration-300 hover:text-inverse-foreground"
     >
       <span
         aria-hidden="true"

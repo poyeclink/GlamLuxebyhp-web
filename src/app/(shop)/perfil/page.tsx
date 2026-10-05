@@ -1,12 +1,13 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { MapPin, Plus, User } from "lucide-react";
+import { KeyRound, MapPin, Plus, User } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { AccountSection, AccountShell } from "@/components/account/AccountShell";
 import { ADDRESS_SUMMARY_COPY, AddressSummary } from "@/components/account/AddressSummary";
 import { DeleteAddressButton } from "@/components/account/DeleteAddressButton";
 import { ProfileForm } from "@/components/account/ProfileForm";
+import { ChangePasswordForm } from "@/components/account/ChangePasswordForm";
 import { requireCustomer } from "@/lib/session";
 import { t, tMany } from "@/lib/i18n";
 import { listAddresses } from "@/server/services/address-service";
@@ -35,6 +36,16 @@ export default async function PerfilPage() {
       saved: "Datos actualizados.",
       submit: "Guardar cambios",
       pending: "Enviando…",
+      security: "Contraseña",
+      securityText: "Te avisaremos por correo cada vez que cambie.",
+      currentPassword: "Contraseña actual",
+      newPassword: "Nueva contraseña",
+      confirmPassword: "Repite la nueva contraseña",
+      showPassword: "Mostrar contraseña",
+      hidePassword: "Ocultar contraseña",
+      forgot: "¿Olvidaste tu contraseña?",
+      passwordSaved: "Contraseña actualizada.",
+      savePassword: "Cambiar contraseña",
     }),
     tMany(ADDRESS_SUMMARY_COPY),
   ]);
@@ -44,12 +55,20 @@ export default async function PerfilPage() {
       <div className="flex flex-col gap-14">
         <AccountSection icon={User} title={copy.personalData} description={profile.email}>
           <Card>
-            <CardContent className="p-6 sm:p-8">
+            <CardContent className="p-5 sm:p-8">
               <ProfileForm
                 email={profile.email}
                 defaultValues={{ name: profile.name, whatsapp: profile.whatsapp }}
                 copy={copy}
               />
+            </CardContent>
+          </Card>
+        </AccountSection>
+
+        <AccountSection icon={KeyRound} title={copy.security} description={copy.securityText}>
+          <Card>
+            <CardContent className="p-5 sm:p-8">
+              <ChangePasswordForm copy={copy} />
             </CardContent>
           </Card>
         </AccountSection>
@@ -68,7 +87,7 @@ export default async function PerfilPage() {
               >
                 <CardContent className="flex h-full flex-col gap-4 p-5">
                   <AddressSummary address={address} copy={addressCopy} />
-                  <div className="mt-auto flex items-center gap-2 border-t border-border pt-4">
+                  <div className="mt-auto grid grid-cols-2 gap-2 border-t border-border pt-4 sm:flex sm:items-center [&_button]:w-full sm:[&_button]:w-auto">
                     <Link href={`/perfil/direcciones/${address.id}/editar`}>
                       <Button variant="outline" size="sm">
                         {copy.edit}

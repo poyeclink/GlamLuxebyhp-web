@@ -55,17 +55,22 @@ export function OrderSummary({
           <CardContent className="p-4">
             <ul className="flex flex-col divide-y divide-border">
               {items.map((item) => (
-                <li key={item.id} className="flex items-center justify-between gap-4 py-3 text-sm">
-                  <span className="flex items-center gap-2 text-foreground">
-                    {item.productName}
+                <li
+                  key={item.id}
+                  className="flex flex-col gap-1.5 py-3 text-sm sm:flex-row sm:items-center sm:justify-between sm:gap-4"
+                >
+                  <span className="min-w-0 text-foreground">{item.productName}</span>
+                  <span className="flex shrink-0 items-center gap-2 whitespace-nowrap">
                     {item.variantSize ? (
                       <Badge variant="outline" className="text-xs">
                         {item.variantSize}
                       </Badge>
                     ) : null}
                     <span className="text-muted-foreground">× {item.quantity}</span>
+                    <span className="ml-auto pl-2 text-muted-foreground sm:ml-0">
+                      {formatCurrency(item.lineTotal)}
+                    </span>
                   </span>
-                  <span className="text-muted-foreground">{formatCurrency(item.lineTotal)}</span>
                 </li>
               ))}
             </ul>

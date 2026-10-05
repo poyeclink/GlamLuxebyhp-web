@@ -1,9 +1,15 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { after } from "next/server";
 import { z } from "zod";
 import { requireAdmin } from "@/lib/session";
-import { InventoryError, adjustVariantStock } from "@/server/services/inventory-service";
+import {
+  InventoryError,
+  adjustVariantStock,
+  crossedLowStock,
+} from "@/server/services/inventory-service";
+import { notifyAdminLowStock } from "@/server/email/notifications";
 
 export type InventoryActionState = {
   error?: string;
@@ -34,12 +40,15 @@ export async function adjustVariantStockAction(
   }
 
   try {
-    await adjustVariantStock({
+    const updated = await adjustVariantStock({
       variantId,
       delta: parsed.data.delta,
       note: parsed.data.note,
       adminUserId: session.userId,
     });
+    if (crossedLowStock(updated.stock - parsed.data.delta, updated.stock)) {
+      after(() => notifyAdminLowStock([variantId]));
+    }
   } catch (error) {
     if (error instanceof InventoryError) return { error: error.message };
     throw error;

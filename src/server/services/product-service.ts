@@ -53,7 +53,10 @@ export async function listProducts({ search, page = 1 }: { search?: string; page
     prisma.product.findMany({
       where,
       orderBy: { name: "asc" },
-      include: { category: categoryWithParent },
+      include: {
+        category: categoryWithParent,
+        images: { where: { isPrimary: true }, take: 1, select: { key: true } },
+      },
       skip: (Math.max(page, 1) - 1) * ADMIN_PAGE_SIZE,
       take: ADMIN_PAGE_SIZE,
     }),

@@ -24,7 +24,7 @@ export default async function NewProductPage() {
           .
         </p>
       ) : (
-        <div className="rounded-2xl border border-border bg-background p-6 sm:p-8">
+        <div className="rounded-2xl border border-border bg-background p-4 sm:p-8">
           <ProductForm
             action={createProductAction}
             categories={categories}

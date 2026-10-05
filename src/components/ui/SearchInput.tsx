@@ -32,7 +32,7 @@ export function SearchInput({
           name="q"
           defaultValue={defaultValue}
           placeholder={placeholder}
-          className="h-11 w-full rounded-full border border-input bg-background pl-11 pr-4 text-sm outline-none transition-[border-color,box-shadow] duration-200 hover:border-foreground/30 focus:border-ring focus:ring-4 focus:ring-ring/15"
+          className="h-11 w-full rounded-full border border-input bg-background pl-11 pr-4 text-base outline-none sm:text-sm transition-[border-color,box-shadow] duration-200 hover:border-foreground/30 focus:border-ring focus:ring-4 focus:ring-ring/15"
         />
       </div>
     </form>

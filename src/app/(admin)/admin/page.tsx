@@ -38,7 +38,7 @@ function CardLink({ href, children }: { href: string; children: React.ReactNode 
   return (
     <Link
       href={href}
-      className="group flex items-center gap-1 text-sm font-medium text-accent transition-colors hover:text-foreground"
+      className="group -my-2.5 -mr-2 flex min-h-10 items-center gap-1 rounded-lg px-2 text-sm font-medium text-accent transition-colors hover:text-foreground active:bg-accent-soft"
     >
       {children}
       <ArrowUpRight className="h-4 w-4 transition-transform duration-300 group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
@@ -56,7 +56,7 @@ export default async function AdminHomePage() {
   const firstName = (session?.name ?? "Administrador").split(" ")[0];
 
   return (
-    <div className="mx-auto flex max-w-7xl flex-col gap-10 px-4 py-10 sm:px-8 lg:py-12">
+    <div className="mx-auto flex max-w-7xl flex-col gap-6 px-4 py-6 sm:gap-10 sm:px-8 sm:py-10 lg:py-12">
       <AdminPageHeader
         eyebrow={formatDate(new Date())}
         title={`Hola, ${firstName}`}
@@ -71,7 +71,7 @@ export default async function AdminHomePage() {
         }
       />
 
-      <ul className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
+      <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-5">
         {STATUS_CARDS.map(({ status, label, hint, icon }, index) => {
           const featured = index === 0;
           return (
@@ -79,7 +79,7 @@ export default async function AdminHomePage() {
               <Link
                 href={`/admin/pedidos?estado=${status}`}
                 className={cn(
-                  "group flex h-full flex-col gap-6 rounded-2xl border p-5 hover-lift hover:shadow-[0_20px_40px_-24px_rgba(10,10,11,0.45)]",
+                  "group flex h-full items-center gap-3 rounded-2xl border p-3.5 hover-lift hover:shadow-[0_20px_40px_-24px_rgba(10,10,11,0.45)] active:opacity-80 sm:flex-col sm:items-stretch sm:gap-6 sm:p-5",
                   featured
                     ? "border-inverse bg-inverse text-inverse-foreground"
                     : "border-border bg-background text-foreground hover:border-foreground/30",
@@ -88,7 +88,7 @@ export default async function AdminHomePage() {
                 <div className="flex items-center justify-between">
                   <span
                     className={cn(
-                      "flex h-10 w-10 items-center justify-center rounded-full transition-transform duration-300 group-hover:scale-110",
+                      "flex h-9 w-9 items-center justify-center rounded-full transition-transform duration-300 group-hover:scale-110 sm:h-10 sm:w-10",
                       featured
                         ? "bg-inverse-accent/15 text-inverse-accent"
                         : "bg-accent-soft text-accent",
@@ -103,20 +103,20 @@ export default async function AdminHomePage() {
                   </span>
                   <ArrowUpRight
                     className={cn(
-                      "h-4 w-4 opacity-0 transition-opacity duration-300 group-hover:opacity-100",
+                      "hidden h-4 w-4 opacity-0 transition-opacity duration-300 group-hover:opacity-100 sm:block",
                       featured ? "text-inverse-accent" : "text-accent",
                     )}
                   />
                 </div>
-                <div className="flex flex-col gap-1">
-                  <span className="text-4xl font-semibold leading-none tracking-tight tabular-nums">
+                <div className="flex min-w-0 flex-col gap-0.5 sm:gap-1">
+                  <span className="text-2xl font-semibold leading-none tracking-tight tabular-nums sm:text-4xl">
                     {statusCounts[status]}
                   </span>
-                  <span className="text-sm font-medium">{label}</span>
+                  <span className="truncate text-xs font-medium sm:text-sm">{label}</span>
                   <span
                     className={cn(
                       "text-xs",
-                      featured ? "text-inverse-muted" : "text-muted-foreground",
+                      featured ? "text-inverse-muted" : "hidden text-muted-foreground sm:block",
                     )}
                   >
                     {hint}
@@ -130,7 +130,7 @@ export default async function AdminHomePage() {
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1.4fr_1fr]">
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between border-b border-border">
+          <CardHeader className="flex flex-row items-center justify-between border-b border-border p-4 sm:p-6">
             <CardTitle>Ventas recientes</CardTitle>
             <CardLink href="/admin/pedidos">Ver todos</CardLink>
           </CardHeader>
@@ -143,7 +143,7 @@ export default async function AdminHomePage() {
                   <li key={order.id}>
                     <Link
                       href={`/admin/pedidos/${order.id}`}
-                      className="flex items-center gap-4 rounded-xl px-4 py-3 transition-colors hover:bg-accent-soft/50"
+                      className="flex min-h-14 items-center gap-3 rounded-xl px-3 py-3 transition-colors hover:bg-accent-soft/50 active:bg-accent-soft sm:gap-4 sm:px-4"
                     >
                       <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-secondary font-display text-foreground">
                         {order.fullName.charAt(0).toUpperCase()}
@@ -156,11 +156,11 @@ export default async function AdminHomePage() {
                           {formatDate(order.createdAt)}
                         </span>
                       </span>
-                      <span className="hidden sm:block">
+                      <span className="flex shrink-0 flex-col items-end gap-1 sm:flex-row-reverse sm:items-center sm:gap-4">
+                        <span className="text-sm font-medium text-foreground sm:w-20 sm:text-right">
+                          {formatCurrency(Number(order.total))}
+                        </span>
                         <OrderStatusBadge status={order.status} />
-                      </span>
-                      <span className="w-20 text-right text-sm font-medium text-foreground">
-                        {formatCurrency(Number(order.total))}
                       </span>
                     </Link>
                   </li>
@@ -172,7 +172,7 @@ export default async function AdminHomePage() {
 
         <div className="flex flex-col gap-6">
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between border-b border-border">
+            <CardHeader className="flex flex-row items-center justify-between border-b border-border p-4 sm:p-6">
               <CardTitle>Stock bajo</CardTitle>
               <CardLink href="/admin/inventario">Inventario</CardLink>
             </CardHeader>
@@ -190,7 +190,7 @@ export default async function AdminHomePage() {
                     <li key={variant.id}>
                       <Link
                         href={`/admin/inventario/${variant.id}`}
-                        className="flex items-center justify-between gap-4 rounded-xl px-4 py-3 transition-colors hover:bg-accent-soft/50"
+                        className="flex min-h-14 items-center justify-between gap-3 rounded-xl px-3 py-3 transition-colors hover:bg-accent-soft/50 active:bg-accent-soft sm:gap-4 sm:px-4"
                       >
                         <span className="flex min-w-0 flex-col gap-0.5">
                           <span className="truncate text-sm font-medium text-foreground">
@@ -220,7 +220,7 @@ export default async function AdminHomePage() {
                 <Link
                   key={link.href}
                   href={link.href}
-                  className="group flex flex-col gap-3 rounded-xl border border-inverse-border p-4 text-sm transition-colors duration-300 hover:border-inverse-accent/60 hover:bg-inverse-border/40"
+                  className="group flex flex-col gap-3 rounded-xl border border-inverse-border p-4 text-sm transition-colors duration-300 hover:border-inverse-accent/60 hover:bg-inverse-border/40 active:bg-inverse-border/60"
                 >
                   <span
                     className="material-symbols-outlined text-[22px] leading-none text-inverse-accent transition-transform duration-300 group-hover:-translate-y-0.5"

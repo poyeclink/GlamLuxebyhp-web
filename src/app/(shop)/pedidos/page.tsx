@@ -67,13 +67,13 @@ export default async function OrderHistoryPage() {
               <li key={order.id} className="border-t border-border first:border-t-0">
                 <Link
                   href={`/pedidos/${order.id}`}
-                  className="group flex items-center gap-4 bg-background px-5 py-4 transition-colors duration-300 hover:bg-accent-soft/50 sm:px-6"
+                  className="group flex items-center gap-3 bg-background px-4 py-4 transition-colors duration-300 hover:bg-accent-soft/50 active:bg-accent-soft sm:gap-4 sm:px-6"
                 >
-                  <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-inverse text-inverse-accent">
+                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-inverse text-inverse-accent sm:h-11 sm:w-11">
                     <Package className="h-5 w-5" aria-hidden="true" />
                   </span>
                   <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-                    <span className="font-display text-lg text-foreground">
+                    <span className="font-display text-base text-foreground sm:text-lg">
                       {copy.order.replace("{id}", order.id.slice(0, 8))}
                     </span>
                     <span className="text-xs text-muted-foreground">
@@ -81,7 +81,7 @@ export default async function OrderHistoryPage() {
                       {order._count.items === 1 ? copy.itemOne : copy.itemMany}
                     </span>
                   </span>
-                  <span className="flex flex-col items-end gap-1.5 sm:flex-row sm:items-center sm:gap-6">
+                  <span className="flex shrink-0 flex-col items-end gap-1.5 sm:flex-row sm:items-center sm:gap-6">
                     <OrderStatusBadge status={order.status} label={statusLabels[order.status]} />
                     <span className="text-sm font-medium text-foreground sm:w-24 sm:text-right">
                       {formatCurrency(Number(order.total))}

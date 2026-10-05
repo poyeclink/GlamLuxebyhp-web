@@ -122,19 +122,21 @@ export function Modal({
           isVisible ? "opacity-100 scale-100 translate-y-0" : "opacity-0 scale-[0.98] translate-y-2",
         )}
       >
-        <div className="flex items-center justify-between border-b border-border px-5 py-4">
+        <div className="flex items-center justify-between border-b border-border px-5 py-3 md:py-4">
           <h2 className="text-lg font-semibold text-foreground">{title}</h2>
           <button
             ref={closeButtonRef}
             type="button"
             aria-label={closeLabel}
             onClick={onClose}
-            className="flex h-8 w-8 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            className="-mr-1 flex h-10 w-10 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground active:bg-muted md:mr-0 md:h-8 md:w-8"
           >
             <X className="h-5 w-5" aria-hidden="true" />
           </button>
         </div>
-        <div className="flex-1 overflow-y-auto px-5 py-5">{children}</div>
+        <div className="flex-1 overflow-y-auto overscroll-contain px-5 pt-5 pb-[calc(1.25rem+env(safe-area-inset-bottom))] md:pb-5">
+          {children}
+        </div>
       </div>
     </div>
   );

@@ -89,6 +89,7 @@ export async function createReservedOrder(params: {
   userId: string;
   address: OrderAddressInput;
   paymentMethod: PaymentMethod;
+  locale: "es" | "en";
 }) {
   const cart = await getCartWithPricing({ userId: params.userId });
   if (cart.items.length === 0) throw new OrderError("Tu carrito está vacío.");
@@ -138,6 +139,7 @@ export async function createReservedOrder(params: {
         userId: params.userId,
         pricingTier: cart.useWholesalePrice ? "mayorista" : "individual",
         paymentMethod: params.paymentMethod,
+        locale: params.locale,
         subtotal: cart.subtotal,
         shippingCost: cart.shippingEstimate,
         total,
@@ -186,7 +188,7 @@ export async function expireReservedOrders() {
     select: { id: true, items: { select: { variantId: true, quantity: true } } },
   });
 
-  let expiredCount = 0;
+  const expiredIds: string[] = [];
 
   for (const order of expiredOrders) {
     try {
@@ -205,7 +207,7 @@ export async function expireReservedOrders() {
         await releaseOrderStock(tx, order);
         return true;
       });
-      if (expired) expiredCount++;
+      if (expired) expiredIds.push(order.id);
     } catch (error) {
       // Un pedido con problemas (fila bloqueada, error transitorio) no debe
       // detener el resto del lote — los que ya expiraron en esta corrida se
@@ -215,7 +217,7 @@ export async function expireReservedOrders() {
     }
   }
 
-  return { expiredCount };
+  return { expiredCount: expiredIds.length, expiredIds };
 }
 
 // Historial de pedidos del cliente — a diferencia de listOrdersForAdmin, ya

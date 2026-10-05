@@ -234,6 +234,9 @@ model Order {
   // 3 días desde la creación (regla de negocio) — el cron del ticket #28
   // marca `vencido` los pedidos `reservado` que pasan este momento sin pago.
   reservedUntil   DateTime
+  // Idioma en que el cliente hizo el checkout: los correos de estado que
+  // dispara el admin o el cron no tienen la cookie de idioma del cliente.
+  locale          String         @default("en") @db.VarChar(2)
   createdAt       DateTime       @default(now())
   items           OrderItem[]
   inventoryLogs   InventoryLog[]

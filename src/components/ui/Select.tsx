@@ -6,7 +6,7 @@ export function Select({ className, children, ...props }: ComponentProps<"select
     <select
       {...props}
       className={cn(
-        "h-11 w-full rounded-lg border border-input bg-background px-3.5 text-sm outline-none",
+        "h-11 w-full rounded-lg border border-input bg-background px-3.5 text-base outline-none sm:text-sm",
         "transition-[border-color,box-shadow] duration-200 placeholder:text-muted-foreground/70 hover:border-foreground/30 focus:border-ring focus:ring-4 focus:ring-ring/15",
         "disabled:cursor-not-allowed disabled:opacity-60",
         className,

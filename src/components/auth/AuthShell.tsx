@@ -21,23 +21,27 @@ export async function AuthShell({
   subtitle: string;
   brandTitle: string;
   brandPoints: string[];
-  image: StockImage;
+  // Opcional: sin foto el panel queda en Negro Noche liso (cada foto de
+  // stock se usa en un solo lugar del sitio).
+  image?: StockImage;
   children: React.ReactNode;
 }) {
   const homeLabel = await t("Inicio");
 
-  const alt = await t(image.alt);
+  const alt = image ? await t(image.alt) : "";
 
   return (
     <div className="mx-auto grid w-full max-w-7xl gap-4 p-3 sm:p-4 lg:min-h-[calc(100vh-5rem)] lg:grid-cols-[1.05fr_1fr]">
       <aside className="relative isolate hidden flex-col justify-between overflow-hidden rounded-[2rem] bg-inverse p-12 text-inverse-foreground [--logo-accent:var(--inverse-accent)] lg:flex">
-        <Image
-          src={image.src}
-          alt={alt}
-          fill
-          sizes="50vw"
-          className="-z-20 object-cover opacity-60"
-        />
+        {image && (
+          <Image
+            src={image.src}
+            alt={alt}
+            fill
+            sizes="50vw"
+            className="-z-20 object-cover opacity-60"
+          />
+        )}
         <div
           aria-hidden="true"
           className="absolute inset-0 -z-10 bg-[linear-gradient(160deg,rgba(10,10,11,0.55)_0%,rgba(10,10,11,0.95)_75%)]"

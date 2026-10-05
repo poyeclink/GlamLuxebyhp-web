@@ -40,7 +40,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           <div className="p-3">{userCard}</div>
         </aside>
 
-        <div className="flex min-w-0 flex-1 flex-col">
+        <div className="flex min-w-0 flex-1 flex-col pb-[calc(4rem+env(safe-area-inset-bottom))] md:pb-0">
           <AdminMobileNav userCard={userCard} />
           <main className="flex-1">{children}</main>
         </div>

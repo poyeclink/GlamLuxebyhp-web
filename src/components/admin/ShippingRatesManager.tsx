@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { DataTable } from "@/components/ui/DataTable";
+import { AdminCardList, AdminListCard } from "@/components/admin/AdminListCard";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { Modal } from "@/components/ui/Modal";
 import { ShippingRateForm } from "@/components/admin/ShippingRateForm";
@@ -21,6 +22,10 @@ type ShippingRate = {
   maxQuantity: number | null;
   price: number;
 };
+
+function quantityRange(rate: ShippingRate) {
+  return `${rate.minQuantity}${rate.maxQuantity === null ? "+" : `–${rate.maxQuantity}`}`;
+}
 
 type ModalState = { mode: "create" } | { mode: "edit"; rate: ShippingRate } | null;
 
@@ -46,26 +51,16 @@ export function ShippingRatesManager({ rates }: { rates: ShippingRate[] }) {
           Todavía no hay tarifas configuradas.
         </p>
       ) : (
-        <DataTable>
-          <thead>
-            <tr>
-              <th>Tier</th>
-              <th>Cantidad</th>
-              <th>Precio</th>
-              <th />
-            </tr>
-          </thead>
-          <tbody>
+        <>
+          <AdminCardList>
             {rates.map((rate) => (
-              <tr key={rate.id}>
-                <td className="font-medium capitalize text-foreground">{rate.tier}</td>
-                <td className="text-muted-foreground">
-                  {rate.minQuantity}
-                  {rate.maxQuantity === null ? "+" : `–${rate.maxQuantity}`}
-                </td>
-                <td className="text-foreground">{formatCurrency(rate.price)}</td>
-                <td>
-                  <div className="flex items-center justify-end gap-2">
+              <AdminListCard
+                key={rate.id}
+                title={<span className="capitalize">{rate.tier}</span>}
+                meta={`${quantityRange(rate)} artículos`}
+                aside={formatCurrency(rate.price)}
+                actions={
+                  <>
                     <Button
                       variant="outline"
                       size="sm"
@@ -74,12 +69,43 @@ export function ShippingRatesManager({ rates }: { rates: ShippingRate[] }) {
                       Editar
                     </Button>
                     <DeleteShippingRateButton id={rate.id} />
-                  </div>
-                </td>
-              </tr>
+                  </>
+                }
+              />
             ))}
-          </tbody>
-        </DataTable>
+          </AdminCardList>
+          <DataTable className="hidden md:block">
+            <thead>
+              <tr>
+                <th>Tier</th>
+                <th>Cantidad</th>
+                <th>Precio</th>
+                <th />
+              </tr>
+            </thead>
+            <tbody>
+              {rates.map((rate) => (
+                <tr key={rate.id}>
+                  <td className="font-medium capitalize text-foreground">{rate.tier}</td>
+                  <td className="text-muted-foreground">{quantityRange(rate)}</td>
+                  <td className="text-foreground">{formatCurrency(rate.price)}</td>
+                  <td>
+                    <div className="flex items-center justify-end gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setModal({ mode: "edit", rate })}
+                      >
+                        Editar
+                      </Button>
+                      <DeleteShippingRateButton id={rate.id} />
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </DataTable>
+        </>
       )}
 
       <Modal

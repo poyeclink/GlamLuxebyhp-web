@@ -185,7 +185,7 @@ export default async function ProductoPage({ params }: PageProps<"/producto/[slu
           })),
         }}
       />
-      <nav aria-label={copy.breadcrumb} className="text-sm text-muted-foreground">
+      <nav aria-label={copy.breadcrumb} className="text-sm text-muted-foreground [&_a]:-my-3 [&_a]:inline-block [&_a]:py-3">
         <Link href="/tienda" className="hover:text-foreground">
           {copy.shop}
         </Link>

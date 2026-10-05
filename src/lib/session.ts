@@ -5,7 +5,7 @@ import { cookies } from "next/headers";
 export const SESSION_COOKIE_NAME = process.env.SESSION_COOKIE_NAME || "glamluxe_session";
 const SESSION_DURATION_SECONDS = 60 * 60 * 24 * 7; // 7 días
 
-function getSecretKey() {
+export function getSecretKey() {
   const secret = process.env.AUTH_SECRET;
   if (!secret) throw new Error("AUTH_SECRET no está configurado.");
   return new TextEncoder().encode(secret);

@@ -22,6 +22,7 @@ export default async function LoginPage() {
     password: "Contraseña",
     showPassword: "Mostrar contraseña",
     hidePassword: "Ocultar contraseña",
+    forgot: "¿Olvidaste tu contraseña?",
     submit: "Iniciar sesión",
     pending: "Enviando…",
     noAccount: "¿No tienes cuenta?",

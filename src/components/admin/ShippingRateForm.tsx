@@ -49,6 +49,7 @@ export function ShippingRateForm({
         label="Cantidad mínima"
         name="minQuantity"
         type="number"
+        inputMode="numeric"
         min="1"
         defaultValue={defaultValues?.minQuantity}
         required
@@ -57,6 +58,7 @@ export function ShippingRateForm({
         label="Cantidad máxima (vacío = sin límite)"
         name="maxQuantity"
         type="number"
+        inputMode="numeric"
         min="1"
         defaultValue={defaultValues?.maxQuantity ?? undefined}
       />
@@ -64,6 +66,7 @@ export function ShippingRateForm({
         label="Precio"
         name="price"
         type="number"
+        inputMode="decimal"
         step="0.01"
         min="0"
         defaultValue={defaultValues?.price}

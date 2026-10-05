@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { DataTable } from "@/components/ui/DataTable";
+import { AdminCardList, AdminListCard } from "@/components/admin/AdminListCard";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { Modal } from "@/components/ui/Modal";
 import { SearchInput } from "@/components/ui/SearchInput";
@@ -65,30 +66,31 @@ export function CategoriesManager({
           {search ? `No encontramos categorías para "${search}".` : "Todavía no hay categorías."}
         </p>
       ) : (
-        <DataTable>
-          <thead>
-            <tr>
-              <th>Nombre</th>
-              <th>Categoría principal</th>
-              <th>Slug</th>
-              <th>Productos</th>
-              <th />
-            </tr>
-          </thead>
-          <tbody>
+        <>
+          <AdminCardList>
             {categories.map((category) => (
-              <tr key={category.id}>
-                <td className="font-medium text-foreground">{category.name}</td>
-                <td className="text-muted-foreground">
-                  {category.parent?.name ??
-                    (category._count.children > 0
+              <AdminListCard
+                key={category.id}
+                title={
+                  category.parent ? (
+                    <>
+                      <span className="text-muted-foreground">{category.parent.name} › </span>
+                      {category.name}
+                    </>
+                  ) : (
+                    category.name
+                  )
+                }
+                meta={[
+                  category.parent
+                    ? "Subcategoría"
+                    : category._count.children > 0
                       ? `Principal · ${category._count.children} sub`
-                      : "Principal")}
-                </td>
-                <td className="font-mono text-xs text-muted-foreground">{category.slug}</td>
-                <td className="text-muted-foreground">{category._count.products}</td>
-                <td>
-                  <div className="flex items-center justify-end gap-2">
+                      : "Principal",
+                  `${category._count.products} ${category._count.products === 1 ? "producto" : "productos"}`,
+                ].join(" · ")}
+                actions={
+                  <>
                     <Button
                       variant="outline"
                       size="sm"
@@ -97,12 +99,50 @@ export function CategoriesManager({
                       Editar
                     </Button>
                     <DeleteCategoryButton categoryId={category.id} />
-                  </div>
-                </td>
-              </tr>
+                  </>
+                }
+              />
             ))}
-          </tbody>
-        </DataTable>
+          </AdminCardList>
+          <DataTable className="hidden md:block">
+            <thead>
+              <tr>
+                <th>Nombre</th>
+                <th>Categoría principal</th>
+                <th>Slug</th>
+                <th>Productos</th>
+                <th />
+              </tr>
+            </thead>
+            <tbody>
+              {categories.map((category) => (
+                <tr key={category.id}>
+                  <td className="font-medium text-foreground">{category.name}</td>
+                  <td className="text-muted-foreground">
+                    {category.parent?.name ??
+                      (category._count.children > 0
+                        ? `Principal · ${category._count.children} sub`
+                        : "Principal")}
+                  </td>
+                  <td className="font-mono text-xs text-muted-foreground">{category.slug}</td>
+                  <td className="text-muted-foreground">{category._count.products}</td>
+                  <td>
+                    <div className="flex items-center justify-end gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setModal({ mode: "edit", category })}
+                      >
+                        Editar
+                      </Button>
+                      <DeleteCategoryButton categoryId={category.id} />
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </DataTable>
+        </>
       )}
 
       <Pagination

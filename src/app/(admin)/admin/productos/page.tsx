@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import { Plus } from "lucide-react";
 import { listProducts } from "@/server/services/product-service";
@@ -9,7 +10,18 @@ import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { SearchInput } from "@/components/ui/SearchInput";
 import { Pagination } from "@/components/ui/Pagination";
 import { DeleteProductButton } from "@/components/admin/DeleteProductButton";
+import { AdminCardList, AdminListCard } from "@/components/admin/AdminListCard";
+import { Isotipo } from "@/components/brand/Logo";
+import { r2PublicUrl } from "@/lib/r2";
 import { ADMIN_PAGE_SIZE, formatCurrency } from "@/lib/utils";
+
+function StatusBadge({ active }: { active: boolean }) {
+  return active ? (
+    <Badge variant="accent">Activo</Badge>
+  ) : (
+    <Badge variant="outline">Inactivo</Badge>
+  );
+}
 
 export default async function AdminProductsPage({ searchParams }: PageProps<"/admin/productos">) {
   const { q, page: pageParam } = await searchParams;
@@ -46,45 +58,94 @@ export default async function AdminProductsPage({ searchParams }: PageProps<"/ad
           {search ? `No encontramos productos para "${search}".` : "Todavía no hay productos."}
         </p>
       ) : (
-        <DataTable>
-          <thead>
-            <tr>
-              <th>Nombre</th>
-              <th>Categoría</th>
-              <th>Mayorista</th>
-              <th>Estado</th>
-              <th />
-            </tr>
-          </thead>
-          <tbody>
-            {products.map((product) => (
-              <tr key={product.id}>
-                <td className="font-medium text-foreground">{product.name}</td>
-                <td className="text-muted-foreground">{categoryLabel(product.category)}</td>
-                <td className="text-muted-foreground">
-                  {formatCurrency(Number(product.wholesalePrice))}
-                </td>
-                <td>
-                  {product.active ? (
-                    <Badge variant="accent">Activo</Badge>
-                  ) : (
-                    <Badge variant="outline">Inactivo</Badge>
-                  )}
-                </td>
-                <td>
-                  <div className="flex items-center justify-end gap-2">
-                    <Link href={`/admin/productos/${product.id}/editar`}>
-                      <Button variant="outline" size="sm">
-                        Editar
-                      </Button>
-                    </Link>
-                    <DeleteProductButton productId={product.id} />
-                  </div>
-                </td>
+        <>
+          <AdminCardList>
+            {products.map((product) => {
+              const editHref = `/admin/productos/${product.id}/editar`;
+              const image = product.images[0];
+              return (
+                <AdminListCard
+                  key={product.id}
+                  href={editHref}
+                  title={product.name}
+                  badge={<StatusBadge active={product.active} />}
+                  meta={categoryLabel(product.category)}
+                  aside={
+                    <div className="flex flex-col items-end leading-tight">
+                      <span>{formatCurrency(Number(product.individualPrice))}</span>
+                      <span className="text-xs font-normal text-accent">
+                        {formatCurrency(Number(product.wholesalePrice))} mayorista
+                      </span>
+                    </div>
+                  }
+                  media={
+                    <div className="relative flex h-14 w-14 items-center justify-center overflow-hidden rounded-lg bg-muted">
+                      {image ? (
+                        <Image
+                          src={r2PublicUrl(image.key)}
+                          alt=""
+                          fill
+                          sizes="56px"
+                          className="object-cover"
+                        />
+                      ) : (
+                        <Isotipo
+                          className="h-auto w-8 text-muted-foreground/40 [--logo-accent:currentColor]"
+                          title=""
+                        />
+                      )}
+                    </div>
+                  }
+                  actions={
+                    <>
+                      <Link href={editHref}>
+                        <Button variant="outline" size="sm">
+                          Editar
+                        </Button>
+                      </Link>
+                      <DeleteProductButton productId={product.id} />
+                    </>
+                  }
+                />
+              );
+            })}
+          </AdminCardList>
+          <DataTable className="hidden md:block">
+            <thead>
+              <tr>
+                <th>Nombre</th>
+                <th>Categoría</th>
+                <th>Mayorista</th>
+                <th>Estado</th>
+                <th />
               </tr>
-            ))}
-          </tbody>
-        </DataTable>
+            </thead>
+            <tbody>
+              {products.map((product) => (
+                <tr key={product.id}>
+                  <td className="font-medium text-foreground">{product.name}</td>
+                  <td className="text-muted-foreground">{categoryLabel(product.category)}</td>
+                  <td className="text-muted-foreground">
+                    {formatCurrency(Number(product.wholesalePrice))}
+                  </td>
+                  <td>
+                    <StatusBadge active={product.active} />
+                  </td>
+                  <td>
+                    <div className="flex items-center justify-end gap-2">
+                      <Link href={`/admin/productos/${product.id}/editar`}>
+                        <Button variant="outline" size="sm">
+                          Editar
+                        </Button>
+                      </Link>
+                      <DeleteProductButton productId={product.id} />
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </DataTable>
+        </>
       )}
 
       <Pagination

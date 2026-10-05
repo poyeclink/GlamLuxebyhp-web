@@ -18,8 +18,9 @@ const buttonVariants = cva(
         destructive: "bg-destructive text-destructive-foreground hover:bg-destructive/90",
       },
       size: {
-        sm: "h-8 px-3",
-        md: "h-10 px-4",
+        // En pantallas táctiles, 40-44px como mínimo para el dedo.
+        sm: "h-10 px-3.5 sm:h-8 sm:px-3",
+        md: "h-11 px-4 sm:h-10",
         lg: "h-12 px-7 text-[0.9375rem]",
       },
     },

@@ -45,7 +45,7 @@ export default async function OrderConfirmationPage({
       <div className="flex flex-col gap-8">
         <Link
           href="/pedidos"
-          className="group flex w-fit items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground"
+          className="group -my-1.5 -ml-2 flex min-h-10 w-fit items-center gap-2 rounded-lg px-2 text-sm text-muted-foreground transition-colors hover:text-foreground active:bg-muted"
         >
           <ArrowLeft className="h-4 w-4 transition-transform duration-300 group-hover:-translate-x-1" />
           {copy.back}
@@ -63,8 +63,8 @@ export default async function OrderConfirmationPage({
           <OrderStatusBadge status={order.status} label={statusLabel} />
         </div>
 
-        <div className="grid items-start gap-6 lg:grid-cols-[1fr_320px]">
-          <div className="flex flex-col gap-8">
+        <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
+          <div className="flex min-w-0 flex-col gap-8">
             <OrderSummary
               address={{
                 fullName: order.fullName,
@@ -82,7 +82,7 @@ export default async function OrderConfirmationPage({
             />
           </div>
 
-          <div className="flex flex-col gap-4 rounded-2xl bg-inverse p-6 text-inverse-foreground lg:sticky lg:top-28">
+          <div className="flex flex-col gap-4 rounded-2xl bg-inverse p-5 text-inverse-foreground sm:p-6 lg:sticky lg:top-28">
             <span className="flex h-10 w-10 items-center justify-center rounded-full bg-inverse-accent/15 text-inverse-accent">
               <Info className="h-5 w-5" aria-hidden="true" />
             </span>

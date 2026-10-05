@@ -30,7 +30,7 @@ export default async function EditProductPage({
         title={product.name}
       />
 
-      <section className="flex flex-col gap-5 rounded-2xl border border-border bg-background p-6 sm:p-8">
+      <section className="flex flex-col gap-5 rounded-2xl border border-border bg-background p-4 sm:p-8">
         <h2 className="font-display text-2xl text-foreground">Información</h2>
         <ProductForm
           action={updateProductAction.bind(null, id)}
@@ -50,12 +50,12 @@ export default async function EditProductPage({
         />
       </section>
 
-      <section className="flex flex-col gap-5 rounded-2xl border border-border bg-background p-6 sm:p-8">
+      <section className="flex flex-col gap-5 rounded-2xl border border-border bg-background p-4 sm:p-8">
         <h2 className="font-display text-2xl text-foreground">Imágenes</h2>
         <ProductImageUploader productId={product.id} images={images} />
       </section>
 
-      <section className="flex flex-col gap-5 rounded-2xl border border-border bg-background p-6 sm:p-8">
+      <section className="flex flex-col gap-5 rounded-2xl border border-border bg-background p-4 sm:p-8">
         <h2 className="font-display text-2xl text-foreground">Tallas y stock</h2>
         <VariantManager productId={product.id} variants={product.variants} />
       </section>

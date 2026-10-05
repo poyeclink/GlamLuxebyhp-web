@@ -15,6 +15,7 @@ export type LoginFormCopy = {
   password: string;
   showPassword: string;
   hidePassword: string;
+  forgot: string;
   submit: string;
   pending: string;
   noAccount: string;
@@ -35,6 +36,12 @@ export function LoginForm({ copy }: { copy: LoginFormCopy }) {
         hideLabel={copy.hidePassword}
         required
       />
+      <Link
+        href="/recuperar"
+        className="-my-2.5 w-fit self-end py-2.5 text-sm text-muted-foreground hover:text-accent"
+      >
+        {copy.forgot}
+      </Link>
       <FormError message={state.error} />
       <SubmitButton size="lg" className="mt-1" pendingLabel={copy.pending}>
         {copy.submit}

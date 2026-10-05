@@ -54,7 +54,7 @@ export function QuantityInput({
           setValue(Number.isNaN(parsed) ? min : parsed);
         }}
         onBlur={() => setValue((current) => clamp(current))}
-        className="w-12 border-x border-input bg-transparent text-center text-sm outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+        className="w-12 border-x border-input bg-transparent text-center text-base outline-none sm:text-sm [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
       />
       <button
         type="button"
