@@ -21,7 +21,7 @@ export const POLICY_LINKS = [
 
 // Fecha visible de la última revisión del texto legal — actualizarla cada vez
 // que cambie el contenido de cualquiera de las tres políticas.
-export const POLICIES_UPDATED_AT = new Date("2026-09-28T12:00:00Z");
+export const POLICIES_UPDATED_AT = new Date("2026-10-08T12:00:00Z");
 
 export async function PolicyPage({
   href,

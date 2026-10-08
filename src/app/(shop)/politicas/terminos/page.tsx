@@ -6,7 +6,7 @@ import { WHOLESALE_ITEM_THRESHOLD } from "@/server/services/cart-service";
 export async function generateMetadata(): Promise<Metadata> {
   const [title, description] = await Promise.all([
     t("Términos y condiciones"),
-    t("Condiciones de compra en Glam Luxe by HJ: precios, precio mayorista, reservas, pagos y envíos."),
+    t("Condiciones de compra en Glam Luxe by HJ: precios, precio mayorista, pagos y envíos."),
   ]);
   return { title, description, alternates: { canonical: "/politicas/terminos" } };
 }
@@ -37,10 +37,10 @@ export default function TermsPage() {
         },
         {
           id: "pedidos",
-          title: "Pedidos y reserva",
+          title: "Pedidos",
           body: [
-            "Al confirmar tu pedido reservamos las piezas y su inventario durante 3 días mientras verificamos tu pago. El pedido no se considera confirmado hasta que el pago esté verificado.",
-            "Si el pago no se confirma dentro de ese plazo, la reserva vence automáticamente y las piezas vuelven a estar disponibles para otros clientes.",
+            "El pago se realiza en el momento de confirmar tu pedido, y el pedido queda confirmado en cuanto el pago se completa.",
+            "Si no completas el pago, el pedido se cancela automáticamente, no se te cobra nada y las piezas vuelven a tu carrito.",
             "Nos reservamos el derecho de cancelar un pedido ante errores evidentes de precio o de inventario; en ese caso te avisaremos y, si ya pagaste, te reembolsaremos el importe completo.",
           ],
         },
@@ -49,7 +49,6 @@ export default function TermsPage() {
           title: "Métodos de pago",
           body: [
             "Aceptamos tarjeta de crédito o débito, procesada por un proveedor de pagos certificado: no almacenamos los datos de tu tarjeta.",
-            "También aceptamos Zelle, Cash App y PayPal. Estos pagos se verifican manualmente; tu pedido se confirma una vez comprobado el pago. Un pago rechazado o no verificable puede provocar la cancelación del pedido.",
           ],
         },
         {

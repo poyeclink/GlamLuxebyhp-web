@@ -1,22 +1,26 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { after } from "next/server";
 import { requireCustomer } from "@/lib/session";
 import { getLocale, t } from "@/lib/i18n";
-import {
-  notifyAdminNewOrder,
-  notifyLowStockFromOrder,
-  sendOrderStatusEmail,
-} from "@/server/email/notifications";
+import { stripe } from "@/lib/stripe";
 import {
   createAddress,
   getAddressForEdit,
   parseAddressInput,
 } from "@/server/services/address-service";
 import { getCartWithPricing } from "@/server/services/cart-service";
-import { isPaymentMethod } from "@/server/services/payment-service";
-import { OrderError, createReservedOrder } from "@/server/services/order-service";
+import {
+  OrderError,
+  createReservedOrder,
+  getOrderForCustomer,
+  releaseUnpaidOrder,
+} from "@/server/services/order-service";
+import {
+  createCardCheckoutUrl,
+  expireCheckoutSession,
+  getOpenCheckoutUrl,
+} from "@/server/services/card-payment-service";
 import type { AddressActionState } from "@/server/actions/address-actions";
 
 export async function createCheckoutAddressAction(
@@ -59,44 +63,7 @@ export async function acceptCheckoutTermsAction(
 
   const termsAcceptedAt = new Date().toISOString();
   redirect(
-    `/checkout/pago?addressId=${address.id}&termsAcceptedAt=${encodeURIComponent(termsAcceptedAt)}`,
-  );
-}
-
-export type CheckoutPaymentActionState = { error?: string };
-
-export async function selectCheckoutPaymentMethodAction(
-  _prevState: CheckoutPaymentActionState,
-  formData: FormData,
-): Promise<CheckoutPaymentActionState> {
-  const session = await requireCustomer();
-
-  const cart = await getCartWithPricing({ userId: session.userId });
-  if (cart.items.length === 0) redirect("/carrito");
-
-  const addressId = formData.get("addressId");
-  if (typeof addressId !== "string")
-    return { error: await t("Selecciona una dirección de envío.") };
-
-  // termsAcceptedAt solo viaja como señal de "paso 2 completado" (ver
-  // CLAUDE.md) — si falta, el cliente saltó el paso de términos.
-  const termsAcceptedAt = formData.get("termsAcceptedAt");
-  if (typeof termsAcceptedAt !== "string" || termsAcceptedAt.length === 0) {
-    return { error: await t("Debes completar el paso anterior del checkout.") };
-  }
-
-  const paymentMethod = formData.get("paymentMethod");
-  if (!isPaymentMethod(paymentMethod)) {
-    return { error: await t("Selecciona un método de pago.") };
-  }
-
-  const address = await getAddressForEdit(session.userId, addressId);
-  if (!address) return { error: await t("Esta dirección ya no está disponible.") };
-
-  redirect(
-    `/checkout/confirmar?addressId=${address.id}` +
-      `&termsAcceptedAt=${encodeURIComponent(termsAcceptedAt)}` +
-      `&paymentMethod=${encodeURIComponent(paymentMethod)}`,
+    `/checkout/confirmar?addressId=${address.id}&termsAcceptedAt=${encodeURIComponent(termsAcceptedAt)}`,
   );
 }
 
@@ -111,6 +78,8 @@ export async function confirmCheckoutOrderAction(
   const cart = await getCartWithPricing({ userId: session.userId });
   if (cart.items.length === 0) redirect("/carrito");
 
+  if (!stripe) return { error: await t("El pago con tarjeta no está disponible en este momento.") };
+
   const addressId = formData.get("addressId");
   if (typeof addressId !== "string")
     return { error: await t("Selecciona una dirección de envío.") };
@@ -118,11 +87,6 @@ export async function confirmCheckoutOrderAction(
   const termsAcceptedAt = formData.get("termsAcceptedAt");
   if (typeof termsAcceptedAt !== "string" || termsAcceptedAt.length === 0) {
     return { error: await t("Debes completar el paso anterior del checkout.") };
-  }
-
-  const paymentMethod = formData.get("paymentMethod");
-  if (!isPaymentMethod(paymentMethod)) {
-    return { error: await t("Selecciona un método de pago.") };
   }
 
   const address = await getAddressForEdit(session.userId, addressId);
@@ -142,7 +106,7 @@ export async function confirmCheckoutOrderAction(
         state: address.state,
         zip: address.zip,
       },
-      paymentMethod,
+      paymentMethod: "tarjeta",
       locale: await getLocale(),
     });
   } catch (error) {
@@ -150,13 +114,36 @@ export async function confirmCheckoutOrderAction(
     throw error;
   }
 
-  const orderId = order.id;
-  after(() =>
-    Promise.all([
-      sendOrderStatusEmail(orderId),
-      notifyAdminNewOrder(orderId),
-      notifyLowStockFromOrder(orderId),
-    ]),
-  );
-  redirect(`/pedidos/${order.id}`);
+  // Los correos salen cuando Stripe confirma el cobro (webhook), no aquí.
+  let paymentUrl: string;
+  try {
+    paymentUrl = await createCardCheckoutUrl(order);
+  } catch (error) {
+    // Sin sesión de pago el pedido no sirve: se deshace y las piezas vuelven
+    // al carrito para reintentar.
+    console.error(`Stripe: no se pudo crear la sesión del pedido ${order.id}`, error);
+    await releaseUnpaidOrder(order.id, "cancelado");
+    return { error: await t("No pudimos abrir el pago con tarjeta. Inténtalo de nuevo.") };
+  }
+  redirect(paymentUrl);
+}
+
+async function requireUnpaidOrder(orderId: string) {
+  const session = await requireCustomer();
+  const order = await getOrderForCustomer(session.userId, orderId);
+  if (!order || order.status !== "reservado") redirect(`/pedidos/${orderId}`);
+  return order;
+}
+
+export async function resumeCardPaymentAction(orderId: string) {
+  const order = await requireUnpaidOrder(orderId);
+  const url = await getOpenCheckoutUrl(order.id);
+  redirect(url ?? `/pedidos/${order.id}`);
+}
+
+export async function cancelUnpaidOrderAction(orderId: string) {
+  const order = await requireUnpaidOrder(orderId);
+  await expireCheckoutSession(order.id);
+  await releaseUnpaidOrder(order.id, "cancelado");
+  redirect("/carrito");
 }

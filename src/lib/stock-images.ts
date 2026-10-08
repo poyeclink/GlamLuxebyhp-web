@@ -8,13 +8,21 @@ function unsplash(id: string) {
 }
 
 export const STOCK_IMAGES = {
+  // Fotos de campaña entregadas por la clienta (public/images). `position`
+  // mantiene a la modelo, que está a la derecha, a la vista al recortar.
+  heroHome: {
+    src: "/images/hero-home.jpg",
+    alt: "Modelo con vestido blanco, bolso negro con cadena dorada y sandalias de tacón",
+    position: "75% center",
+  },
+  heroAbout: {
+    src: "/images/hero-nosotros.jpg",
+    alt: "Modelo sentada con las piernas cruzadas y zapatos de tacón negros",
+    position: "75% center",
+  },
   boutique: {
     src: unsplash("1441984904996-e0b6ba687e04"),
     alt: "Interior de una boutique de ropa",
-  },
-  editorial: {
-    src: unsplash("1595065666634-4725aa7e8379"),
-    alt: "Retrato de moda en tonos oscuros con sombrero negro",
   },
   tailoring: {
     src: unsplash("1753162660069-d4145d9a95f7"),
@@ -64,10 +72,6 @@ export const STOCK_IMAGES = {
     src: unsplash("1619043518800-7f14be467dca"),
     alt: "Pliegues de seda blanca",
   },
-  boutiqueRacks: {
-    src: unsplash("1769107805465-bfd41863f1a0"),
-    alt: "Percheros con vestidos en tonos neutros en una boutique luminosa",
-  },
   boutiqueMinimal: {
     src: unsplash("1769107805412-90d9191d53e9"),
     alt: "Interior minimalista de una boutique con ropa y accesorios",
@@ -78,4 +82,4 @@ export const STOCK_IMAGES = {
   },
 } as const;
 
-export type StockImage = (typeof STOCK_IMAGES)[keyof typeof STOCK_IMAGES];
+export type StockImage = { src: string; alt: string; position?: string };

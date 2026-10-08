@@ -60,6 +60,9 @@ model User {
   passwordHash  String
   role          UserRole
   whatsapp      String?
+  // Foto de perfil en R2 (solo la key, igual que ProductImage): la URL se
+  // deriva con r2PublicUrl al leer.
+  avatarKey     String?
   createdAt     DateTime       @default(now())
   addresses     Address[]
   cart          Cart?

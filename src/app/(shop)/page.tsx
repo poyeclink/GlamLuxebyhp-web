@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowRight, BadgeCheck, CalendarClock, ShieldCheck } from "lucide-react";
+import { ArrowRight, BadgeCheck, ShieldCheck, Zap } from "lucide-react";
 import { SelloChrome } from "@/components/brand/Logo";
 import { ProductCard } from "@/components/shop/ProductCard";
 import { Button } from "@/components/ui/Button";
@@ -72,7 +72,7 @@ export default async function HomePage() {
   const [copy, navNames, topNames, latestItems, categoryItems] = await Promise.all([
     tMany({
       heroEyebrow: "Ropa, bolsos y accesorios",
-      heroAlt: STOCK_IMAGES.editorial.alt,
+      heroAlt: STOCK_IMAGES.heroHome.alt,
       siteDescription: SITE_DESCRIPTION,
       heroTitleA: "El lujo que se nota,",
       heroTitleB: "al precio que buscas",
@@ -88,18 +88,18 @@ export default async function HomePage() {
       promiseQuote: "Si una pieza no pasa nuestra revisión, no llega a la tienda.",
       trust1Title: "Calidad seleccionada",
       trust1Text: "Revisamos costuras, materiales y acabados de cada pieza antes de publicarla.",
-      trust2Title: "Reserva por 3 días",
-      trust2Text: "Apartamos tu pedido y el inventario mientras confirmas tu pago, sin presión.",
+      trust2Title: "Confirmación inmediata",
+      trust2Text: "Tu pedido queda confirmado en el momento en que pagas, sin esperas.",
       trust3Title: "Pago seguro",
-      trust3Text: "Tarjeta con procesamiento cifrado, o Zelle, Cash App y PayPal verificados a mano.",
+      trust3Text: "Pagas con tarjeta en una página de pago cifrada: nunca vemos ni guardamos sus datos.",
       faqEyebrow: "Preguntas frecuentes",
       faqTitle: "Todo claro antes de comprar",
       q1: "¿Qué métodos de pago aceptan?",
-      a1: "Tarjeta de crédito o débito (procesada de forma segura), Zelle, Cash App y PayPal. Los pagos manuales se verifican antes de confirmar tu pedido.",
+      a1: "Tarjeta de crédito o débito, en una página de pago segura. Tu pedido se confirma al instante.",
       q2: "¿Cuánto cuesta el envío?",
       a2: "En compras al detalle el envío depende de la cantidad de artículos y lo ves en tu carrito antes de pagar. En pedidos mayoristas coordinamos el envío contigo.",
-      q3: "¿Cuánto tiempo tengo para pagar mi pedido?",
-      a3: "Tu pedido y su inventario quedan reservados durante 3 días. Si el pago no se confirma en ese plazo, la reserva vence y las piezas vuelven a estar disponibles.",
+      q3: "¿Cuándo se confirma mi pedido?",
+      a3: "En el momento en que se completa el pago. Si no terminas de pagar, el pedido se cancela solo y las piezas vuelven a tu carrito.",
       q4: "¿Cómo obtengo el precio mayorista?",
       a4: `Solo agrega ${WHOLESALE_ITEM_THRESHOLD} o más artículos a tu carrito —pueden ser distintos productos y tallas—. El precio mayorista se aplica automáticamente a todas las piezas.`,
       q5: "¿Aceptan devoluciones?",
@@ -114,7 +114,7 @@ export default async function HomePage() {
 
   const trust = [
     { icon: BadgeCheck, title: copy.trust1Title, text: copy.trust1Text },
-    { icon: CalendarClock, title: copy.trust2Title, text: copy.trust2Text },
+    { icon: Zap, title: copy.trust2Title, text: copy.trust2Text },
     { icon: ShieldCheck, title: copy.trust3Title, text: copy.trust3Text },
   ];
 
@@ -132,22 +132,22 @@ export default async function HomePage() {
         }}
       />
 
-      <section className="relative isolate flex h-[26rem] items-center overflow-hidden bg-inverse text-inverse-foreground sm:h-[32rem] lg:h-[34rem]">
-        {/* En escritorio la foto arranca a un tercio para que el rostro no
-            quede detrás del título. */}
-        <div className="absolute inset-0 -z-10 overflow-hidden lg:left-1/3">
-          <Image
-            src={STOCK_IMAGES.editorial.src}
-            alt={copy.heroAlt}
-            fill
-            priority
-            sizes="(min-width: 1024px) 67vw, 100vw"
-            className="animate-settle object-cover object-[center_30%]"
-          />
-        </div>
+      <section className="relative isolate flex h-[32rem] items-center overflow-hidden bg-inverse text-inverse-foreground sm:h-[38rem] lg:h-[46rem]">
+        {/* La foto ya trae el fondo oscuro a la izquierda: va a sangre y en
+            escritorio el degradado solo refuerza el lado del texto. En móvil
+            la modelo queda detrás del título, así que se oscurece entera. */}
+        <Image
+          src={STOCK_IMAGES.heroHome.src}
+          alt={copy.heroAlt}
+          fill
+          priority
+          sizes="100vw"
+          className="-z-10 animate-settle object-cover"
+          style={{ objectPosition: STOCK_IMAGES.heroHome.position }}
+        />
         <div
           aria-hidden="true"
-          className="absolute inset-0 -z-10 bg-[linear-gradient(90deg,rgba(10,10,11,0.85)_0%,rgba(10,10,11,0.45)_55%,rgba(10,10,11,0.1)_100%)]"
+          className="absolute inset-0 -z-10 bg-[linear-gradient(90deg,rgba(10,10,11,0.85)_0%,rgba(10,10,11,0.55)_100%)] lg:bg-[linear-gradient(90deg,rgba(10,10,11,0.8)_0%,rgba(10,10,11,0.45)_45%,transparent_75%)]"
         />
         <div className="mx-auto flex w-full max-w-7xl flex-col items-start gap-5 px-4 sm:px-6">
           <p className="eyebrow animate-fade-up text-inverse-accent">{copy.heroEyebrow}</p>

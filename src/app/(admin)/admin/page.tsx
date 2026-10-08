@@ -11,20 +11,20 @@ import { OrderStatusBadge } from "@/components/orders/OrderStatusBadge";
 import { cn, formatCurrency, formatDate } from "@/lib/utils";
 import type { OrderStatus } from "@/generated/prisma/client";
 
-// Plural porque son encabezados de tarjeta ("Reservados: 3"), a diferencia de
+// Plural porque son encabezados de tarjeta ("Pago pendiente: 3"), a diferencia de
 // ORDER_STATUS_LABELS (singular, para un badge de un solo pedido) — no vale
 // la pena compartir un mapa para esta única diferencia de forma gramatical.
 const STATUS_CARDS: { status: OrderStatus; label: string; hint: string; icon: string }[] = [
   {
     status: "reservado",
-    label: "Reservados",
-    hint: "Esperando verificación de pago",
+    label: "Pago pendiente",
+    hint: "Cliente en la página de pago",
     icon: "hourglass_top",
   },
   { status: "confirmado", label: "Confirmados", hint: "Listos para preparar", icon: "task_alt" },
   { status: "enviado", label: "Enviados", hint: "En camino al cliente", icon: "local_shipping" },
-  { status: "cancelado", label: "Cancelados", hint: "Pago rechazado", icon: "block" },
-  { status: "vencido", label: "Vencidos", hint: "Reserva expirada", icon: "event_busy" },
+  { status: "cancelado", label: "Cancelados", hint: "Cancelados o reembolsados", icon: "block" },
+  { status: "vencido", label: "Sin pagar", hint: "Pago no completado", icon: "event_busy" },
 ];
 
 const QUICK_LINKS = [

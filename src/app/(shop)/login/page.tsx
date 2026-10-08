@@ -16,7 +16,7 @@ export default async function LoginPage() {
     subtitle: "Inicia sesión para ver tus pedidos y completar tu compra.",
     brandTitle: "Tu próxima pieza favorita te está esperando.",
     point1: `Precio mayorista desde ${WHOLESALE_ITEM_THRESHOLD} artículos`,
-    point2: "Pedidos reservados 3 días",
+    point2: "Confirmación inmediata al pagar",
     point3: "Seguimiento de cada pedido",
     email: "Correo",
     password: "Contraseña",

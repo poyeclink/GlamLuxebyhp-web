@@ -130,7 +130,7 @@ export default async function AboutPage() {
     v3: "Trato cercano",
     v3t: "Te acompañamos con tallas, disponibilidad y envíos, de persona a persona.",
     v4: "Compra segura",
-    v4t: "Pagos protegidos y cada pedido reservado mientras confirmas tu pago.",
+    v4t: "Pagos protegidos y cada pedido confirmado en el momento en que pagas.",
     processEyebrow: "Cómo trabajamos",
     processTitle: "De nuestro proveedor a tus manos",
     processText: "Cuatro pasos que se repiten con cada pieza, sin excepciones.",
@@ -153,12 +153,12 @@ export default async function AboutPage() {
     personal1: "Sin mínimo de compra",
     personal2: "Tallas y disponibilidad visibles en cada producto",
     personal3: "Envío calculado en tu carrito antes de pagar",
-    personal4: "Pagos con tarjeta, Zelle, Cash App o PayPal",
+    personal4: "Pago seguro con tarjeta",
     businessText: `¿Tienes una boutique, vendes por redes o surtes a clientes? Desde ${WHOLESALE_ITEM_THRESHOLD} artículos variados, todo tu pedido pasa a precio mayorista.`,
     business1: `Precio mayorista desde ${WHOLESALE_ITEM_THRESHOLD} artículos, combinando productos`,
     business2: "Sin cuentas especiales ni aprobaciones previas",
     business3: "Envío coordinado directamente contigo",
-    business4: "Tu pedido reservado 3 días mientras confirmas el pago",
+    business4: "Tu pedido confirmado al instante al pagar",
     ctaEyebrow: "Glam Luxe by HJ",
     ctaTitle: "Descubre piezas que se ven —y se sienten— de alta gama",
     ctaShop: "Ir a la tienda",
@@ -185,7 +185,7 @@ export default async function AboutPage() {
         eyebrow={c.eyebrow}
         title={c.title}
         description={c.description}
-        image={STOCK_IMAGES.boutiqueRacks}
+        image={STOCK_IMAGES.heroAbout}
         breadcrumb={{ home: c.home, current: c.eyebrow }}
       />
 

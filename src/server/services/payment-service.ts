@@ -1,8 +1,7 @@
 import type { PaymentMethod } from "@/generated/prisma/client";
 
-// PaymentMethodConfig (ticket #36) todavía no existe: por ahora se muestran
-// siempre los cuatro métodos. Cuando exista ese modelo, este listado pasa a
-// filtrarse por el flag "habilitado" en vez de ser estático.
+// Etiquetas para reportes y pedidos históricos. El checkout solo cobra con
+// tarjeta (Stripe): Zelle/Cash App/PayPal quedan de pedidos anteriores.
 export const PAYMENT_METHOD_OPTIONS: { value: PaymentMethod; label: string }[] = [
   { value: "tarjeta", label: "Tarjeta" },
   { value: "zelle", label: "Zelle" },

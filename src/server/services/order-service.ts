@@ -1,23 +1,30 @@
 import { prisma } from "@/lib/prisma";
 import type { AddressType, OrderStatus, PaymentMethod, Prisma } from "@/generated/prisma/client";
-import { computeCartTotal, getCartWithPricing } from "@/server/services/cart-service";
-import { PAYMENT_METHOD_OPTIONS } from "@/server/services/payment-service";
+import {
+  CartError,
+  addToCart,
+  computeCartTotal,
+  getCartWithPricing,
+} from "@/server/services/cart-service";
 import { logInventoryChange } from "@/server/services/inventory-service";
 import { ADMIN_PAGE_SIZE, isUuid } from "@/lib/utils";
 
 export class OrderError extends Error {}
 
-export const RESERVATION_DAYS = 3;
+// El pago es inmediato: el stock solo queda apartado mientras el cliente está
+// en la página de Stripe. Stripe exige que una sesión dure al menos 30 min, y
+// la sesión vence a la vez que el pedido (createCardCheckoutUrl).
+export const PAYMENT_WINDOW_MINUTES = 32;
 
 // Badge/label de OrderStatus centralizados aquí: antes de esto, cada página
 // que renderizaba un pedido (dashboard, lista admin, detalle admin, detalle
 // del cliente) redeclaraba el mismo Record<OrderStatus, ...> por separado.
 export const ORDER_STATUS_LABELS: Record<OrderStatus, string> = {
-  reservado: "Reservado",
+  reservado: "Pago pendiente",
   confirmado: "Confirmado",
   enviado: "Enviado",
   cancelado: "Cancelado",
-  vencido: "Vencido",
+  vencido: "Pago no completado",
 };
 
 export const ORDER_STATUS_BADGE_VARIANT: Record<
@@ -31,12 +38,11 @@ export const ORDER_STATUS_BADGE_VARIANT: Record<
   cancelado: "destructive",
 };
 
-// Transiciones manuales que el admin puede disparar desde /admin/pedidos
-// (ticket de gestión de pedidos). `vencido` no aparece como destino: ese
-// estado solo lo pone el cron de expiración (ticket #28), nunca un admin a
-// mano. Los estados terminales (enviado, cancelado, vencido) no tienen salida.
+// Transiciones manuales que el admin puede disparar desde /admin/pedidos.
+// "confirmado" no es manual: solo lo pone el webhook de Stripe al cobrar.
+// "vencido" lo pone Stripe (sesión vencida) o el cron de respaldo.
 const ALLOWED_MANUAL_TRANSITIONS: Record<OrderStatus, OrderStatus[]> = {
-  reservado: ["confirmado", "cancelado"],
+  reservado: ["cancelado"],
   confirmado: ["enviado", "cancelado"],
   enviado: [],
   cancelado: [],
@@ -94,7 +100,7 @@ export async function createReservedOrder(params: {
   const cart = await getCartWithPricing({ userId: params.userId });
   if (cart.items.length === 0) throw new OrderError("Tu carrito está vacío.");
 
-  const reservedUntil = new Date(Date.now() + RESERVATION_DAYS * 24 * 60 * 60 * 1000);
+  const reservedUntil = new Date(Date.now() + PAYMENT_WINDOW_MINUTES * 60 * 1000);
   const total = computeCartTotal(cart.subtotal, cart.shippingEstimate);
 
   return prisma.$transaction(async (tx) => {
@@ -178,46 +184,60 @@ export async function createReservedOrder(params: {
   });
 }
 
-// Corre desde el cron del ticket #28 (src/app/api/cron/expire-orders/route.ts).
-// Un pedido reservado sin pago verificado en RESERVATION_DAYS pasa a "vencido"
-// y su stock reservado se libera — el propio índice (status, reservedUntil)
-// del schema existe para esta consulta.
+// Pedido que no se pagó (el cliente canceló, venció la sesión de Stripe, o el
+// admin lo canceló): libera el stock y devuelve las piezas al carrito del
+// cliente para que pueda volver a intentarlo. El updateMany guardado por
+// "reservado" es la sección crítica: el webhook de Stripe y el cron pueden
+// llegar a la vez y solo uno libera el stock.
+export async function releaseUnpaidOrder(orderId: string, status: "cancelado" | "vencido") {
+  if (!isUuid(orderId)) return false;
+  const order = await prisma.order.findUnique({
+    where: { id: orderId },
+    include: { items: { select: { productId: true, variantId: true, quantity: true } } },
+  });
+  if (!order || order.status !== "reservado") return false;
+
+  const released = await prisma.$transaction(async (tx) => {
+    const claimed = await tx.order.updateMany({
+      where: { id: orderId, status: "reservado" },
+      data: { status },
+    });
+    if (claimed.count === 0) return false;
+    await releaseOrderStock(tx, order);
+    return true;
+  });
+  if (!released || !order.userId) return released;
+
+  for (const item of order.items) {
+    if (!item.productId) continue;
+    // Un producto desactivado o ya sin stock simplemente no vuelve al carrito.
+    await addToCart({ userId: order.userId }, item.productId, item.variantId, item.quantity).catch(
+      (error) => {
+        if (!(error instanceof CartError)) throw error;
+      },
+    );
+  }
+  return true;
+}
+
+// Respaldo del cron por si el webhook "checkout.session.expired" de Stripe no
+// llegó: la sesión de pago vence junto con reservedUntil.
 export async function expireReservedOrders() {
   const expiredOrders = await prisma.order.findMany({
     where: { status: "reservado", reservedUntil: { lt: new Date() } },
-    select: { id: true, items: { select: { variantId: true, quantity: true } } },
+    select: { id: true },
   });
 
-  const expiredIds: string[] = [];
-
+  let expiredCount = 0;
   for (const order of expiredOrders) {
     try {
-      const expired = await prisma.$transaction(async (tx) => {
-        // updateMany guardado por status, no un update por id: si dos corridas
-        // del cron se solapan (o esta consulta trae el mismo pedido dos veces
-        // por un reintento), la segunda encuentra 0 filas en estado "reservado"
-        // y no repite la liberación de stock — mismo patrón atómico que el
-        // "reclamo" del carrito en createReservedOrder.
-        const claimed = await tx.order.updateMany({
-          where: { id: order.id, status: "reservado" },
-          data: { status: "vencido" },
-        });
-        if (claimed.count === 0) return false;
-
-        await releaseOrderStock(tx, order);
-        return true;
-      });
-      if (expired) expiredIds.push(order.id);
+      if (await releaseUnpaidOrder(order.id, "vencido")) expiredCount++;
     } catch (error) {
-      // Un pedido con problemas (fila bloqueada, error transitorio) no debe
-      // detener el resto del lote — los que ya expiraron en esta corrida se
-      // quedan así (transacciones independientes), y este se reintenta en la
-      // siguiente corrida del cron (sigue "reservado" hasta que se reclame).
+      // Un pedido con problemas no detiene el lote: se reintenta en la próxima corrida.
       console.error(`expireReservedOrders: fallo al expirar el pedido ${order.id}`, error);
     }
   }
-
-  return { expiredCount: expiredIds.length, expiredIds };
+  return { expiredCount };
 }
 
 // Historial de pedidos del cliente — a diferencia de listOrdersForAdmin, ya
@@ -342,59 +362,55 @@ export async function updateOrderStatus(orderId: string, newStatus: OrderStatus)
       throw new OrderError("Este pedido ya fue actualizado por otra persona. Recarga la página.");
     }
 
-    // confirmado/enviado no mueven stock: ya se descontó en la reserva
-    // (createReservedOrder) y se mantiene descontado mientras el pedido no se
-    // cancele o venza. Solo cancelado libera lo reservado.
+    // enviado no mueve stock: ya se descontó al crear el pedido. Solo
+    // cancelado lo devuelve al inventario.
     if (newStatus === "cancelado") {
       await releaseOrderStock(tx, order);
     }
   });
 }
 
-// Copy de "siguientes pasos" para la pantalla de confirmación (ticket #29).
-// Los pasos reales de pago con tarjeta (Stripe, ticket #31) y de pago manual
-// (instrucciones desde PaymentMethodConfig, ticket #33) todavía no existen —
-// este texto es un placeholder honesto ("te avisaremos") que esas tickets
-// reemplazan, no una promesa de una función ya construida.
-export function getOrderStatusMessage(status: OrderStatus, paymentMethod: PaymentMethod) {
+// Lo llama el webhook de Stripe. Mismo reclamo atómico guardado por estado
+// que updateOrderStatus: Stripe reintenta y puede repetir eventos, y la
+// segunda entrega encuentra 0 filas "reservado". false = el pedido ya no
+// estaba reservado (repetido, o vencido/cancelado: ese cobro hay que
+// reembolsarlo a mano desde Stripe).
+export async function confirmCardPayment(orderId: string) {
+  if (!isUuid(orderId)) return false;
+  const { count } = await prisma.order.updateMany({
+    where: { id: orderId, status: "reservado", paymentMethod: "tarjeta" },
+    data: { status: "confirmado" },
+  });
+  return count > 0;
+}
+
+// Copy de "siguientes pasos" de /pedidos/[id] y de los correos de estado.
+export function getOrderStatusMessage(status: OrderStatus) {
   switch (status) {
-    case "reservado": {
-      if (paymentMethod === "tarjeta") {
-        return {
-          title: "Pedido reservado",
-          description:
-            "Tu pedido está reservado por 3 días. Pronto habilitaremos el pago en línea con tarjeta — te avisaremos para completarlo.",
-        };
-      }
-      // Fallback al valor crudo del enum si algún día PAYMENT_METHOD_OPTIONS
-      // (ticket #36, lista dinámica) no cubre un método — nunca mostrar "undefined".
-      const label =
-        PAYMENT_METHOD_OPTIONS.find((option) => option.value === paymentMethod)?.label ??
-        paymentMethod;
+    case "reservado":
       return {
-        title: "Pedido reservado",
+        title: "Pago pendiente",
         description:
-          `Tu pedido está reservado por 3 días. Te contactaremos con los datos para pagar por ${label} ` +
-          "— nuestro equipo verifica los pagos manuales antes de confirmar el pedido.",
+          "Completa el pago con tarjeta para confirmar tu pedido. Si no lo completas, el pedido se cancela solo y las piezas vuelven a tu carrito.",
       };
-    }
     case "confirmado":
       return {
         title: "Pago confirmado",
-        description: "Verificamos tu pago. Estamos preparando tu pedido para el envío.",
+        description: "Recibimos tu pago. Estamos preparando tu pedido para el envío.",
       };
     case "enviado":
       return { title: "Pedido enviado", description: "Tu pedido ya está en camino." };
     case "vencido":
       return {
-        title: "Reserva vencida",
-        description: "La reserva de este pedido venció sin un pago verificado.",
+        title: "Pago no completado",
+        description:
+          "El pago no se completó, así que el pedido se canceló y las piezas volvieron a tu carrito.",
       };
     case "cancelado":
       return { title: "Pedido cancelado", description: "Este pedido fue cancelado." };
     default: {
-      // Chequeo de exhaustividad: si OrderStatus gana un valor nuevo (ticket
-      // #35 y en adelante), esto deja de compilar hasta agregar su caso.
+      // Chequeo de exhaustividad: si OrderStatus gana un valor nuevo, esto
+      // deja de compilar hasta agregar su caso.
       const unhandled: never = status;
       throw new Error(`Estado de pedido no manejado: ${unhandled}`);
     }

@@ -5,6 +5,10 @@ const r2Hostname = process.env.R2_PUBLIC_URL
   : undefined;
 
 const nextConfig: NextConfig = {
+  // El límite por defecto de los Server Actions es 1MB: una foto de teléfono
+  // (producto en el admin, foto de perfil sin reducir) no pasaba. 4MB queda
+  // bajo el tope de 4.5MB del cuerpo de una función de Vercel.
+  experimental: { serverActions: { bodySizeLimit: "4mb" } },
   // El PDF de reportes lee los trazos del logo desde public/ con fs; sin esto
   // el archivo no viaja en el bundle serverless de esa ruta.
   outputFileTracingIncludes: {

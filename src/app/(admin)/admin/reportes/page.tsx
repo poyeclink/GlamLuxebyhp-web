@@ -372,7 +372,7 @@ export default async function AdminReportsPage({ searchParams }: PageProps<"/adm
             <Kpi
               label="Pendiente de pago"
               value={formatCurrency(sales.summary.pendingRevenue)}
-              hint="Pedidos reservados"
+              hint="Pedidos con pago pendiente"
             />
             <Kpi
               label="Unidades vendidas"

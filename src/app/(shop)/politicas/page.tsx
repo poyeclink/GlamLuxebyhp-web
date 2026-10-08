@@ -21,7 +21,7 @@ export default async function PoliciesIndexPage() {
     description:
       "Todo lo que necesitas saber sobre cómo compras, cómo cuidamos tus datos y qué pasa si una pieza llega dañada.",
     terms: "Términos y condiciones",
-    termsText: "Precios, precio mayorista, reservas de 3 días, pagos y envíos.",
+    termsText: "Precios, precio mayorista, pagos y envíos.",
     privacy: "Política de privacidad",
     privacyText: "Qué datos usamos, para qué y cómo los protegemos.",
     returns: "Política de devoluciones",

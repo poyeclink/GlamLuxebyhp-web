@@ -26,7 +26,7 @@ const LEGAL_LINKS = [
   { href: "/politicas/devoluciones", label: "Política de devoluciones" },
 ];
 
-const PAYMENT_METHODS = ["Visa", "Mastercard", "Zelle", "Cash App", "PayPal"];
+const PAYMENT_METHODS = ["Visa", "Mastercard", "American Express", "Apple Pay", "Google Pay"];
 
 // Cuántas categorías caben antes de que la columna se vuelva demasiado larga
 // — con más que esto, "Ver todas" hacia /tienda cubre el resto sin que el

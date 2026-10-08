@@ -208,7 +208,7 @@ function SalesBody({ report }: { report: SalesReport }) {
         <Kpi
           label="Pendiente de pago"
           value={formatCurrency(summary.pendingRevenue)}
-          hint="Pedidos reservados"
+          hint="Pedidos con pago pendiente"
         />
         <Kpi
           label="Unidades vendidas"

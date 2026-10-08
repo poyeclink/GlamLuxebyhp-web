@@ -1,8 +1,11 @@
+import Image from "next/image";
 import Link from "next/link";
 import { LogOut, MapPin, Package, User } from "lucide-react";
 import { logoutAction } from "@/server/actions/auth-actions";
 import { cn } from "@/lib/utils";
 import { t, tMany } from "@/lib/i18n";
+import { getSession } from "@/lib/session";
+import { getUserAvatarUrl } from "@/server/services/user-service";
 
 const ACCOUNT_LINKS = [
   { key: "perfil", href: "/perfil", label: "Mi perfil", icon: User },
@@ -24,9 +27,11 @@ export async function AccountShell({
   active: (typeof ACCOUNT_LINKS)[number]["key"];
   children: React.ReactNode;
 }) {
-  const [copy, linkLabels] = await Promise.all([
+  const session = await getSession();
+  const [copy, linkLabels, avatarUrl] = await Promise.all([
     tMany({ account: "Mi cuenta", hello: "Hola", logout: "Cerrar sesión" }),
     Promise.all(ACCOUNT_LINKS.map((link) => t(link.label))),
+    session ? getUserAvatarUrl(session.userId) : null,
   ]);
 
   return (
@@ -37,8 +42,12 @@ export async function AccountShell({
           className="absolute -right-24 -top-24 -z-10 h-80 w-80 rounded-full bg-inverse-accent/15 blur-3xl"
         />
         <div className="flex flex-wrap items-center gap-5">
-          <span className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full border border-inverse-accent/50 bg-inverse-border/50 font-display text-3xl text-inverse-accent">
-            {name.charAt(0).toUpperCase()}
+          <span className="relative flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-full border border-inverse-accent/50 bg-inverse-border/50 font-display text-3xl text-inverse-accent">
+            {avatarUrl ? (
+              <Image src={avatarUrl} alt="" fill sizes="64px" className="object-cover" />
+            ) : (
+              name.charAt(0).toUpperCase()
+            )}
           </span>
           <div className="flex min-w-0 flex-col gap-1">
             <span className="eyebrow text-inverse-accent">{copy.account}</span>

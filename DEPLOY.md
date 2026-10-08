@@ -26,6 +26,8 @@ node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 | `AUTH_SECRET` | **Nuevo** (comando de arriba) |
 | `SESSION_COOKIE_NAME` | `glamluxe_session` |
 | `CRON_SECRET` | **Nuevo** (comando de arriba) |
+| `STRIPE_SECRET_KEY` | Clave secreta **live** (`sk_live_…`) de la cuenta de la clienta |
+| `STRIPE_WEBHOOK_SECRET` | `whsec_…` del endpoint de producción (ver paso 3) |
 | `NEXT_PUBLIC_SITE_URL` | El dominio final, con `https://` y sin `/` final. Hasta tener dominio puede quedar vacío (usa la URL `*.vercel.app`) |
 | `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET_NAME`, `R2_PUBLIC_URL` | Los mismos del `.env` |
 | `CLOUDFLARE_API_TOKEN` | El mismo del `.env` |
@@ -44,6 +46,7 @@ node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 - [ ] Pide una recuperación de contraseña en `/recuperar` con tu correo y revisa que llegue el correo, con el logo.
 - [ ] Envía un mensaje de prueba desde `/contacto`: debe llegar a `ADMIN_NOTIFY_EMAIL` (o, si está vacío, a `SMTP_USER`).
 - [ ] En Vercel → **Settings → Cron Jobs**, confirma que aparece `/api/cron/expire-orders`.
+- [ ] En Stripe → **Developers → Webhooks** crea el endpoint `https://<dominio>/api/stripe/webhook` con los eventos `checkout.session.completed`, `checkout.session.async_payment_succeeded` y `checkout.session.expired`; copia su *Signing secret* a `STRIPE_WEBHOOK_SECRET` y vuelve a desplegar. Haz un pedido con tarjeta: debe pasar solo a **Confirmado**.
 - [ ] Al conectar el dominio, carga `NEXT_PUBLIC_SITE_URL` y vuelve a desplegar: los enlaces de los correos, el sitemap y el canonical lo usan.
 
 ## 4. Cambios futuros de base de datos
@@ -56,8 +59,7 @@ pnpm prisma migrate deploy
 
 ## 5. Pendientes conocidos (no bloquean el lanzamiento)
 
-- **Pago con tarjeta (Stripe)**: todavía no está integrado. La tienda dice con honestidad que se habilitará pronto; hoy los pedidos se pagan por Zelle, Cash App o PayPal, verificados a mano.
 - **Traducción al inglés**: el sitio sale en inglés por defecto, pero Cloudflare Workers AI agotó su cuota gratuita diaria (10,000 neurons). Mientras tanto, los textos nuevos aparecen en español. El plan Workers Paid (desde USD 5/mes) lo resuelve; lo ya traducido queda en caché.
 - **Imágenes en `*.r2.dev`**: Cloudflare limita esa URL y no la recomienda para producción. Conecta un dominio propio al bucket (p. ej. `img.tudominio.com`) y actualiza `R2_PUBLIC_URL`; no hace falta migrar datos.
-- **Cron diario**: el plan Hobby solo permite un cron al día. Un pedido vence entre 0 y 24 h después de sus 3 días de reserva; en Pro se puede pasar a cada hora (`vercel.json`).
+- **Cron diario**: solo es respaldo. Si Stripe no logra avisar que venció un pago, el stock de ese pedido se libera en la corrida diaria del cron.
 - **Gmail**: permite unos 500 correos al día. Con más volumen conviene un proveedor transaccional (Resend, Postmark); solo habría que cambiar `src/lib/mailer.ts`.

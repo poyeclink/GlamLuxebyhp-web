@@ -2,26 +2,25 @@ import { prisma } from "@/lib/prisma";
 import { hashPassword } from "@/lib/password";
 
 async function main() {
-  const { ADMIN_EMAIL, ADMIN_PASSWORD, ADMIN_NAME } = process.env;
+  const env = process.env;
+  const admins = [
+    { name: env.ADMIN_NAME || "Administrador", email: env.ADMIN_EMAIL, password: env.ADMIN_PASSWORD },
+    { name: env.DEV_ADMIN_NAME || "Dev Admin", email: env.DEV_ADMIN_EMAIL, password: env.DEV_ADMIN_PASSWORD },
+  ];
 
-  if (!ADMIN_EMAIL || !ADMIN_PASSWORD) {
-    console.log("ADMIN_EMAIL / ADMIN_PASSWORD no configurados — se omite la creación del admin.");
-    return;
+  for (const { name, email, password } of admins) {
+    if (!email || !password) {
+      console.log(`Admin ${email ?? name} sin email/contraseña configurados — se omite.`);
+      continue;
+    }
+    const passwordHash = await hashPassword(password);
+    const admin = await prisma.user.upsert({
+      where: { email },
+      update: { passwordHash, role: "administrador" },
+      create: { name, email, passwordHash, role: "administrador" },
+    });
+    console.log(`Admin listo: ${admin.email}`);
   }
-
-  const passwordHash = await hashPassword(ADMIN_PASSWORD);
-  const admin = await prisma.user.upsert({
-    where: { email: ADMIN_EMAIL },
-    update: { passwordHash, role: "administrador" },
-    create: {
-      name: ADMIN_NAME || "Administrador",
-      email: ADMIN_EMAIL,
-      passwordHash,
-      role: "administrador",
-    },
-  });
-
-  console.log(`Admin listo: ${admin.email}`);
 
   const { DEMO_CUSTOMER_EMAIL, DEMO_CUSTOMER_PASSWORD } = process.env;
   const existingDemo = DEMO_CUSTOMER_EMAIL

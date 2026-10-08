@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { cache } from "react";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { CalendarClock, Package, ShieldCheck, Sparkles } from "lucide-react";
+import { BadgeCheck, Package, ShieldCheck, Sparkles } from "lucide-react";
 import { Accordion } from "@/components/ui/Accordion";
 import { PriceDual } from "@/components/ui/PriceDual";
 import { ImageGallery } from "@/components/shop/ImageGallery";
@@ -14,7 +14,6 @@ import {
   listRelatedProducts,
   toProductCardItem,
 } from "@/server/services/product-service";
-import { RESERVATION_DAYS } from "@/server/services/order-service";
 import { r2PublicUrl } from "@/lib/r2";
 import { SITE_NAME, SITE_URL } from "@/lib/site";
 import { JsonLd } from "@/components/seo/JsonLd";
@@ -22,7 +21,7 @@ import { t, tMany } from "@/lib/i18n";
 
 const TRUST = [
   { icon: ShieldCheck, label: "Pago seguro" },
-  { icon: CalendarClock, label: `Reserva de ${RESERVATION_DAYS} días` },
+  { icon: BadgeCheck, label: "Confirmación inmediata" },
   { icon: Sparkles, label: "Calidad revisada" },
 ];
 
@@ -33,8 +32,9 @@ const PURCHASE_INFO = [
       "En compras al detalle el envío depende de la cantidad de artículos y lo ves en tu carrito antes de pagar. En pedidos mayoristas coordinamos el envío contigo.",
   },
   {
-    question: "Pago y reserva",
-    answer: `Paga con tarjeta, Zelle, Cash App o PayPal. Reservamos tu pedido y su inventario durante ${RESERVATION_DAYS} días mientras confirmamos tu pago.`,
+    question: "Pago",
+    answer:
+      "Pagas con tarjeta de crédito o débito en una página de pago segura. Tu pedido se confirma en el momento en que se completa el pago.",
   },
   {
     question: "Cambios y devoluciones",

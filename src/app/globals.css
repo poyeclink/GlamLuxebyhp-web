@@ -210,6 +210,45 @@ html {
   scroll-behavior: smooth;
 }
 
+/* Barra de scroll de marca: píldora Negro Noche translúcida sobre un riel
+   blanco que pasa a Zafiro al tomarla. Chromium y Safari usan los
+   pseudo-elementos (permiten redondear); Firefox solo entiende
+   scrollbar-color, por eso va aparte (si Chromium lo viera, ignoraría los
+   pseudo-elementos). Las filas de píldoras siguen ocultando la suya. */
+::-webkit-scrollbar {
+  width: 12px;
+  height: 12px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--background);
+}
+
+::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--inverse) 28%, transparent) padding-box;
+  border: 3px solid transparent;
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: color-mix(in srgb, var(--inverse) 55%, transparent);
+}
+
+::-webkit-scrollbar-thumb:active {
+  background-color: var(--accent);
+}
+
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+@supports not selector(::-webkit-scrollbar) {
+  html {
+    scrollbar-width: thin;
+    scrollbar-color: color-mix(in srgb, var(--inverse) 35%, transparent) var(--background);
+  }
+}
+
 /* NavigationProgress: mientras llega la página siguiente, el contenido actual
    se atenúa (con retardo, para que una navegación instantánea no parpadee). */
 main {

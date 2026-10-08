@@ -15,6 +15,7 @@ import { setSessionCookie, clearSessionCookie } from "@/lib/session";
 import { getCartSessionToken, clearCartSessionToken } from "@/lib/cart-session";
 import { createPasswordResetToken } from "@/lib/password-reset";
 import { mergeGuestCartIntoUser } from "@/server/services/cart-service";
+import { setUserAvatar } from "@/server/services/user-service";
 import {
   notifyAdminNewCustomer,
   sendPasswordChangedEmail,
@@ -64,6 +65,7 @@ export async function registerAction(
   try {
     const user = await registerCustomer(parsed.data);
     await setSessionCookie({ userId: user.id, role: user.role, name: user.name });
+    await saveSignupAvatar(user.id, formData.get("avatar"));
     await mergeGuestCartOnAuth(user.id);
     const locale = await getLocale();
     after(() => Promise.all([sendWelcomeEmail(user, locale), notifyAdminNewCustomer(user)]));
@@ -73,6 +75,17 @@ export async function registerAction(
   }
 
   redirect("/perfil");
+}
+
+// La foto es opcional al registrarse: si falla (formato, R2), la cuenta ya
+// está creada y se puede subir después desde /perfil.
+async function saveSignupAvatar(userId: string, file: FormDataEntryValue | null) {
+  if (!(file instanceof File) || file.size === 0) return;
+  try {
+    await setUserAvatar(userId, file);
+  } catch (error) {
+    console.error(`No se pudo guardar la foto de perfil de ${userId}`, error);
+  }
 }
 
 export async function loginAction(

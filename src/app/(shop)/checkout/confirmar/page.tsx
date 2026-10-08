@@ -4,34 +4,30 @@ import { ConfirmOrderForm } from "@/components/checkout/ConfirmOrderForm";
 import { requireCustomer } from "@/lib/session";
 import { requireCheckoutCartAndAddress } from "@/lib/checkout";
 import { t, tMany } from "@/lib/i18n";
-import { isPaymentMethod, PAYMENT_METHOD_OPTIONS } from "@/server/services/payment-service";
 
 export default async function CheckoutConfirmarPage({
   searchParams,
 }: {
-  searchParams: Promise<{ addressId?: string; termsAcceptedAt?: string; paymentMethod?: string }>;
+  searchParams: Promise<{ addressId?: string; termsAcceptedAt?: string }>;
 }) {
   const session = await requireCustomer();
-  const { addressId, termsAcceptedAt, paymentMethod } = await searchParams;
+  const { addressId, termsAcceptedAt } = await searchParams;
   const { cart, address } = await requireCheckoutCartAndAddress(session.userId, addressId);
 
   if (!termsAcceptedAt) redirect(`/checkout/resumen?addressId=${address.id}`);
-  if (!isPaymentMethod(paymentMethod)) {
-    redirect(
-      `/checkout/pago?addressId=${address.id}&termsAcceptedAt=${encodeURIComponent(termsAcceptedAt)}`,
-    );
-  }
 
-  const paymentMethodLabel =
-    PAYMENT_METHOD_OPTIONS.find((option) => option.value === paymentMethod)?.label ?? paymentMethod;
-
-  const [copy, summaryCopy, items, translatedPaymentMethod] = await Promise.all([
-    tMany({ title: "Confirmar pedido", paymentMethod: "Método de pago" }),
+  const [copy, summaryCopy, items] = await Promise.all([
+    tMany({
+      title: "Confirmar y pagar",
+      paymentMethod: "Método de pago",
+      card: "Tarjeta (pago seguro con Stripe)",
+      submit: "Pagar ahora",
+      pending: "Abriendo el pago…",
+    }),
     tMany(ORDER_SUMMARY_COPY),
     Promise.all(
       cart.items.map(async (item) => ({ ...item, productName: await t(item.productName) })),
     ),
-    t(paymentMethodLabel),
   ]);
 
   return (
@@ -48,15 +44,14 @@ export default async function CheckoutConfirmarPage({
 
       <div className="flex items-center justify-between text-sm">
         <span className="text-muted-foreground">{copy.paymentMethod}</span>
-        <span className="font-medium text-foreground">{translatedPaymentMethod}</span>
+        <span className="font-medium text-foreground">{copy.card}</span>
       </div>
 
       <ConfirmOrderForm
         addressId={address.id}
         termsAcceptedAt={termsAcceptedAt}
-        paymentMethod={paymentMethod}
-        submitLabel={copy.title}
-        pendingLabel={await t("Enviando…")}
+        submitLabel={copy.submit}
+        pendingLabel={copy.pending}
       />
     </div>
   );

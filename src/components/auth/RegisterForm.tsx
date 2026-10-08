@@ -7,10 +7,15 @@ import { TextField } from "@/components/ui/TextField";
 import { PasswordField } from "@/components/ui/PasswordField";
 import { SubmitButton } from "@/components/ui/SubmitButton";
 import { FormError } from "@/components/ui/FormError";
+import { AvatarInput } from "@/components/account/AvatarInput";
 
 const initialState: AuthActionState = {};
 
 export type RegisterFormCopy = {
+  photo: string;
+  choose: string;
+  change: string;
+  hint: string;
   name: string;
   email: string;
   password: string;
@@ -27,6 +32,10 @@ export function RegisterForm({ copy }: { copy: RegisterFormCopy }) {
 
   return (
     <form action={formAction} className="flex flex-col gap-5">
+      <fieldset className="flex flex-col gap-2">
+        <legend className="mb-2 text-sm font-medium text-foreground">{copy.photo}</legend>
+        <AvatarInput fallback="" copy={copy} />
+      </fieldset>
       <TextField label={copy.name} name="name" type="text" autoComplete="name" required />
       <TextField label={copy.email} name="email" type="email" autoComplete="email" required />
       <PasswordField

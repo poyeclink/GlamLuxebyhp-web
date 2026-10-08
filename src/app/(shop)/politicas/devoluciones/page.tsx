@@ -65,7 +65,7 @@ export default function ReturnPolicyPage() {
           id: "cancelaciones",
           title: "Cancelaciones antes del pago",
           body: [
-            "Mientras tu pedido esté reservado y sin pagar, puedes pedirnos cancelarlo. Si no confirmas el pago en 3 días, la reserva vence sola y no se te cobra nada.",
+            "Mientras tu pedido esté pendiente de pago, puedes cancelarlo desde “Mis pedidos” y no se te cobra nada. Si no completas el pago, se cancela solo.",
           ],
         },
       ]}

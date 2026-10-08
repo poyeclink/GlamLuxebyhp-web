@@ -4,7 +4,12 @@ import { revalidatePath } from "next/cache";
 import { after } from "next/server";
 import { z } from "zod";
 import { requireAdmin } from "@/lib/session";
-import { OrderError, updateOrderStatus } from "@/server/services/order-service";
+import {
+  OrderError,
+  getOrderForAdmin,
+  updateOrderStatus,
+} from "@/server/services/order-service";
+import { expireCheckoutSession, refundCardPayment } from "@/server/services/card-payment-service";
 import { sendOrderStatusEmail } from "@/server/email/notifications";
 
 export type OrderActionState = {
@@ -28,6 +33,15 @@ export async function updateOrderStatusAction(
   }
 
   try {
+    if (parsed.data.status === "cancelado") {
+      const order = await getOrderForAdmin(orderId);
+      // Sin pagar: se anula la sesión de Stripe para que ya no se pueda pagar.
+      // Pagado con tarjeta: se reembolsa antes de cancelar.
+      if (order?.status === "reservado") await expireCheckoutSession(orderId);
+      if (order?.status === "confirmado" && order.paymentMethod === "tarjeta") {
+        await refundCardPayment(orderId);
+      }
+    }
     await updateOrderStatus(orderId, parsed.data.status);
     after(() => sendOrderStatusEmail(orderId));
   } catch (error) {

@@ -8,7 +8,7 @@ import { FormError } from "@/components/ui/FormError";
 import type { OrderStatus } from "@/generated/prisma/client";
 
 const STATUS_ACTIONS: Record<OrderStatus, string> = {
-  reservado: "Marcar como reservado",
+  reservado: "Marcar como pago pendiente",
   confirmado: "Confirmar pago",
   enviado: "Marcar como enviado",
   cancelado: "Cancelar pedido",
@@ -38,7 +38,7 @@ function StatusButtons({ statuses }: { statuses: OrderStatus[] }) {
         }
         onClick={(event) => {
           // Cancelar devuelve el stock y no tiene vuelta atrás: un toque accidental en el teléfono no debe bastar.
-          if (isCancel && !confirm("¿Cancelar este pedido? Esta acción no se puede deshacer.")) {
+          if (isCancel && !confirm("¿Cancelar este pedido? Si ya se pagó con tarjeta, se reembolsa automáticamente. Esta acción no se puede deshacer.")) {
             event.preventDefault();
           }
         }}

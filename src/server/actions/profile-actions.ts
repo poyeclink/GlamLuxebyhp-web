@@ -4,7 +4,12 @@ import { revalidatePath } from "next/cache";
 import { after } from "next/server";
 import { z } from "zod";
 import { requireCustomer, setSessionCookie } from "@/lib/session";
-import { updateProfile } from "@/server/services/user-service";
+import {
+  removeUserAvatar,
+  setUserAvatar,
+  updateProfile,
+} from "@/server/services/user-service";
+import { ProductImageError } from "@/server/services/product-image-service";
 import { AuthError, changePassword } from "@/server/services/auth-service";
 import { sendPasswordChangedEmail } from "@/server/email/notifications";
 import { getLocale, t } from "@/lib/i18n";
@@ -79,5 +84,34 @@ export async function changePasswordAction(
     throw error;
   }
 
+  return { success: true };
+}
+
+export async function updateAvatarAction(
+  _prevState: ProfileActionState,
+  formData: FormData,
+): Promise<ProfileActionState> {
+  const session = await requireCustomer();
+
+  const file = formData.get("avatar");
+  if (!(file instanceof File) || file.size === 0) {
+    return { error: await t("Elige una foto.") };
+  }
+
+  try {
+    await setUserAvatar(session.userId, file);
+  } catch (error) {
+    if (error instanceof ProductImageError) return { error: await t(error.message) };
+    throw error;
+  }
+
+  revalidatePath("/", "layout");
+  return { success: true };
+}
+
+export async function removeAvatarAction(): Promise<ProfileActionState> {
+  const session = await requireCustomer();
+  await removeUserAvatar(session.userId);
+  revalidatePath("/", "layout");
   return { success: true };
 }

@@ -7,6 +7,7 @@ const KEYFRAMES: Keyframe[] = [
   { opacity: 0, translate: "0 2rem" },
   { opacity: 1, translate: "0 0" },
 ];
+const HIDDEN: Keyframe[] = [{ opacity: 0 }, { opacity: 0 }];
 const STAGGER_MS = 90;
 const MAX_STAGGER_MS = 450;
 
@@ -32,31 +33,34 @@ function collect(root: Element, rootWidth: number, units: HTMLElement[]) {
 
 // Aparición al hacer scroll en todo el sitio sin envolver nada a mano: lo que
 // ya está en pantalla al cargar no se toca (sin parpadeo ni impacto en LCP) y
-// el HTML llega completo del servidor. Web Animations en vez de clases: al
-// terminar no queda ningún transform pegado al elemento (un transform
-// residual atraparía a los hijos `fixed`, como los Modal del admin).
+// el HTML llega completo del servidor. Web Animations en vez de clases o
+// estilos inline, también para la espera: no tocan atributos del DOM (React
+// marcaba error de hidratación en contenido que llega por streaming) y al
+// terminar no queda ningún transform pegado al elemento (atraparía a los
+// hijos `fixed`, como los Modal del admin).
 export function ScrollReveal() {
   const pathname = usePathname();
 
   useEffect(() => {
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
 
-    const pending = new Set<HTMLElement>();
+    // Cada unidad pendiente queda retenida en opacidad 0 por una animación.
+    const pending = new Map<HTMLElement, Animation>();
     const observer = new IntersectionObserver(
       (entries) => {
         let order = 0;
         for (const entry of entries) {
           const unit = entry.target as HTMLElement;
           if (!entry.isIntersecting || !pending.has(unit)) continue;
-          // fill "backwards" cubre el delay, así que la opacidad inline de
-          // espera se puede soltar en el mismo instante sin parpadeo.
+          // fill "backwards" cubre el delay, así que la espera se puede
+          // cancelar en el mismo instante sin parpadeo.
           unit.animate(KEYFRAMES, {
             duration: 900,
             delay: Math.min(order++ * STAGGER_MS, MAX_STAGGER_MS),
             easing: "cubic-bezier(0.22, 1, 0.36, 1)",
             fill: "backwards",
           });
-          unit.style.opacity = "";
+          pending.get(unit)?.cancel();
           pending.delete(unit);
           observer.unobserve(unit);
         }
@@ -65,7 +69,7 @@ export function ScrollReveal() {
 
     // Lo que aún no apareció saldría en blanco al imprimir.
     function revealAll() {
-      for (const unit of pending) unit.style.opacity = "";
+      for (const hold of pending.values()) hold.cancel();
       pending.clear();
       observer.disconnect();
     }
@@ -77,8 +81,7 @@ export function ScrollReveal() {
         collect(root, root.clientWidth, units);
         for (const unit of units) {
           if (pending.has(unit) || unit.getBoundingClientRect().top < window.innerHeight) continue;
-          unit.style.opacity = "0";
-          pending.add(unit);
+          pending.set(unit, unit.animate(HIDDEN, { duration: 1, fill: "forwards" }));
           observer.observe(unit);
         }
       }

@@ -1,12 +1,14 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { KeyRound, MapPin, Plus, User } from "lucide-react";
+import { Camera, KeyRound, MapPin, Plus, User } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { AccountSection, AccountShell } from "@/components/account/AccountShell";
 import { ADDRESS_SUMMARY_COPY, AddressSummary } from "@/components/account/AddressSummary";
 import { DeleteAddressButton } from "@/components/account/DeleteAddressButton";
 import { ProfileForm } from "@/components/account/ProfileForm";
+import { AvatarForm } from "@/components/account/AvatarForm";
+import { r2PublicUrl } from "@/lib/r2";
 import { ChangePasswordForm } from "@/components/account/ChangePasswordForm";
 import { requireCustomer } from "@/lib/session";
 import { t, tMany } from "@/lib/i18n";
@@ -24,6 +26,14 @@ export default async function PerfilPage() {
     listAddresses(session.userId),
     tMany({
       personalData: "Datos personales",
+      photo: "Foto de perfil",
+      photoText: "Se muestra en tu cuenta.",
+      choose: "Agregar foto",
+      change: "Cambiar foto",
+      hint: "JPG, PNG o WEBP.",
+      savePhoto: "Guardar foto",
+      removePhoto: "Quitar foto",
+      photoSaved: "Foto actualizada.",
       addresses: "Direcciones",
       addressesText: "Las usamos para agilizar tu checkout.",
       edit: "Editar",
@@ -53,6 +63,26 @@ export default async function PerfilPage() {
   return (
     <AccountShell name={session.name} active="perfil">
       <div className="flex flex-col gap-14">
+        <AccountSection icon={Camera} title={copy.photo} description={copy.photoText}>
+          <Card>
+            <CardContent className="p-5 sm:p-8">
+              <AvatarForm
+                avatarUrl={profile.avatarKey ? r2PublicUrl(profile.avatarKey) : null}
+                fallback={profile.name.charAt(0).toUpperCase()}
+                copy={{
+                  choose: copy.choose,
+                  change: copy.change,
+                  hint: copy.hint,
+                  save: copy.savePhoto,
+                  remove: copy.removePhoto,
+                  saved: copy.photoSaved,
+                  pending: copy.pending,
+                }}
+              />
+            </CardContent>
+          </Card>
+        </AccountSection>
+
         <AccountSection icon={User} title={copy.personalData} description={profile.email}>
           <Card>
             <CardContent className="p-5 sm:p-8">

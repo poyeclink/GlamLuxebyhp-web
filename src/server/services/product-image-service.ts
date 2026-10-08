@@ -28,7 +28,7 @@ function buildKey(productId: string, filename: string) {
   return `products/${productId}/${randomUUID()}-${sanitizeFilename(filename)}`;
 }
 
-async function uploadToR2(key: string, file: File) {
+export async function uploadToR2(key: string, file: File) {
   const buffer = Buffer.from(await file.arrayBuffer());
   await r2.send(
     new PutObjectCommand({

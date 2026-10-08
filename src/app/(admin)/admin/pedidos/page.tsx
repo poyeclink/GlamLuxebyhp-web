@@ -11,11 +11,11 @@ import { ADMIN_PAGE_SIZE, filterPillClass, formatCurrency, formatDate } from "@/
 import type { OrderStatus } from "@/generated/prisma/client";
 
 const STATUS_FILTERS: { value: OrderStatus; label: string }[] = [
-  { value: "reservado", label: "Reservados" },
+  { value: "reservado", label: "Pago pendiente" },
   { value: "confirmado", label: "Confirmados" },
   { value: "enviado", label: "Enviados" },
   { value: "cancelado", label: "Cancelados" },
-  { value: "vencido", label: "Vencidos" },
+  { value: "vencido", label: "Sin pagar" },
 ];
 
 export default async function AdminOrdersPage({ searchParams }: PageProps<"/admin/pedidos">) {

@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { ArrowLeft, Info } from "lucide-react";
 import { AccountShell } from "@/components/account/AccountShell";
 import { OrderStatusBadge } from "@/components/orders/OrderStatusBadge";
+import { SubmitButton } from "@/components/ui/SubmitButton";
 import { ORDER_SUMMARY_COPY, OrderSummary } from "@/components/checkout/OrderSummary";
 import { requireCustomer } from "@/lib/session";
 import {
@@ -12,23 +13,40 @@ import {
 } from "@/server/services/order-service";
 import { formatDate } from "@/lib/utils";
 import { getLocale, t, tMany } from "@/lib/i18n";
+import {
+  cancelUnpaidOrderAction,
+  resumeCardPaymentAction,
+} from "@/server/actions/checkout-actions";
 
 export default async function OrderConfirmationPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ pago?: string }>;
 }) {
   const session = await requireCustomer();
   const { id } = await params;
+  const { pago } = await searchParams;
   const order = await getOrderForCustomer(session.userId, id);
   if (!order) notFound();
 
   const [locale, copy, summaryCopy, statusLabel, message, items] = await Promise.all([
     getLocale(),
-    tMany({ back: "Mis pedidos", order: "Pedido #{id}", placedOn: "Realizado el {date}" }),
+    tMany({
+      back: "Mis pedidos",
+      order: "Pedido #{id}",
+      placedOn: "Realizado el {date}",
+      pay: "Completar pago",
+      redirecting: "Abriendo el pago…",
+      cancel: "Cancelar y volver al carrito",
+      cancelling: "Cancelando…",
+      paymentReceived:
+        "Recibimos tu pago. Lo estamos confirmando: en unos instantes tu pedido pasará a confirmado.",
+    }),
     tMany(ORDER_SUMMARY_COPY),
     t(ORDER_STATUS_LABELS[order.status]),
-    tMany(getOrderStatusMessage(order.status, order.paymentMethod)),
+    tMany(getOrderStatusMessage(order.status)),
     Promise.all(
       order.items.map(async (item) => ({
         id: item.id,
@@ -39,6 +57,10 @@ export default async function OrderConfirmationPage({
       })),
     ),
   ]);
+
+  const unpaid = order.status === "reservado";
+  // Al volver de Stripe el webhook puede tardar unos segundos en confirmar.
+  const justPaid = unpaid && pago === "ok";
 
   return (
     <AccountShell name={session.name} active="pedidos">
@@ -87,7 +109,23 @@ export default async function OrderConfirmationPage({
               <Info className="h-5 w-5" aria-hidden="true" />
             </span>
             <p className="font-display text-xl">{message.title}</p>
-            <p className="text-sm leading-relaxed text-inverse-muted">{message.description}</p>
+            <p className="text-sm leading-relaxed text-inverse-muted">
+              {justPaid ? copy.paymentReceived : message.description}
+            </p>
+            {unpaid && !justPaid && (
+              <div className="flex flex-col gap-2">
+                <form action={resumeCardPaymentAction.bind(null, order.id)}>
+                  <SubmitButton variant="inverse" pendingLabel={copy.redirecting}>
+                    {copy.pay}
+                  </SubmitButton>
+                </form>
+                <form action={cancelUnpaidOrderAction.bind(null, order.id)}>
+                  <SubmitButton variant="inverse-outline" pendingLabel={copy.cancelling}>
+                    {copy.cancel}
+                  </SubmitButton>
+                </form>
+              </div>
+            )}
           </div>
         </div>
       </div>

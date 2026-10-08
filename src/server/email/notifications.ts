@@ -1,12 +1,11 @@
 import { prisma } from "@/lib/prisma";
 import { ADMIN_INBOX, sendMail } from "@/lib/mailer";
 import { SITE_NAME, SITE_URL } from "@/lib/site";
-import { formatCurrency, formatDate } from "@/lib/utils";
+import { formatCurrency } from "@/lib/utils";
 import type { Locale } from "@/lib/i18n";
 import { RESET_TOKEN_MINUTES } from "@/lib/password-reset";
 import { translate } from "@/server/services/translation-service";
-import { getOrderStatusMessage, ORDER_STATUS_LABELS } from "@/server/services/order-service";
-import { PAYMENT_METHOD_OPTIONS } from "@/server/services/payment-service";
+import { getOrderStatusMessage } from "@/server/services/order-service";
 import { LOW_STOCK_THRESHOLD, crossedLowStock } from "@/server/services/inventory-service";
 import { logoAttachments, renderEmail, type EmailContent } from "@/server/email/template";
 
@@ -60,8 +59,6 @@ function sendToAdmin(
 }
 
 const orderNumber = (id: string) => id.slice(0, 8).toUpperCase();
-const paymentLabel = (value: string) =>
-  PAYMENT_METHOD_OPTIONS.find((option) => option.value === value)?.label ?? value;
 
 // ——— Cuenta ———
 
@@ -165,14 +162,14 @@ function itemRows(
   ]);
 }
 
-// Un correo por estado (reservado al crear, confirmado/enviado/cancelado desde
-// el admin, vencido desde el cron), con el mismo copy de "siguientes pasos"
-// que la página /pedidos/[id].
+// Un correo por estado (confirmado desde el webhook de Stripe, enviado y
+// cancelado desde el admin), con el mismo copy de "siguientes pasos" que la
+// página /pedidos/[id].
 export async function sendOrderStatusEmail(orderId: string) {
   const order = await loadOrder(orderId);
   if (!order) return false;
   const locale: Locale = order.locale === "es" ? "es" : "en";
-  const message = getOrderStatusMessage(order.status, order.paymentMethod);
+  const message = getOrderStatusMessage(order.status);
 
   const c = await localize(
     {
@@ -186,7 +183,6 @@ export async function sendOrderStatusEmail(orderId: string) {
       shipping: "Envío",
       shippingLater: "Se coordina aparte",
       total: "Total",
-      reservedUntil: "Reservado hasta",
       cta: "Ver mi pedido",
       footer: "Recibes este correo porque hiciste un pedido en nuestra tienda.",
     },
@@ -207,10 +203,6 @@ export async function sendOrderStatusEmail(orderId: string) {
     eyebrow: number,
     heading: c.title,
     paragraphs: [`${c.hello} ${order.fullName},`, c.description],
-    highlight:
-      order.status === "reservado"
-        ? [c.reservedUntil, formatDate(order.reservedUntil, locale)]
-        : undefined,
     rows,
     total: [c.total, formatCurrency(Number(order.total))],
     cta: { label: c.cta, href: `${SITE_URL}/pedidos/${order.id}` },
@@ -226,15 +218,7 @@ export async function notifyAdminNewOrder(orderId: string) {
     `Nuevo pedido #${orderNumber(order.id)} · ${formatCurrency(Number(order.total))}`,
     {
       heading: `Nuevo pedido #${orderNumber(order.id)}`,
-      paragraphs: [
-        order.paymentMethod === "tarjeta"
-          ? "Pago con tarjeta."
-          : `Pago manual por ${paymentLabel(order.paymentMethod)}: verifica el pago antes de confirmarlo.`,
-      ],
-      highlight: [
-        `${ORDER_STATUS_LABELS[order.status]} hasta`,
-        formatDate(order.reservedUntil),
-      ],
+      paragraphs: ["Pagado con tarjeta. Prepara el envío."],
       rows: [
         ["Cliente", order.fullName],
         ["Correo", order.email],
