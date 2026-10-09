@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight, ShieldCheck } from "lucide-react";
+import { ArrowRight, LockKeyhole, ShieldCheck } from "lucide-react";
 import { listShopCategories } from "@/server/services/category-service";
 import { WHOLESALE_ITEM_THRESHOLD } from "@/server/services/cart-service";
 import { t, tMany } from "@/lib/i18n";
@@ -113,6 +113,7 @@ export async function SiteFooter() {
       contactForm: "Formulario de contacto",
       viewAll: "Ver todas",
       rights: "Todos los derechos reservados.",
+      adminAccess: "Acceso administración",
       secure: "Pagos seguros",
       appTitle: "App Glam Luxe",
       appText: "Instálala gratis y compra desde tu pantalla de inicio.",
@@ -256,9 +257,20 @@ export async function SiteFooter() {
         </div>
 
         <div className="flex flex-col items-center justify-between gap-4 border-t border-inverse-border py-6 text-center lg:flex-row lg:text-left">
-          <p className="text-xs text-inverse-muted">
-            © {new Date().getFullYear()} {SITE_NAME}. {copy.rights}
-          </p>
+          <div className="flex flex-col items-center gap-1 lg:flex-row lg:gap-4">
+            <p className="text-xs text-inverse-muted">
+              © {new Date().getFullYear()} {SITE_NAME}. {copy.rights}
+            </p>
+            {/* Entrada de la administradora al panel, también desde la PWA
+                instalada (ahí no hay barra de direcciones para escribir la URL). */}
+            <Link
+              href="/acceso-admin"
+              className="inline-flex min-h-11 items-center gap-1.5 text-xs text-inverse-muted transition-colors duration-300 hover:text-inverse-accent lg:min-h-0"
+            >
+              <LockKeyhole className="h-3.5 w-3.5" aria-hidden="true" />
+              {copy.adminAccess}
+            </Link>
+          </div>
           <div className="flex flex-wrap items-center justify-center gap-2 lg:justify-end">
             <span className="flex w-full items-center justify-center gap-1.5 text-xs text-inverse-muted sm:mr-1 sm:w-auto">
               <ShieldCheck className="h-4 w-4 text-inverse-accent" aria-hidden="true" />
