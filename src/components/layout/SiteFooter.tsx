@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { ArrowRight, LockKeyhole, ShieldCheck } from "lucide-react";
 import { listShopCategories } from "@/server/services/category-service";
-import { WHOLESALE_ITEM_THRESHOLD } from "@/server/services/cart-service";
 import { t, tMany } from "@/lib/i18n";
 import { CONTACT, SITE_NAME, whatsappUrl } from "@/lib/site";
 import { Sello, Wordmark } from "@/components/brand/Logo";
@@ -102,10 +101,10 @@ export async function SiteFooter() {
       ctaEyebrow: "Glam Luxe by HJ",
       ctaA: "Moda que se nota en los",
       ctaB: "detalles",
-      ctaText: "Al detalle o al por mayor, te acompañamos en cada pedido con atención personal.",
+      ctaText: "Te acompañamos en cada pedido con atención personal.",
       ctaShop: "Ir a la tienda",
       ctaContact: "Escríbenos",
-      tagline: `Ropa, bolsos y accesorios de alta calidad, seleccionados pieza por pieza. Precio mayorista desde ${WHOLESALE_ITEM_THRESHOLD} artículos.`,
+      tagline: "Ropa, bolsos y accesorios de alta calidad, seleccionados pieza por pieza.",
       categoriesTitle: "Categorías",
       companyTitle: "Empresa",
       legalTitle: "Legal",

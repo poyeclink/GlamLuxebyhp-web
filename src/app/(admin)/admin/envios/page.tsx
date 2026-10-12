@@ -8,7 +8,6 @@ export default async function AdminShippingRatesPage() {
   // convierte a number acá, mismo cuidado que toProductCardItem/ProductForm.
   const items = rates.map((rate) => ({
     id: rate.id,
-    tier: rate.tier,
     minQuantity: rate.minQuantity,
     maxQuantity: rate.maxQuantity,
     price: Number(rate.price),

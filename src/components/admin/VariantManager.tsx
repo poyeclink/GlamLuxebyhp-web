@@ -7,6 +7,8 @@ import {
   updateVariantAction,
   type VariantActionState,
 } from "@/server/actions/product-variant-actions";
+import { setVariantSoldOutAction } from "@/server/actions/inventory-actions";
+import { AvailabilityToggle } from "@/components/admin/AvailabilityToggle";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { SubmitButton } from "@/components/ui/SubmitButton";
@@ -16,7 +18,7 @@ import { useAdminT } from "@/components/admin/AdminLocaleProvider";
 export type VariantItem = {
   id: string;
   size: string;
-  stock: number;
+  soldOut: boolean;
 };
 
 const initialState: VariantActionState = {};
@@ -30,37 +32,38 @@ function VariantRow({ productId, variant }: { productId: string; variant: Varian
 
   return (
     <div className="flex flex-col gap-2 rounded-xl border border-border p-3 sm:rounded-none sm:border-0 sm:border-b sm:px-0 sm:py-2">
-      <div className="grid grid-cols-2 gap-2 sm:flex sm:items-center">
-        <form action={formAction} className="contents">
-          <label className="flex flex-col gap-1 sm:w-20">
-            <span className="text-xs text-muted-foreground sm:sr-only">{t("Talla")}</span>
-            <Input name="size" defaultValue={variant.size} required />
-          </label>
-          <label className="flex flex-col gap-1 sm:w-24">
-            <span className="text-xs text-muted-foreground sm:sr-only">{t("Stock")}</span>
-            <Input
-              name="stock"
-              type="number"
-              inputMode="numeric"
-              min="0"
-              defaultValue={variant.stock}
-              required
-            />
-          </label>
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+        <form action={formAction} className="flex items-center gap-2">
+          <Input
+            name="size"
+            defaultValue={variant.size}
+            aria-label={t("Talla")}
+            className="w-20"
+            required
+          />
           <SubmitButton
             variant="outline"
             size="sm"
-            className="sm:w-auto"
+            className="w-auto"
             pendingLabel={t("Enviando…")}
           >
             {t("Guardar")}
           </SubmitButton>
         </form>
-        <form action={deleteVariantAction.bind(null, variant.id, productId)} className="contents">
-          <Button type="submit" variant="ghost" size="sm" className="text-destructive">
-            {t("Eliminar")}
-          </Button>
-        </form>
+        <div className="flex items-center justify-between gap-2 sm:contents">
+          <AvailabilityToggle
+            soldOut={variant.soldOut}
+            action={setVariantSoldOutAction.bind(null, variant.id, !variant.soldOut)}
+          />
+          <form
+            action={deleteVariantAction.bind(null, variant.id, productId)}
+            className="sm:ml-auto"
+          >
+            <Button type="submit" variant="ghost" size="sm" className="text-destructive">
+              {t("Eliminar")}
+            </Button>
+          </form>
+        </div>
       </div>
       <FormError message={state.error} />
     </div>
@@ -86,25 +89,15 @@ export function VariantManager({
         <VariantRow key={variant.id} productId={productId} variant={variant} />
       ))}
 
-      <form action={formAction} className="grid grid-cols-2 gap-2 pt-2 sm:flex sm:items-center">
+      <form action={formAction} className="flex items-center gap-2 pt-2">
         <Input
           name="size"
           placeholder={t("Talla")}
           aria-label={t("Talla")}
-          className="sm:w-20"
+          className="min-w-0 flex-1 sm:w-20 sm:flex-none"
           required
         />
-        <Input
-          name="stock"
-          type="number"
-          inputMode="numeric"
-          min="0"
-          placeholder={t("Stock")}
-          aria-label={t("Stock")}
-          className="sm:w-24"
-          required
-        />
-        <SubmitButton className="col-span-2 sm:w-auto" pendingLabel={t("Enviando…")}>
+        <SubmitButton className="w-auto" pendingLabel={t("Enviando…")}>
           {t("Agregar talla")}
         </SubmitButton>
       </form>

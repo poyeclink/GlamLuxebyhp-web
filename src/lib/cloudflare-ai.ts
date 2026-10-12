@@ -11,7 +11,9 @@ const SYSTEM_PROMPT =
   "like {count}, numbers, punctuation, symbols and capitalization (a lowercase source stays lowercase). Department labels Mujer/Hombre/Niños are " +
   "Women/Men/Kids. When the whole text is a single menu item, button or label, use standard e-commerce wording, " +
   "for example: Inicio = Home, Tienda = Shop, Nosotros = About, Comprar ahora = Shop now, Novedades = What's New, " +
-  "Recién llegados = New Arrivals, Carrito = Cart, Atención = Customer Care, Desde/Hasta (price range) = From/To. " +
+  "Recién llegados = New Arrivals, Carrito = Cart, Atención = Customer Care, Desde/Hasta (price range) = From/To, " +
+  "Se coordina aparte (shipping) = Arranged separately, Continuar con la compra (button to checkout) = " +
+  "Proceed to checkout. " +
   "Those capitals are for standalone labels only: inside a sentence use normal case (Agregado a tu carrito = " +
   "Added to your cart), and a lowercase fragment stays lowercase (detalles = details). " +
   "Reply with only the English translation of the user message (never the Spanish text): no quotes, no notes.";

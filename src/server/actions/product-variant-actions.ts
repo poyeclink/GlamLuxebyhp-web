@@ -17,10 +17,6 @@ export type VariantActionState = {
 
 const variantSchema = z.object({
   size: z.string().trim().min(1, "La talla es obligatoria."),
-  stock: z.coerce
-    .number()
-    .int("El stock debe ser un número entero.")
-    .min(0, "El stock no puede ser negativo."),
 });
 
 export async function createVariantAction(

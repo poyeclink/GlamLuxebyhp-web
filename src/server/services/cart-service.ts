@@ -9,16 +9,10 @@ export class CartError extends Error {}
 // migración guest_cart_session_token.
 export type CartOwner = { userId: string } | { sessionToken: string };
 
-// Del PDF: umbral que activa precio mayorista automático en el carrito. Los
-// ShippingRate del tier "individual" (prisma/seed.ts) deben cubrir hasta
-// threshold-1 — si este número sube sin extender esas tarifas, el hueco
-// resuelve a null ("se coordina aparte") en vez de dar un precio real.
-export const WHOLESALE_ITEM_THRESHOLD = 6;
-
 // Único lugar con esta fórmula: la usan tanto CartTotals (para mostrar el
 // carrito/checkout) como order-service.ts (para el Order.total persistido) —
-// que ambos deriven de aquí evita que un cambio futuro (ej. envío gratis
-// mayorista) se aplique en la UI pero no en lo que de verdad se cobra.
+// que ambos deriven de aquí evita que un cambio futuro (ej. envío gratis)
+// se aplique en la UI pero no en lo que de verdad se cobra.
 export function computeCartTotal(subtotal: number, shippingEstimate: number | null) {
   return subtotal + (shippingEstimate ?? 0);
 }
@@ -45,15 +39,12 @@ async function getOrCreateCart(owner: CartOwner) {
   return prisma.cart.upsert({ where, create: owner, update: {} });
 }
 
-async function assertVariantAvailable(productId: string, variantId: string, quantity: number) {
+async function assertVariantAvailable(productId: string, variantId: string) {
   const variant = await prisma.productVariant.findUnique({ where: { id: variantId } });
   if (!variant || variant.productId !== productId) {
     throw new CartError("La talla seleccionada no es válida para este producto.");
   }
-  if (variant.stock < quantity) {
-    throw new CartError(`Solo quedan ${variant.stock} unidades de esta talla.`);
-  }
-  return variant;
+  if (variant.soldOut) throw new CartError("Esta talla está agotada.");
 }
 
 export async function addToCart(
@@ -67,9 +58,15 @@ export async function addToCart(
     throw new CartError("Este producto ya no está disponible.");
   }
 
+  // Un producto sin tallas puede conservar filas viejas de ProductVariant:
+  // nunca se guarda una de esas en el carrito.
+  if (!product.hasVariants) variantId = null;
+
   if (product.hasVariants) {
     if (!variantId) throw new CartError("Selecciona una talla.");
-    await assertVariantAvailable(productId, variantId, quantity);
+    await assertVariantAvailable(productId, variantId);
+  } else if (product.soldOut) {
+    throw new CartError("Este producto está agotado.");
   }
 
   const cart = await getOrCreateCart(owner);
@@ -79,11 +76,9 @@ export async function addToCart(
   });
 
   if (existingItem) {
-    const newQuantity = existingItem.quantity + quantity;
-    if (variantId) await assertVariantAvailable(productId, variantId, newQuantity);
     return prisma.cartItem.update({
       where: { id: existingItem.id },
-      data: { quantity: newQuantity },
+      data: { quantity: existingItem.quantity + quantity },
     });
   }
 
@@ -118,8 +113,7 @@ async function getOwnedCartItem(owner: CartOwner, itemId: string) {
 }
 
 export async function updateCartItemQuantity(owner: CartOwner, itemId: string, quantity: number) {
-  const item = await getOwnedCartItem(owner, itemId);
-  if (item.variantId) await assertVariantAvailable(item.productId, item.variantId, quantity);
+  await getOwnedCartItem(owner, itemId);
   return prisma.cartItem.update({ where: { id: itemId }, data: { quantity } });
 }
 
@@ -154,16 +148,20 @@ export async function getCartWithPricing(owner: CartOwner) {
 
   const rawItems = cart?.items ?? [];
   const totalQuantity = rawItems.reduce((sum, item) => sum + item.quantity, 0);
-  const useWholesalePrice = totalQuantity >= WHOLESALE_ITEM_THRESHOLD;
 
   const items = rawItems.map((item) => {
-    const unitPrice = Number(
-      useWholesalePrice ? item.product.wholesalePrice : item.product.individualPrice,
-    );
+    const unitPrice = Number(item.product.individualPrice);
     return {
       id: item.id,
       productId: item.productId,
       productActive: item.product.active,
+      // Para el cliente, desactivado o con una línea que ya no calza con las
+      // tallas del producto (updateProduct las limpia) es lo mismo que agotado.
+      soldOut:
+        !item.product.active ||
+        (item.product.hasVariants
+          ? (item.variant?.soldOut ?? true)
+          : item.variantId !== null || item.product.soldOut),
       variantId: item.variantId,
       productName: item.product.name,
       variantSize: item.variant?.size ?? null,
@@ -176,12 +174,12 @@ export async function getCartWithPricing(owner: CartOwner) {
 
   const subtotal = items.reduce((sum, item) => sum + item.lineTotal, 0);
 
-  const shippingEstimate =
-    totalQuantity === 0
-      ? 0
-      : await resolveShippingCost(useWholesalePrice ? "mayorista" : "individual", totalQuantity);
+  const shippingEstimate = totalQuantity === 0 ? 0 : await resolveShippingCost(totalQuantity);
 
-  return { items, totalQuantity, useWholesalePrice, subtotal, shippingEstimate };
+  // El checkout no deja avanzar mientras haya algo que no se puede comprar.
+  const hasUnavailable = items.some((item) => item.soldOut);
+
+  return { items, totalQuantity, subtotal, shippingEstimate, hasUnavailable };
 }
 
 export async function mergeGuestCartIntoUser(sessionToken: string, userId: string) {
@@ -202,7 +200,7 @@ export async function mergeGuestCartIntoUser(sessionToken: string, userId: strin
     try {
       await addToCart({ userId }, item.productId, item.variantId, item.quantity);
     } catch (error) {
-      // Producto desactivado o sin stock suficiente desde que se agregó como
+      // Producto desactivado o agotado desde que se agregó como
       // invitado: se descarta esa línea en vez de bloquear el login.
       if (!(error instanceof CartError)) throw error;
     }

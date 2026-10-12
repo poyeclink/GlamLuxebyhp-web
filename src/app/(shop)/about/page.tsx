@@ -17,15 +17,13 @@ import { PageHero } from "@/components/marketing/PageHero";
 import { SectionHeading } from "@/components/marketing/SectionHeading";
 import { Spotlight } from "@/components/motion/Spotlight";
 import { Button } from "@/components/ui/Button";
-import { Tabs } from "@/components/ui/Tabs";
 import { t, tMany } from "@/lib/i18n";
 import { STOCK_IMAGES, type StockImage } from "@/lib/stock-images";
-import { WHOLESALE_ITEM_THRESHOLD } from "@/server/services/cart-service";
 
 export const metadata: Metadata = {
   title: "Nosotros",
   description:
-    "Conoce Glam Luxe by HJ: ropa, bolsos y accesorios de alta calidad seleccionados pieza por pieza, para compras personales y para boutiques.",
+    "Conoce Glam Luxe by HJ: ropa, bolsos y accesorios de alta calidad seleccionados pieza por pieza.",
   alternates: { canonical: "/about" },
 };
 
@@ -97,7 +95,7 @@ export default async function AboutPage() {
     eyebrow: "Nosotros",
     title: "Moda de alta calidad, elegida con criterio",
     description:
-      "Glam Luxe by HJ nace de una idea simple: que vestir bien no dependa de pagar de más. Seleccionamos ropa, bolsos y accesorios con acabados de alta gama y los ponemos a tu alcance, al detalle o al por mayor.",
+      "Glam Luxe by HJ nace de una idea simple: que vestir bien no dependa de pagar de más. Seleccionamos ropa, bolsos y accesorios con acabados de alta gama y los ponemos a tu alcance.",
     manifestoEyebrow: "Nuestra filosofía",
     manifestoA: "Creemos que el lujo no está en la etiqueta, sino en los",
     manifestoB: "detalles",
@@ -126,7 +124,7 @@ export default async function AboutPage() {
     v1: "Calidad primero",
     v1t: "Materiales y confección revisados pieza por pieza antes de publicarse.",
     v2: "Precios transparentes",
-    v2t: "Ves el precio individual y el mayorista de cada producto, sin letra pequeña.",
+    v2t: "Ves el precio de cada producto y el envío en tu carrito antes de pagar, sin letra pequeña.",
     v3: "Trato cercano",
     v3t: "Te acompañamos con tallas, disponibilidad y envíos, de persona a persona.",
     v4: "Compra segura",
@@ -144,21 +142,13 @@ export default async function AboutPage() {
     p4t: "Coordinamos el envío y te mantenemos al tanto del estado de tu pedido.",
     forEyebrow: "Para quién",
     forTitle: "Compra como tú necesites",
-    forText:
-      "Una sola tienda con la misma calidad, ya sea que busques una pieza para ti o surtir tu negocio.",
-    tabPersonal: "Para ti",
-    tabBusiness: "Para tu negocio",
+    forText: "Una tienda pensada para que encuentres tu próxima pieza favorita, sin complicaciones.",
     personalText:
-      "¿Buscas una pieza especial? Compra al detalle, sin mínimos, con la misma calidad que nuestros clientes mayoristas.",
+      "¿Buscas una pieza especial? Compra sin mínimos, con la calidad que revisamos pieza por pieza.",
     personal1: "Sin mínimo de compra",
     personal2: "Tallas y disponibilidad visibles en cada producto",
     personal3: "Envío calculado en tu carrito antes de pagar",
     personal4: "Pago seguro con tarjeta",
-    businessText: `¿Tienes una boutique, vendes por redes o surtes a clientes? Desde ${WHOLESALE_ITEM_THRESHOLD} artículos variados, todo tu pedido pasa a precio mayorista.`,
-    business1: `Precio mayorista desde ${WHOLESALE_ITEM_THRESHOLD} artículos, combinando productos`,
-    business2: "Sin cuentas especiales ni aprobaciones previas",
-    business3: "Envío coordinado directamente contigo",
-    business4: "Tu pedido confirmado al instante al pagar",
     ctaEyebrow: "Glam Luxe by HJ",
     ctaTitle: "Descubre piezas que se ven —y se sienten— de alta gama",
     ctaShop: "Ir a la tienda",
@@ -367,31 +357,10 @@ export default async function AboutPage() {
               align="center"
             />
           </div>
-          <Tabs
-            items={[
-              {
-                id: "personal",
-                label: c.tabPersonal,
-                content: (
-                  <AudiencePanel
-                    image={STOCK_IMAGES.scarfWoman}
-                    text={c.personalText}
-                    points={[c.personal1, c.personal2, c.personal3, c.personal4]}
-                  />
-                ),
-              },
-              {
-                id: "business",
-                label: c.tabBusiness,
-                content: (
-                  <AudiencePanel
-                    image={STOCK_IMAGES.boutique}
-                    text={c.businessText}
-                    points={[c.business1, c.business2, c.business3, c.business4]}
-                  />
-                ),
-              },
-            ]}
+          <AudiencePanel
+            image={STOCK_IMAGES.scarfWoman}
+            text={c.personalText}
+            points={[c.personal1, c.personal2, c.personal3, c.personal4]}
           />
         </div>
       </section>

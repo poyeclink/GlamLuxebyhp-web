@@ -18,7 +18,6 @@ import { formatCurrency } from "@/lib/utils";
 
 type ShippingRate = {
   id: string;
-  tier: string;
   minQuantity: number;
   maxQuantity: number | null;
   price: number;
@@ -58,8 +57,7 @@ export function ShippingRatesManager({ rates }: { rates: ShippingRate[] }) {
             {rates.map((rate) => (
               <AdminListCard
                 key={rate.id}
-                title={<span className="capitalize">{t(rate.tier)}</span>}
-                meta={t("{range} artículos", { range: quantityRange(rate) })}
+                title={t("{range} artículos", { range: quantityRange(rate) })}
                 aside={formatCurrency(rate.price)}
                 actions={
                   <>
@@ -79,7 +77,6 @@ export function ShippingRatesManager({ rates }: { rates: ShippingRate[] }) {
           <DataTable className="hidden md:block">
             <thead>
               <tr>
-                <th>{t("Tier")}</th>
                 <th>{t("Cantidad")}</th>
                 <th>{t("Precio")}</th>
                 <th />
@@ -88,8 +85,7 @@ export function ShippingRatesManager({ rates }: { rates: ShippingRate[] }) {
             <tbody>
               {rates.map((rate) => (
                 <tr key={rate.id}>
-                  <td className="font-medium capitalize text-foreground">{t(rate.tier)}</td>
-                  <td className="text-muted-foreground">{quantityRange(rate)}</td>
+                  <td className="font-medium text-foreground">{quantityRange(rate)}</td>
                   <td className="text-foreground">{formatCurrency(rate.price)}</td>
                   <td>
                     <div className="flex items-center justify-end gap-2">

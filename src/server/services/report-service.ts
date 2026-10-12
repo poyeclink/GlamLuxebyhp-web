@@ -1,14 +1,8 @@
 import { prisma } from "@/lib/prisma";
-import type {
-  InventoryLogReason,
-  OrderStatus,
-  PaymentMethod,
-  PricingTier,
-  Prisma,
-} from "@/generated/prisma/client";
+import type { OrderStatus, PaymentMethod, Prisma } from "@/generated/prisma/client";
 import { ORDER_STATUS_LABELS } from "@/server/services/order-service";
 import { PAYMENT_METHOD_OPTIONS, isPaymentMethod } from "@/server/services/payment-service";
-import { LOW_STOCK_THRESHOLD } from "@/server/services/inventory-service";
+import { sortVariantsBySize } from "@/server/services/product-service";
 import { isUuid } from "@/lib/utils";
 import { categoryLabel, productInCategory } from "@/server/services/category-service";
 import type { AdminT } from "@/lib/admin-i18n";
@@ -22,9 +16,8 @@ export type ReportFilters = {
   to: Date;
   status?: OrderStatus;
   paymentMethod?: PaymentMethod;
-  tier?: PricingTier;
   categoryId?: string;
-  lowStockOnly: boolean;
+  soldOutOnly: boolean;
 };
 
 type SearchParams = Record<string, string | string[] | undefined>;
@@ -34,19 +27,6 @@ const DAY_MS = 24 * 60 * 60 * 1000;
 // Estados que cuentan como venta cobrada; `reservado` todavía no está pagado
 // y `cancelado`/`vencido` nunca lo estuvieron.
 const PAID_STATUSES: OrderStatus[] = ["confirmado", "enviado"];
-
-// Sin `venta`: hoy nadie escribe ese motivo (el stock ya se descuenta en la
-// reserva, ver InventoryLog en schema.prisma) y mostraría siempre 0.
-const MOVEMENT_LABELS: Partial<Record<InventoryLogReason, string>> = {
-  reserva: "Reservas (pedidos)",
-  liberacion: "Liberaciones de stock",
-  ajuste_manual: "Ajustes manuales",
-};
-
-export const TIER_LABELS: Record<PricingTier, string> = {
-  individual: "Individual",
-  mayorista: "Mayorista",
-};
 
 export const NO_CATEGORY = "Sin categoría";
 
@@ -93,7 +73,6 @@ export function parseReportFilters(params: SearchParams, now = new Date()): Repo
 
   const status = single(params.estado);
   const method = single(params.metodo);
-  const tier = single(params.tier);
   const categoryId = single(params.categoria);
 
   return {
@@ -103,9 +82,8 @@ export function parseReportFilters(params: SearchParams, now = new Date()): Repo
     status:
       status && Object.hasOwn(ORDER_STATUS_LABELS, status) ? (status as OrderStatus) : undefined,
     paymentMethod: isPaymentMethod(method) ? method : undefined,
-    tier: tier && Object.hasOwn(TIER_LABELS, tier) ? (tier as PricingTier) : undefined,
     categoryId: categoryId && isUuid(categoryId) ? categoryId : undefined,
-    lowStockOnly: single(params.stockBajo) === "1",
+    soldOutOnly: single(params.agotados) === "1",
   };
 }
 
@@ -118,10 +96,9 @@ export function reportQueryString(filters: ReportFilters) {
   if (filters.type === "ventas") {
     if (filters.status) params.set("estado", filters.status);
     if (filters.paymentMethod) params.set("metodo", filters.paymentMethod);
-    if (filters.tier) params.set("tier", filters.tier);
   } else {
     if (filters.categoryId) params.set("categoria", filters.categoryId);
-    if (filters.lowStockOnly) params.set("stockBajo", "1");
+    if (filters.soldOutOnly) params.set("agotados", "1");
   }
   return params.toString();
 }
@@ -137,13 +114,13 @@ export function describeFilters(filters: ReportFilters, t: AdminT, categoryName?
     );
     if (filters.paymentMethod)
       labels.push(t("Método: {method}", { method: t(paymentMethodLabel(filters.paymentMethod)) }));
-    if (filters.tier) labels.push(t("Precio: {tier}", { tier: t(TIER_LABELS[filters.tier]) }));
   } else {
     labels.push(
-      categoryName ? t("Categoría: {category}", { category: categoryName }) : t("Todas las categorías"),
+      categoryName
+        ? t("Categoría: {category}", { category: categoryName })
+        : t("Todas las categorías"),
     );
-    if (filters.lowStockOnly)
-      labels.push(t("Solo stock bajo ({threshold} o menos)", { threshold: LOW_STOCK_THRESHOLD }));
+    if (filters.soldOutOnly) labels.push(t("Solo agotados"));
   }
   return labels;
 }
@@ -156,7 +133,6 @@ type SalesOrderRow = {
   fullName: string;
   status: OrderStatus;
   paymentMethod: PaymentMethod;
-  pricingTier: PricingTier;
   total: number;
   itemCount: number;
   items: { productName: string; category: string; quantity: number; lineTotal: number }[];
@@ -190,10 +166,9 @@ export function summarizeSales(orders: SalesOrderRow[]) {
   for (const order of orders)
     addToBucket(byStatus, order.status, ORDER_STATUS_LABELS[order.status], order.total);
 
-  // Métodos, tier, productos y categorías solo sobre ventas cobradas: un
+  // Métodos, productos y categorías solo sobre ventas cobradas: un
   // pedido vencido o cancelado no es una venta de ese producto.
   const byMethod = new Map<string, Bucket>();
-  const byTier = new Map<string, Bucket>();
   const byProduct = new Map<string, Bucket>();
   const byCategory = new Map<string, Bucket>();
   let unitsSold = 0;
@@ -204,7 +179,6 @@ export function summarizeSales(orders: SalesOrderRow[]) {
       paymentMethodLabel(order.paymentMethod),
       order.total,
     );
-    addToBucket(byTier, order.pricingTier, TIER_LABELS[order.pricingTier], order.total);
     for (const item of order.items) {
       unitsSold += item.quantity;
       addToBucket(byProduct, item.productName, item.productName, item.lineTotal, item.quantity);
@@ -225,7 +199,6 @@ export function summarizeSales(orders: SalesOrderRow[]) {
     unitsSold,
     byStatus: [...byStatus.values()],
     byMethod: [...byMethod.values()].sort(byAmountDesc),
-    byTier: [...byTier.values()].sort(byAmountDesc),
     topProducts: [...byProduct.values()].sort(byAmountDesc).slice(0, 10),
     byCategory: [...byCategory.values()].sort(byAmountDesc),
   };
@@ -236,7 +209,6 @@ export async function getSalesReport(filters: ReportFilters) {
     createdAt: { gte: filters.from, lte: filters.to },
     ...(filters.status ? { status: filters.status } : {}),
     ...(filters.paymentMethod ? { paymentMethod: filters.paymentMethod } : {}),
-    ...(filters.tier ? { pricingTier: filters.tier } : {}),
   };
   const rows = await prisma.order.findMany({
     where,
@@ -247,14 +219,15 @@ export async function getSalesReport(filters: ReportFilters) {
       fullName: true,
       status: true,
       paymentMethod: true,
-      pricingTier: true,
       total: true,
       items: {
         select: {
           productName: true,
           quantity: true,
           unitPrice: true,
-          product: { select: { category: { select: { name: true, parent: { select: { name: true } } } } } },
+          product: {
+            select: { category: { select: { name: true, parent: { select: { name: true } } } } },
+          },
         },
       },
     },
@@ -278,70 +251,50 @@ export async function getSalesReport(filters: ReportFilters) {
 
 export type SalesReport = Awaited<ReturnType<typeof getSalesReport>>;
 
-// ---------- Inventario ----------
+// ---------- Inventario (disponibilidad) ----------
 
+// Sin fechas: es una foto de lo que está Disponible o Agotado hoy. Un
+// producto sin tallas es una sola fila; uno con tallas, una por talla.
 export async function getInventoryReport(filters: ReportFilters) {
-  const variantWhere: Prisma.ProductVariantWhereInput = {
-    ...(filters.categoryId ? { product: productInCategory({ id: filters.categoryId }) } : {}),
-    ...(filters.lowStockOnly ? { stock: { lte: LOW_STOCK_THRESHOLD } } : {}),
-  };
-  const [variants, movements] = await Promise.all([
-    prisma.productVariant.findMany({
-      where: variantWhere,
-      orderBy: [{ stock: "asc" }, { product: { name: "asc" } }],
-      select: {
-        id: true,
-        size: true,
-        stock: true,
-        product: {
-          select: {
-            name: true,
-            active: true,
-            wholesalePrice: true,
-            category: { select: { name: true, parent: { select: { name: true } } } },
-          },
-        },
-      },
-    }),
-    prisma.inventoryLog.groupBy({
-      by: ["reason"],
-      where: {
-        createdAt: { gte: filters.from, lte: filters.to },
-        ...(filters.categoryId ? { variant: { product: productInCategory({ id: filters.categoryId }) } } : {}),
-      },
-      _sum: { quantityChange: true },
-      _count: true,
-    }),
-  ]);
+  const products = await prisma.product.findMany({
+    where: filters.categoryId ? productInCategory({ id: filters.categoryId }) : {},
+    orderBy: { name: "asc" },
+    select: {
+      id: true,
+      name: true,
+      active: true,
+      hasVariants: true,
+      soldOut: true,
+      category: { select: { name: true, parent: { select: { name: true } } } },
+      variants: { select: { id: true, size: true, soldOut: true } },
+    },
+  });
 
-  const rows = variants.map((variant) => ({
-    id: variant.id,
-    product: variant.product.name,
-    category: categoryLabel(variant.product.category),
-    active: variant.product.active,
-    size: variant.size,
-    stock: variant.stock,
-    value: variant.stock * Number(variant.product.wholesalePrice),
-  }));
+  const rows = products
+    .flatMap((product) => {
+      const base = {
+        productId: product.id,
+        product: product.name,
+        category: categoryLabel(product.category),
+        active: product.active,
+      };
+      return product.hasVariants
+        ? sortVariantsBySize(product.variants).map((variant) => ({
+            ...base,
+            id: variant.id,
+            size: variant.size as string | null,
+            soldOut: variant.soldOut,
+          }))
+        : [{ ...base, id: product.id, size: null, soldOut: product.soldOut }];
+    })
+    .filter((row) => !filters.soldOutOnly || row.soldOut)
+    // Lo agotado primero: es lo que hay que revisar.
+    .sort((a, b) => Number(b.soldOut) - Number(a.soldOut));
 
+  const soldOut = rows.filter((row) => row.soldOut).length;
   return {
     rows,
-    summary: {
-      variantCount: rows.length,
-      units: rows.reduce((total, row) => total + row.stock, 0),
-      value: rows.reduce((total, row) => total + row.value, 0),
-      lowStock: rows.filter((row) => row.stock > 0 && row.stock <= LOW_STOCK_THRESHOLD).length,
-      outOfStock: rows.filter((row) => row.stock === 0).length,
-      movements: (Object.keys(MOVEMENT_LABELS) as InventoryLogReason[]).map((reason) => {
-        const row = movements.find((movement) => movement.reason === reason);
-        return {
-          reason,
-          label: MOVEMENT_LABELS[reason]!,
-          count: row?._count ?? 0,
-          units: row?._sum.quantityChange ?? 0,
-        };
-      }),
-    },
+    summary: { rowCount: rows.length, available: rows.length - soldOut, soldOut },
   };
 }
 

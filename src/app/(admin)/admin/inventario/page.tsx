@@ -1,9 +1,13 @@
-import Link from "next/link";
-import { listVariantsWithStock, LOW_STOCK_THRESHOLD } from "@/server/services/inventory-service";
+import { listProductAvailability } from "@/server/services/inventory-service";
+import { isProductSoldOut } from "@/server/services/product-service";
+import {
+  setProductSoldOutAction,
+  setVariantSoldOutAction,
+} from "@/server/actions/inventory-actions";
 import { Badge } from "@/components/ui/Badge";
-import { DataTable } from "@/components/ui/DataTable";
 import { AdminCardList, AdminListCard } from "@/components/admin/AdminListCard";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
+import { AvailabilityToggle } from "@/components/admin/AvailabilityToggle";
 import { SearchInput } from "@/components/ui/SearchInput";
 import { Pagination } from "@/components/ui/Pagination";
 import { ADMIN_PAGE_SIZE } from "@/lib/utils";
@@ -14,8 +18,8 @@ export default async function AdminInventoryPage({ searchParams }: PageProps<"/a
   const search = typeof q === "string" && q.trim() !== "" ? q.trim() : undefined;
   const page = Math.max(Number(typeof pageParam === "string" ? pageParam : "1") || 1, 1);
 
-  const [{ items: variants, total }, t] = await Promise.all([
-    listVariantsWithStock({ search, page }),
+  const [{ items: products, total }, t] = await Promise.all([
+    listProductAvailability({ search, page }),
     getAdminT(),
   ]);
   const totalPages = Math.max(1, Math.ceil(total / ADMIN_PAGE_SIZE));
@@ -25,9 +29,9 @@ export default async function AdminInventoryPage({ searchParams }: PageProps<"/a
       <AdminPageHeader
         eyebrow={t("Catálogo")}
         title={t("Inventario")}
-        description={t("Stock por talla, ordenado de menor a mayor. Stock bajo: {threshold} o menos.", {
-          threshold: LOW_STOCK_THRESHOLD,
-        })}
+        description={t(
+          "Toca un producto o una talla para marcarlo Disponible o Agotado. Lo agotado se sigue viendo en la tienda, pero no se puede comprar.",
+        )}
       />
 
       <SearchInput
@@ -36,70 +40,58 @@ export default async function AdminInventoryPage({ searchParams }: PageProps<"/a
         defaultValue={search}
       />
 
-      {variants.length === 0 ? (
+      {products.length === 0 ? (
         <p className="rounded-2xl border border-dashed border-border bg-background p-10 text-center text-sm text-muted-foreground">
           {search
             ? t('No encontramos productos para "{search}".', { search })
-            : t("Todavía no hay tallas registradas.")}
+            : t("Todavía no hay productos.")}
         </p>
       ) : (
-        <>
-          <AdminCardList>
-            {variants.map((variant) => (
-              <AdminListCard
-                key={variant.id}
-                href={`/admin/inventario/${variant.id}`}
-                title={variant.product.name}
-                badge={
-                  <Badge
-                    variant={variant.stock <= LOW_STOCK_THRESHOLD ? "destructive" : "secondary"}
-                  >
-                    {variant.stock === 0 ? t("Agotado") : t("{count} unid.", { count: variant.stock })}
-                  </Badge>
-                }
-                meta={`${t("Talla {size}", { size: variant.size })}${variant.product.active ? "" : ` · ${t("inactivo")}`}`}
-              />
-            ))}
-          </AdminCardList>
-          <DataTable className="hidden md:block">
-            <thead>
-              <tr>
-                <th>{t("Producto")}</th>
-                <th>{t("Talla")}</th>
-                <th>{t("Stock")}</th>
-                <th />
-              </tr>
-            </thead>
-            <tbody>
-              {variants.map((variant) => (
-                <tr key={variant.id}>
-                  <td className="font-medium text-foreground">
-                    {variant.product.name}
-                    {!variant.product.active && (
-                      <span className="ml-2 text-xs text-muted-foreground">({t("inactivo")})</span>
-                    )}
-                  </td>
-                  <td className="text-muted-foreground">{variant.size}</td>
-                  <td>
-                    <Badge
-                      variant={variant.stock <= LOW_STOCK_THRESHOLD ? "destructive" : "secondary"}
-                    >
-                      {variant.stock}
-                    </Badge>
-                  </td>
-                  <td className="text-right">
-                    <Link
-                      href={`/admin/inventario/${variant.id}`}
-                      className="text-sm font-medium text-accent hover:underline"
-                    >
-                      {t("Ver historial")}
-                    </Link>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </DataTable>
-        </>
+        <AdminCardList className="md:grid md:grid-cols-2 md:gap-4">
+          {products.map((product) => (
+            <AdminListCard
+              key={product.id}
+              href={`/admin/productos/${product.id}/editar`}
+              title={product.name}
+              badge={
+                isProductSoldOut(product) ? (
+                  <Badge variant="destructive">{t("Agotado")}</Badge>
+                ) : null
+              }
+              meta={[
+                product.hasVariants
+                  ? t("{count} tallas", { count: product.variants.length })
+                  : t("Sin tallas"),
+                ...(product.active ? [] : [t("inactivo")]),
+              ].join(" · ")}
+              actions={
+                <div className="flex w-full flex-wrap gap-2">
+                  {product.hasVariants ? (
+                    product.variants.length === 0 ? (
+                      <span className="text-sm text-muted-foreground">
+                        {t("Sin tallas cargadas.")}
+                      </span>
+                    ) : (
+                      product.variants.map((variant) => (
+                        <AvailabilityToggle
+                          key={variant.id}
+                          size={variant.size}
+                          soldOut={variant.soldOut}
+                          action={setVariantSoldOutAction.bind(null, variant.id, !variant.soldOut)}
+                        />
+                      ))
+                    )
+                  ) : (
+                    <AvailabilityToggle
+                      soldOut={product.soldOut}
+                      action={setProductSoldOutAction.bind(null, product.id, !product.soldOut)}
+                    />
+                  )}
+                </div>
+              }
+            />
+          ))}
+        </AdminCardList>
       )}
 
       <Pagination

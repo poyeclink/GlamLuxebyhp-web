@@ -114,6 +114,9 @@ model Product {
   boxed           Boolean          @default(false)
   hasVariants     Boolean          @default(false)
   active          Boolean          @default(true)
+  // Disponible/Agotado de un producto sin tallas (con tallas manda el de cada
+  // ProductVariant). Sin cantidades: la clienta no lleva conteo de stock.
+  soldOut         Boolean          @default(false)
   createdAt       DateTime         @default(now())
   variants        ProductVariant[]
   images          ProductImage[]
@@ -140,6 +143,9 @@ model ProductVariant {
   productId     String         @db.Uuid
   product       Product        @relation(fields: [productId], references: [id], onDelete: Cascade)
   size          String
+  soldOut       Boolean        @default(false)
+  // Histórico: el conteo de stock se dejó de usar (oct 2026, solo
+  // Disponible/Agotado). Se conserva la columna para no perder esos datos.
   stock         Int            @default(0)
   cartItems     CartItem[]
   orderItems    OrderItem[]
@@ -177,8 +183,8 @@ model CartItem {
   createdAt DateTime        @default(now())
 
   // Postgres no deduplica NULLs en un índice único, así que esto solo protege
-  // contra filas duplicadas cuando variantId no es null (productos con tallas,
-  // donde el stock limitado sí importa) — ver addToCart en cart-service.ts.
+  // contra filas duplicadas cuando variantId no es null (productos con
+  // tallas) — ver addToCart en cart-service.ts.
   @@unique([cartId, productId, variantId])
   @@index([productId])
 }
@@ -298,6 +304,8 @@ model Translation {
   @@unique([sourceHash, targetLocale])
 }
 
+// Histórico: ya no se escribe desde que el stock pasó a ser solo
+// Disponible/Agotado (oct 2026). Se conserva con sus filas.
 model InventoryLog {
   id String @id @default(uuid()) @db.Uuid
 

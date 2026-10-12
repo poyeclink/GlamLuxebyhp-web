@@ -6,7 +6,7 @@ import {
   getOrderStatusCounts,
   listRecentOrders,
 } from "@/server/services/order-service";
-import { listLowStockVariants } from "@/server/services/product-variant-service";
+import { listSoldOutItems } from "@/server/services/inventory-service";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
@@ -52,11 +52,11 @@ function CardLink({ href, children }: { href: string; children: React.ReactNode 
 }
 
 export default async function AdminHomePage() {
-  const [session, statusCounts, recentOrders, lowStockVariants, t, locale] = await Promise.all([
+  const [session, statusCounts, recentOrders, soldOutItems, t, locale] = await Promise.all([
     getSession(),
     getOrderStatusCounts(),
     listRecentOrders(8),
-    listLowStockVariants(8),
+    listSoldOutItems(8),
     getAdminT(),
     getLocale(),
   ]);
@@ -67,7 +67,7 @@ export default async function AdminHomePage() {
       <AdminPageHeader
         eyebrow={formatDate(new Date(), locale)}
         title={t("Hola, {name}", { name: firstName })}
-        description={t("Este es el resumen de tu tienda: pedidos por estado, ventas recientes y tallas por reponer.")}
+        description={t("Este es el resumen de tu tienda: pedidos por estado, ventas recientes y lo que está agotado.")}
         action={
           <Link href="/admin/productos/nuevo">
             <Button>
@@ -180,38 +180,36 @@ export default async function AdminHomePage() {
         <div className="flex flex-col gap-6">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between border-b border-border p-4 sm:p-6">
-              <CardTitle>{t("Stock bajo")}</CardTitle>
+              <CardTitle>{t("Agotados")}</CardTitle>
               <CardLink href="/admin/inventario">{t("Inventario")}</CardLink>
             </CardHeader>
             <CardContent className="p-2">
-              {lowStockVariants.length === 0 ? (
+              {soldOutItems.length === 0 ? (
                 <div className="flex items-center gap-3 p-4 text-sm text-muted-foreground">
                   <span className="material-symbols-outlined text-accent" aria-hidden="true">
                     verified
                   </span>
-                  {t("Ninguna talla está por debajo del umbral de stock bajo.")}
+                  {t("Todo está disponible.")}
                 </div>
               ) : (
                 <ul className="flex flex-col">
-                  {lowStockVariants.map((variant) => (
-                    <li key={variant.id}>
+                  {soldOutItems.map((item) => (
+                    <li key={item.key}>
                       <Link
-                        href={`/admin/inventario/${variant.id}`}
+                        href={`/admin/productos/${item.productId}/editar`}
                         className="flex min-h-14 items-center justify-between gap-3 rounded-xl px-3 py-3 transition-colors hover:bg-accent-soft/50 active:bg-accent-soft sm:gap-4 sm:px-4"
                       >
                         <span className="flex min-w-0 flex-col gap-0.5">
                           <span className="truncate text-sm font-medium text-foreground">
-                            {variant.product.name}
+                            {item.name}
                           </span>
-                          <span className="text-xs text-muted-foreground">
-                            {t("Talla {size}", { size: variant.size })}
-                          </span>
+                          {item.size && (
+                            <span className="text-xs text-muted-foreground">
+                              {t("Talla {size}", { size: item.size })}
+                            </span>
+                          )}
                         </span>
-                        <Badge variant={variant.stock === 0 ? "destructive" : "secondary"}>
-                          {variant.stock === 0
-                            ? t("Agotado")
-                            : t("{count} en stock", { count: variant.stock })}
-                        </Badge>
+                        <Badge variant="destructive">{t("Agotado")}</Badge>
                       </Link>
                     </li>
                   ))}

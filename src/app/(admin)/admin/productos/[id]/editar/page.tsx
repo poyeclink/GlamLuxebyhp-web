@@ -45,11 +45,11 @@ export default async function EditProductPage({
             slug: product.slug,
             categoryId: product.categoryId,
             description: product.description,
-            wholesalePrice: Number(product.wholesalePrice),
             individualPrice: Number(product.individualPrice),
             boxed: product.boxed,
             hasVariants: product.hasVariants,
             active: product.active,
+            soldOut: product.soldOut,
           }}
           submitLabel={t("Guardar cambios")}
         />
@@ -61,8 +61,19 @@ export default async function EditProductPage({
       </section>
 
       <section className="flex flex-col gap-5 rounded-2xl border border-border bg-background p-4 sm:p-8">
-        <h2 className="font-display text-2xl text-foreground">{t("Tallas y stock")}</h2>
-        <VariantManager productId={product.id} variants={product.variants} />
+        <h2 className="font-display text-2xl text-foreground">{t("Tallas")}</h2>
+        {product.hasVariants ? (
+          <VariantManager
+            productId={product.id}
+            variants={product.variants.map(({ id, size, soldOut }) => ({ id, size, soldOut }))}
+          />
+        ) : (
+          <p className="text-sm text-muted-foreground">
+            {t(
+              "Este producto no maneja tallas. Para agregarlas, marca «Tiene variantes de talla» arriba y guarda los cambios.",
+            )}
+          </p>
+        )}
       </section>
     </div>
   );

@@ -40,9 +40,13 @@ export default async function AdminProductsPage({ searchParams }: PageProps<"/ad
         eyebrow={t("Catálogo")}
         title={t("Productos")}
         description={
-          total === 1
-            ? t("1 producto en el catálogo.")
-            : t("{count} productos en el catálogo.", { count: total })
+          search
+            ? total === 1
+              ? t("1 producto con este filtro.")
+              : t("{count} productos con este filtro.", { count: total })
+            : total === 1
+              ? t("1 producto en el catálogo.")
+              : t("{count} productos en el catálogo.", { count: total })
         }
         action={
           <Link href="/admin/productos/nuevo">
@@ -79,14 +83,7 @@ export default async function AdminProductsPage({ searchParams }: PageProps<"/ad
                   title={product.name}
                   badge={<StatusBadge active={product.active} t={t} />}
                   meta={categoryLabel(product.category)}
-                  aside={
-                    <div className="flex flex-col items-end leading-tight">
-                      <span>{formatCurrency(Number(product.individualPrice))}</span>
-                      <span className="text-xs font-normal text-accent">
-                        {t("{price} mayorista", { price: formatCurrency(Number(product.wholesalePrice)) })}
-                      </span>
-                    </div>
-                  }
+                  aside={formatCurrency(Number(product.individualPrice))}
                   media={
                     <div className="relative flex h-14 w-14 items-center justify-center overflow-hidden rounded-lg bg-muted">
                       {image ? (
@@ -124,7 +121,7 @@ export default async function AdminProductsPage({ searchParams }: PageProps<"/ad
               <tr>
                 <th>{t("Nombre")}</th>
                 <th>{t("Categoría")}</th>
-                <th>{t("Mayorista")}</th>
+                <th>{t("Precio")}</th>
                 <th>{t("Estado")}</th>
                 <th />
               </tr>
@@ -135,7 +132,7 @@ export default async function AdminProductsPage({ searchParams }: PageProps<"/ad
                   <td className="font-medium text-foreground">{product.name}</td>
                   <td className="text-muted-foreground">{categoryLabel(product.category)}</td>
                   <td className="text-muted-foreground">
-                    {formatCurrency(Number(product.wholesalePrice))}
+                    {formatCurrency(Number(product.individualPrice))}
                   </td>
                   <td>
                     <StatusBadge active={product.active} t={t} />

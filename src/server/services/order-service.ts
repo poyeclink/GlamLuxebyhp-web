@@ -1,19 +1,18 @@
 import { prisma } from "@/lib/prisma";
-import type { AddressType, OrderStatus, PaymentMethod, Prisma } from "@/generated/prisma/client";
+import type { AddressType, OrderStatus, PaymentMethod } from "@/generated/prisma/client";
 import {
   CartError,
   addToCart,
   computeCartTotal,
   getCartWithPricing,
 } from "@/server/services/cart-service";
-import { logInventoryChange } from "@/server/services/inventory-service";
 import { ADMIN_PAGE_SIZE, isUuid } from "@/lib/utils";
 
 export class OrderError extends Error {}
 
-// El pago es inmediato: el stock solo queda apartado mientras el cliente está
-// en la página de Stripe. Stripe exige que una sesión dure al menos 30 min, y
-// la sesión vence a la vez que el pedido (createCardCheckoutUrl).
+// El pago es inmediato: el pedido queda pendiente solo mientras el cliente
+// está en la página de Stripe. Stripe exige que una sesión dure al menos
+// 30 min, y la sesión vence a la vez que el pedido (createCardCheckoutUrl).
 export const PAYMENT_WINDOW_MINUTES = 32;
 
 // Badge/label de OrderStatus centralizados aquí: antes de esto, cada página
@@ -53,33 +52,6 @@ export function getAllowedNextStatuses(status: OrderStatus): OrderStatus[] {
   return ALLOWED_MANUAL_TRANSITIONS[status];
 }
 
-// Compartida por expireReservedOrders (cron) y updateOrderStatus (cancelación
-// manual desde el admin) — ambos casos devuelven al inventario el stock que
-// createReservedOrder reservó, y dejan el mismo tipo de InventoryLog
-// ("liberacion"). Debe correr dentro de la transacción del caller: si el
-// resto de esa transacción revierte, la liberación de stock revierte con ella.
-async function releaseOrderStock(
-  tx: Prisma.TransactionClient,
-  order: { id: string; items: { variantId: string | null; quantity: number }[] },
-) {
-  for (const item of order.items) {
-    if (!item.variantId) continue;
-    // updateMany (no update): si la talla fue borrada después de la compra
-    // (OrderItem.variant es SetNull), no hay nada que liberar.
-    const result = await tx.productVariant.updateMany({
-      where: { id: item.variantId },
-      data: { stock: { increment: item.quantity } },
-    });
-    if (result.count === 0) continue;
-    await logInventoryChange(tx, {
-      variantId: item.variantId,
-      reason: "liberacion",
-      quantityChange: item.quantity,
-      orderId: order.id,
-    });
-  }
-}
-
 type OrderAddressInput = {
   fullName: string;
   whatsapp: string;
@@ -100,95 +72,76 @@ export async function createReservedOrder(params: {
   const cart = await getCartWithPricing({ userId: params.userId });
   if (cart.items.length === 0) throw new OrderError("Tu carrito está vacío.");
 
+  // getCartWithPricing es de solo lectura (para mostrar el carrito) y no
+  // filtra productos desactivados ni agotados como sí hace addToCart — antes
+  // de cobrar por algo hay que revalidarlo aquí.
+  for (const item of cart.items) {
+    if (!item.productActive) {
+      throw new OrderError(`"${item.productName}" ya no está disponible.`);
+    }
+    if (item.soldOut) {
+      throw new OrderError(
+        `"${item.productName}"${item.variantSize ? ` (talla ${item.variantSize})` : ""} está agotado.`,
+      );
+    }
+  }
+
   const reservedUntil = new Date(Date.now() + PAYMENT_WINDOW_MINUTES * 60 * 1000);
   const total = computeCartTotal(cart.subtotal, cart.shippingEstimate);
 
-  return prisma.$transaction(async (tx) => {
-    // Reclama el carrito primero, no al final: un DELETE guardado por userId
-    // (único por Cart) es la sección crítica atómica que evita que dos
-    // confirmaciones concurrentes del mismo carrito (doble clic, dos
-    // pestañas) generen dos Order — la segunda transacción encuentra 0 filas
-    // para borrar porque la primera ya se llevó el carrito, y aborta antes de
-    // tocar stock o crear nada. Si esta transacción falla más abajo (stock
-    // insuficiente, etc.), el rollback deshace también este DELETE.
-    const claimed = await tx.cart.deleteMany({ where: { userId: params.userId } });
-    if (claimed.count === 0) {
-      throw new OrderError("Este pedido ya se procesó, o tu carrito ya no está disponible.");
-    }
-
-    for (const item of cart.items) {
-      // getCartWithPricing es de solo lectura (para mostrar el carrito) y no
-      // filtra productos desactivados como sí hace addToCart — antes de
-      // cobrar por algo hay que revalidarlo aquí.
-      if (!item.productActive) {
-        throw new OrderError(`"${item.productName}" ya no está disponible.`);
+  return prisma.$transaction(
+    async (tx) => {
+      // Reclama el carrito primero, no al final: un DELETE guardado por userId
+      // (único por Cart) es la sección crítica atómica que evita que dos
+      // confirmaciones concurrentes del mismo carrito (doble clic, dos
+      // pestañas) generen dos Order — la segunda transacción encuentra 0 filas
+      // para borrar porque la primera ya se llevó el carrito, y aborta antes de
+      // crear nada. Si el create de abajo falla, el rollback deshace también
+      // este DELETE.
+      const claimed = await tx.cart.deleteMany({ where: { userId: params.userId } });
+      if (claimed.count === 0) {
+        throw new OrderError("Este pedido ya se procesó, o tu carrito ya no está disponible.");
       }
-      if (!item.variantId) continue;
 
-      // updateMany con el stock en el WHERE: el propio UPDATE es la sección
-      // crítica atómica — evita la carrera de leer-y-luego-escribir entre dos
-      // checkouts simultáneos disputando la última unidad de una talla.
-      const result = await tx.productVariant.updateMany({
-        where: { id: item.variantId, stock: { gte: item.quantity } },
-        data: { stock: { decrement: item.quantity } },
-      });
-      if (result.count === 0) {
-        throw new OrderError(
-          `Ya no hay suficiente stock de "${item.productName}"` +
-            `${item.variantSize ? ` (talla ${item.variantSize})` : ""}.`,
-        );
-      }
-    }
-
-    const order = await tx.order.create({
-      data: {
-        userId: params.userId,
-        pricingTier: cart.useWholesalePrice ? "mayorista" : "individual",
-        paymentMethod: params.paymentMethod,
-        locale: params.locale,
-        subtotal: cart.subtotal,
-        shippingCost: cart.shippingEstimate,
-        total,
-        ...params.address,
-        // Se regenera aquí, no se toma del query string que trae el checkout
-        // (ver sección "Checkout" de CLAUDE.md): ese valor es editable por el
-        // cliente y no es una fuente confiable de consentimiento legal.
-        termsAcceptedAt: new Date(),
-        reservedUntil,
-        items: {
-          create: cart.items.map((item) => ({
-            productId: item.productId,
-            variantId: item.variantId,
-            productName: item.productName,
-            variantSize: item.variantSize,
-            unitPrice: item.unitPrice,
-            quantity: item.quantity,
-          })),
+      return tx.order.create({
+        data: {
+          userId: params.userId,
+          pricingTier: "individual",
+          paymentMethod: params.paymentMethod,
+          locale: params.locale,
+          subtotal: cart.subtotal,
+          shippingCost: cart.shippingEstimate,
+          total,
+          ...params.address,
+          // Se regenera aquí, no se toma del query string que trae el checkout
+          // (ver sección "Checkout" de CLAUDE.md): ese valor es editable por el
+          // cliente y no es una fuente confiable de consentimiento legal.
+          termsAcceptedAt: new Date(),
+          reservedUntil,
+          items: {
+            create: cart.items.map((item) => ({
+              productId: item.productId,
+              variantId: item.variantId,
+              productName: item.productName,
+              variantSize: item.variantSize,
+              unitPrice: item.unitPrice,
+              quantity: item.quantity,
+            })),
+          },
         },
-      },
-    });
-
-    // Después de crear el pedido, no antes: cada InventoryLog referencia
-    // orderId, así que necesita el id ya asignado.
-    for (const item of cart.items) {
-      if (!item.variantId) continue;
-      await logInventoryChange(tx, {
-        variantId: item.variantId,
-        reason: "reserva",
-        quantityChange: -item.quantity,
-        orderId: order.id,
       });
-    }
-
-    return order;
-  });
+    },
+    // Son solo dos consultas, pero el límite por defecto de Prisma (5 s) se
+    // pasó en un pico de red y el cliente vio un error 500 al pagar.
+    { timeout: 15_000 },
+  );
 }
 
 // Pedido que no se pagó (el cliente canceló, venció la sesión de Stripe, o el
-// admin lo canceló): libera el stock y devuelve las piezas al carrito del
-// cliente para que pueda volver a intentarlo. El updateMany guardado por
-// "reservado" es la sección crítica: el webhook de Stripe y el cron pueden
-// llegar a la vez y solo uno libera el stock.
+// admin lo canceló): devuelve las piezas al carrito del cliente para que
+// pueda volver a intentarlo. El updateMany guardado por "reservado" es la
+// sección crítica: el webhook de Stripe y el cron pueden llegar a la vez y
+// solo uno las devuelve.
 export async function releaseUnpaidOrder(orderId: string, status: "cancelado" | "vencido") {
   if (!isUuid(orderId)) return false;
   const order = await prisma.order.findUnique({
@@ -197,20 +150,16 @@ export async function releaseUnpaidOrder(orderId: string, status: "cancelado" | 
   });
   if (!order || order.status !== "reservado") return false;
 
-  const released = await prisma.$transaction(async (tx) => {
-    const claimed = await tx.order.updateMany({
-      where: { id: orderId, status: "reservado" },
-      data: { status },
-    });
-    if (claimed.count === 0) return false;
-    await releaseOrderStock(tx, order);
-    return true;
+  const claimed = await prisma.order.updateMany({
+    where: { id: orderId, status: "reservado" },
+    data: { status },
   });
-  if (!released || !order.userId) return released;
+  if (claimed.count === 0) return false;
+  if (!order.userId) return true;
 
   for (const item of order.items) {
     if (!item.productId) continue;
-    // Un producto desactivado o ya sin stock simplemente no vuelve al carrito.
+    // Un producto desactivado o agotado simplemente no vuelve al carrito.
     await addToCart({ userId: order.userId }, item.productId, item.variantId, item.quantity).catch(
       (error) => {
         if (!(error instanceof CartError)) throw error;
@@ -218,6 +167,24 @@ export async function releaseUnpaidOrder(orderId: string, status: "cancelado" | 
     );
   }
   return true;
+}
+
+// Un pedido pendiente se puede retomar en Stripe hasta que vence: si mientras
+// tanto la clienta marcó una pieza agotada (o la desactivó), ya no se cobra.
+export async function orderHasUnavailableItems(orderId: string) {
+  const items = await prisma.orderItem.findMany({
+    where: { orderId },
+    select: {
+      product: { select: { active: true, hasVariants: true, soldOut: true } },
+      variant: { select: { soldOut: true } },
+    },
+  });
+  return items.some(
+    ({ product, variant }) =>
+      !product ||
+      !product.active ||
+      (product.hasVariants ? (variant?.soldOut ?? true) : product.soldOut),
+  );
 }
 
 // Respaldo del cron por si el webhook "checkout.session.expired" de Stripe no
@@ -340,10 +307,7 @@ export function listRecentOrders(limit = 10) {
 export async function updateOrderStatus(orderId: string, newStatus: OrderStatus) {
   if (!isUuid(orderId)) throw new OrderError("Pedido no encontrado.");
 
-  const order = await prisma.order.findUnique({
-    where: { id: orderId },
-    include: { items: { select: { variantId: true, quantity: true } } },
-  });
+  const order = await prisma.order.findUnique({ where: { id: orderId }, select: { status: true } });
   if (!order) throw new OrderError("Pedido no encontrado.");
 
   const allowed = getAllowedNextStatuses(order.status);
@@ -351,21 +315,13 @@ export async function updateOrderStatus(orderId: string, newStatus: OrderStatus)
     throw new OrderError("Este pedido no admite ese cambio de estado.");
   }
 
-  await prisma.$transaction(async (tx) => {
-    const claimed = await tx.order.updateMany({
-      where: { id: orderId, status: order.status },
-      data: { status: newStatus },
-    });
-    if (claimed.count === 0) {
-      throw new OrderError("Este pedido ya fue actualizado por otra persona. Recarga la página.");
-    }
-
-    // enviado no mueve stock: ya se descontó al crear el pedido. Solo
-    // cancelado lo devuelve al inventario.
-    if (newStatus === "cancelado") {
-      await releaseOrderStock(tx, order);
-    }
+  const claimed = await prisma.order.updateMany({
+    where: { id: orderId, status: order.status },
+    data: { status: newStatus },
   });
+  if (claimed.count === 0) {
+    throw new OrderError("Este pedido ya fue actualizado por otra persona. Recarga la página.");
+  }
 }
 
 // Lo llama el webhook de Stripe. Mismo reclamo atómico guardado por estado

@@ -1,4 +1,3 @@
-import { redirect } from "next/navigation";
 import Link from "next/link";
 import { Card, CardContent } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
@@ -7,14 +6,13 @@ import { AddressForm } from "@/components/account/AddressForm";
 import { ADDRESS_FORM_COPY } from "@/components/account/address-form-copy";
 import { createCheckoutAddressAction } from "@/server/actions/checkout-actions";
 import { requireCustomer } from "@/lib/session";
-import { getCartWithPricing } from "@/server/services/cart-service";
+import { requirePurchasableCart } from "@/lib/checkout";
 import { listAddresses } from "@/server/services/address-service";
 import { tMany } from "@/lib/i18n";
 
 export default async function CheckoutDireccionPage() {
   const session = await requireCustomer();
-  const cart = await getCartWithPricing({ userId: session.userId });
-  if (cart.items.length === 0) redirect("/carrito");
+  await requirePurchasableCart(session.userId);
 
   const [addresses, copy, addressCopy, formCopy] = await Promise.all([
     listAddresses(session.userId),

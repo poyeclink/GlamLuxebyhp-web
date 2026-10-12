@@ -11,12 +11,10 @@ import { AdminCardList, AdminListCard } from "@/components/admin/AdminListCard";
 import { SelectField } from "@/components/ui/SelectField";
 import { TextField } from "@/components/ui/TextField";
 import { listCategories } from "@/server/services/category-service";
-import { LOW_STOCK_THRESHOLD } from "@/server/services/inventory-service";
 import { ORDER_STATUS_LABELS } from "@/server/services/order-service";
 import { PAYMENT_METHOD_OPTIONS } from "@/server/services/payment-service";
 import {
   NO_CATEGORY,
-  TIER_LABELS,
   describeFilters,
   formatReportDay,
   getInventoryReport,
@@ -51,7 +49,7 @@ const REPORT_TYPES: { value: ReportType; label: string; text: string; icon: stri
   {
     value: "inventario",
     label: "Inventario",
-    text: "Stock por talla, valor del inventario y movimientos.",
+    text: "Qué está disponible y qué está agotado, por producto y talla.",
     icon: "inventory",
   },
 ];
@@ -160,10 +158,12 @@ function BreakdownCard({
   );
 }
 
-function StockBadge({ stock, t }: { stock: number; t: AdminT }) {
-  if (stock === 0) return <Badge variant="destructive">{t("Agotado")}</Badge>;
-  if (stock <= LOW_STOCK_THRESHOLD) return <Badge variant="accent">{t("Bajo")}</Badge>;
-  return <Badge variant="secondary">{t("OK")}</Badge>;
+function AvailabilityBadge({ soldOut, t }: { soldOut: boolean; t: AdminT }) {
+  return soldOut ? (
+    <Badge variant="destructive">{t("Agotado")}</Badge>
+  ) : (
+    <Badge variant="secondary">{t("Disponible")}</Badge>
+  );
 }
 
 export default async function AdminReportsPage({ searchParams }: PageProps<"/admin/reportes">) {
@@ -251,44 +251,50 @@ export default async function AdminReportsPage({ searchParams }: PageProps<"/adm
         className="flex flex-col gap-5 rounded-2xl border border-border bg-background p-5 sm:p-6"
       >
         <input type="hidden" name="tipo" value={filters.type} />
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-          <span className="text-sm font-medium text-foreground sm:mr-1">{t("Período rápido:")}</span>
-          <div className="-mx-5 flex gap-2 overflow-x-auto px-5 [scrollbar-width:none] sm:mx-0 sm:flex-wrap sm:px-0 [&::-webkit-scrollbar]:hidden">
-            {quickRanges(now).map((range) => {
-              const active =
-                range.desde === toDayParam(filters.from) && range.hasta === toDayParam(filters.to);
-              return (
-                <Link
-                  key={range.label}
-                  href={withChanges(filters, {
-                    from: new Date(`${range.desde}T00:00:00.000Z`),
-                    to: new Date(`${range.hasta}T00:00:00.000Z`),
-                  })}
-                  aria-current={active ? "true" : undefined}
-                  className={cn(filterPillClass(active), "whitespace-nowrap")}
-                >
-                  {t(range.label)}
-                </Link>
-              );
-            })}
+        {/* El inventario es una foto de hoy: no usa período. */}
+        {filters.type === "ventas" && (
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+            <span className="text-sm font-medium text-foreground sm:mr-1">
+              {t("Período rápido:")}
+            </span>
+            <div className="-mx-5 flex gap-2 overflow-x-auto px-5 [scrollbar-width:none] sm:mx-0 sm:flex-wrap sm:px-0 [&::-webkit-scrollbar]:hidden">
+              {quickRanges(now).map((range) => {
+                const active =
+                  range.desde === toDayParam(filters.from) &&
+                  range.hasta === toDayParam(filters.to);
+                return (
+                  <Link
+                    key={range.label}
+                    href={withChanges(filters, {
+                      from: new Date(`${range.desde}T00:00:00.000Z`),
+                      to: new Date(`${range.hasta}T00:00:00.000Z`),
+                    })}
+                    aria-current={active ? "true" : undefined}
+                    className={cn(filterPillClass(active), "whitespace-nowrap")}
+                  >
+                    {t(range.label)}
+                  </Link>
+                );
+              })}
+            </div>
           </div>
-        </div>
+        )}
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <TextField
-            label={t("Desde")}
-            name="desde"
-            type="date"
-            defaultValue={toDayParam(filters.from)}
-          />
-          <TextField
-            label={t("Hasta")}
-            name="hasta"
-            type="date"
-            defaultValue={toDayParam(filters.to)}
-          />
           {filters.type === "ventas" ? (
             <>
+              <TextField
+                label={t("Desde")}
+                name="desde"
+                type="date"
+                defaultValue={toDayParam(filters.from)}
+              />
+              <TextField
+                label={t("Hasta")}
+                name="hasta"
+                type="date"
+                defaultValue={toDayParam(filters.to)}
+              />
               <SelectField label={t("Estado")} name="estado" defaultValue={filters.status ?? ""}>
                 <option value="">{t("Todos")}</option>
                 {Object.entries(ORDER_STATUS_LABELS).map(([value, label]) => (
@@ -309,14 +315,6 @@ export default async function AdminReportsPage({ searchParams }: PageProps<"/adm
                   </option>
                 ))}
               </SelectField>
-              <SelectField label={t("Tipo de precio")} name="tier" defaultValue={filters.tier ?? ""}>
-                <option value="">{t("Todos")}</option>
-                {Object.entries(TIER_LABELS).map(([value, label]) => (
-                  <option key={value} value={value}>
-                    {t(label)}
-                  </option>
-                ))}
-              </SelectField>
             </>
           ) : (
             <>
@@ -334,10 +332,10 @@ export default async function AdminReportsPage({ searchParams }: PageProps<"/adm
               </SelectField>
               <div className="flex items-end sm:pb-3">
                 <Checkbox
-                  label={t("Solo stock bajo ({threshold} o menos)", { threshold: LOW_STOCK_THRESHOLD })}
-                  name="stockBajo"
+                  label={t("Solo agotados")}
+                  name="agotados"
                   value="1"
-                  defaultChecked={filters.lowStockOnly}
+                  defaultChecked={filters.soldOutOnly}
                 />
               </div>
             </>
@@ -365,12 +363,16 @@ export default async function AdminReportsPage({ searchParams }: PageProps<"/adm
         </div>
       </form>
 
-      <p className="-mt-3 text-sm text-muted-foreground">
-        {t("Período:")}{" "}
-        <span className="font-medium text-foreground">{formatReportDay(filters.from, locale)}</span>{" "}
-        –{" "}
-        <span className="font-medium text-foreground">{formatReportDay(filters.to, locale)}</span>
-      </p>
+      {filters.type === "ventas" && (
+        <p className="-mt-3 text-sm text-muted-foreground">
+          {t("Período:")}{" "}
+          <span className="font-medium text-foreground">
+            {formatReportDay(filters.from, locale)}
+          </span>{" "}
+          –{" "}
+          <span className="font-medium text-foreground">{formatReportDay(filters.to, locale)}</span>
+        </p>
+      )}
 
       {sales && (
         <>
@@ -457,7 +459,7 @@ export default async function AdminReportsPage({ searchParams }: PageProps<"/adm
                           label={t(ORDER_STATUS_LABELS[order.status])}
                         />
                       }
-                      meta={`${formatDate(order.createdAt, locale)} · ${t(paymentMethodLabel(order.paymentMethod))} · ${t(TIER_LABELS[order.pricingTier])}`}
+                      meta={`${formatDate(order.createdAt, locale)} · ${t(paymentMethodLabel(order.paymentMethod))}`}
                       aside={<span className="tabular-nums">{formatCurrency(order.total)}</span>}
                     />
                   ))}
@@ -468,7 +470,6 @@ export default async function AdminReportsPage({ searchParams }: PageProps<"/adm
                       <th>{t("Fecha")}</th>
                       <th>{t("Cliente")}</th>
                       <th>{t("Método")}</th>
-                      <th>{t("Tipo")}</th>
                       <th>{t("Estado")}</th>
                       <th className="text-right">{t("Total")}</th>
                     </tr>
@@ -489,9 +490,6 @@ export default async function AdminReportsPage({ searchParams }: PageProps<"/adm
                         </td>
                         <td className="text-muted-foreground">
                           {t(paymentMethodLabel(order.paymentMethod))}
-                        </td>
-                        <td className="text-muted-foreground">
-                          {t(TIER_LABELS[order.pricingTier])}
                         </td>
                         <td>
                           <OrderStatusBadge
@@ -514,52 +512,28 @@ export default async function AdminReportsPage({ searchParams }: PageProps<"/adm
 
       {inventory && (
         <>
-          <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+          <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3">
             <Kpi
               featured
-              label={t("Valor del inventario")}
-              value={formatCurrency(inventory.summary.value)}
-              hint={t("A precio mayorista")}
+              label={t("Agotados")}
+              value={String(inventory.summary.soldOut)}
+              hint={t("No se pueden comprar")}
             />
             <Kpi
-              label={t("Unidades en stock")}
-              value={String(inventory.summary.units)}
-              hint={t("{count} tallas", { count: inventory.summary.variantCount })}
+              label={t("Disponibles")}
+              value={String(inventory.summary.available)}
+              hint={t("A la venta")}
             />
             <Kpi
-              label={t("Stock bajo")}
-              value={String(inventory.summary.lowStock)}
-              hint={t("{threshold} o menos unidades", { threshold: LOW_STOCK_THRESHOLD })}
+              label={t("Productos y tallas")}
+              value={String(inventory.summary.rowCount)}
+              hint={t("Con estos filtros")}
             />
-            <Kpi
-              label={t("Agotadas")}
-              value={String(inventory.summary.outOfStock)}
-              hint={t("Sin unidades")}
-            />
-          </div>
-
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-4">
-            {inventory.summary.movements.map((movement) => (
-              <div
-                key={movement.reason}
-                className="flex flex-col gap-1 rounded-2xl border border-border bg-background p-5"
-              >
-                <span className="text-sm text-muted-foreground">{t(movement.label)}</span>
-                <span className="text-2xl font-semibold tabular-nums text-foreground">
-                  {movement.units > 0 ? `+${movement.units}` : movement.units}
-                </span>
-                <span className="text-xs text-muted-foreground">
-                  {movement.count === 1
-                    ? t("1 registro en el período")
-                    : t("{count} registros en el período", { count: movement.count })}
-                </span>
-              </div>
-            ))}
           </div>
 
           <section className="flex flex-col gap-4">
             <div className="flex flex-wrap items-end justify-between gap-2">
-              <h2 className="font-display text-2xl text-foreground">{t("Stock por talla")}</h2>
+              <h2 className="font-display text-2xl text-foreground">{t("Disponibilidad")}</h2>
               {inventory.rows.length > PREVIEW_ROWS && (
                 <span className="text-xs text-muted-foreground">
                   {t("Mostrando {shown} de {total} · el PDF incluye todas", {
@@ -571,7 +545,7 @@ export default async function AdminReportsPage({ searchParams }: PageProps<"/adm
             </div>
             {inventory.rows.length === 0 ? (
               <p className="rounded-2xl border border-dashed border-border bg-background p-10 text-center text-sm text-muted-foreground">
-                {t("No hay tallas con estos filtros.")}
+                {t("No hay productos con estos filtros.")}
               </p>
             ) : (
               <>
@@ -579,16 +553,14 @@ export default async function AdminReportsPage({ searchParams }: PageProps<"/adm
                   {inventory.rows.slice(0, PREVIEW_ROWS).map((row) => (
                     <AdminListCard
                       key={row.id}
-                      href={`/admin/inventario/${row.id}`}
+                      href={`/admin/productos/${row.productId}/editar`}
                       title={row.product}
-                      badge={<StockBadge stock={row.stock} t={t} />}
+                      badge={<AvailabilityBadge soldOut={row.soldOut} t={t} />}
                       meta={[
                         row.category,
-                        t("Talla {size}", { size: row.size }),
-                        t("{count} unid.", { count: row.stock }),
+                        ...(row.size ? [t("Talla {size}", { size: row.size })] : []),
                         ...(row.active ? [] : [t("inactivo")]),
                       ].join(" · ")}
-                      aside={<span className="tabular-nums">{formatCurrency(row.value)}</span>}
                     />
                   ))}
                 </AdminCardList>
@@ -599,15 +571,16 @@ export default async function AdminReportsPage({ searchParams }: PageProps<"/adm
                       <th>{t("Categoría")}</th>
                       <th>{t("Talla")}</th>
                       <th>{t("Estado")}</th>
-                      <th className="text-right">{t("Stock")}</th>
-                      <th className="text-right">{t("Valor")}</th>
                     </tr>
                   </thead>
                   <tbody>
                     {inventory.rows.slice(0, PREVIEW_ROWS).map((row) => (
                       <tr key={row.id}>
                         <td className="font-medium text-foreground">
-                          <Link href={`/admin/inventario/${row.id}`} className="hover:text-accent">
+                          <Link
+                            href={`/admin/productos/${row.productId}/editar`}
+                            className="hover:text-accent"
+                          >
                             {row.product}
                           </Link>
                           {!row.active && (
@@ -617,13 +590,9 @@ export default async function AdminReportsPage({ searchParams }: PageProps<"/adm
                           )}
                         </td>
                         <td className="text-muted-foreground">{row.category}</td>
-                        <td className="text-muted-foreground">{row.size}</td>
+                        <td className="text-muted-foreground">{row.size ?? "—"}</td>
                         <td>
-                          <StockBadge stock={row.stock} t={t} />
-                        </td>
-                        <td className="text-right tabular-nums text-foreground">{row.stock}</td>
-                        <td className="text-right tabular-nums text-foreground">
-                          {formatCurrency(row.value)}
+                          <AvailabilityBadge soldOut={row.soldOut} t={t} />
                         </td>
                       </tr>
                     ))}

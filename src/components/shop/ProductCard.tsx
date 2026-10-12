@@ -2,15 +2,13 @@ import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { Isotipo } from "@/components/brand/Logo";
-import { PriceDual } from "@/components/ui/PriceDual";
-import { cn } from "@/lib/utils";
+import { cn, formatCurrency } from "@/lib/utils";
 import { t, tMany } from "@/lib/i18n";
 
 export type ProductCardItem = {
   slug: string;
   name: string;
   categoryName: string;
-  wholesalePrice: number;
   individualPrice: number;
   imageUrl: string | null;
   hoverImageUrl?: string | null;
@@ -81,10 +79,9 @@ export async function ProductCard({ product }: { product: ProductCardItem }) {
         <span className="font-medium text-foreground transition-colors group-hover:text-accent">
           {name}
         </span>
-        <PriceDual
-          wholesalePrice={product.wholesalePrice}
-          individualPrice={product.individualPrice}
-        />
+        <span className="font-semibold text-foreground">
+          {formatCurrency(product.individualPrice)}
+        </span>
       </div>
     </Link>
   );

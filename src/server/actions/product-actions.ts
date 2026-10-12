@@ -21,6 +21,7 @@ import { SHOP_CATEGORIES_TAG } from "@/server/services/category-service";
 
 export type ProductActionState = {
   error?: string;
+  success?: boolean;
 };
 
 const productSchema = z.object({
@@ -32,19 +33,11 @@ const productSchema = z.object({
     .regex(/^[a-z0-9]+(-[a-z0-9]+)*$/, "El slug solo puede tener minúsculas, números y guiones."),
   categoryId: z.string().uuid("Selecciona una categoría."),
   description: z.string().trim().min(1, "La descripción es obligatoria."),
-  wholesalePrice: z.coerce.number().positive("El precio mayorista debe ser mayor a 0."),
-  individualPrice: z.coerce.number().positive("El precio individual debe ser mayor a 0."),
+  individualPrice: z.coerce.number().positive("El precio debe ser mayor a 0."),
   boxed: z.coerce.boolean().optional().default(false),
   hasVariants: z.coerce.boolean().optional().default(false),
   active: z.coerce.boolean().optional().default(false),
-});
-
-const variantRowSchema = z.object({
-  size: z.string().trim().min(1, "La talla no puede estar vacía."),
-  stock: z.coerce
-    .number()
-    .int("El stock debe ser un número entero.")
-    .min(0, "El stock no puede ser negativo."),
+  soldOut: z.coerce.boolean().optional().default(false),
 });
 
 export async function createProductAction(
@@ -78,24 +71,17 @@ export async function createProductAction(
     }
   }
 
-  // Input opcional "variantSize"/"variantStock" (pares por posición, ver
-  // VariantSelector) — mismo criterio que las imágenes: se valida todo antes
-  // de crear el producto, para que una talla repetida o un stock inválido no
-  // dejen un producto creado a medias.
-  const variantSizes = formData.getAll("variantSize").map(String);
-  const variantStocks = formData.getAll("variantStock").map(String);
-  const parsedVariants: { size: string; stock: number }[] = [];
+  // Input opcional "variantSize" (ver VariantSelector) — mismo criterio que
+  // las imágenes: se valida todo antes de crear el producto, para que una
+  // talla vacía o repetida no deje un producto creado a medias.
+  const variantSizes = formData.getAll("variantSize").map((size) => String(size).trim());
   const seenSizes = new Set<string>();
-  for (let i = 0; i < variantSizes.length; i++) {
-    const parsedRow = variantRowSchema.safeParse({ size: variantSizes[i], stock: variantStocks[i] });
-    if (!parsedRow.success) {
-      return { error: t(parsedRow.error.issues[0]?.message ?? "Talla inválida.") };
+  for (const size of variantSizes) {
+    if (!size) return { error: t("La talla no puede estar vacía.") };
+    if (seenSizes.has(size.toLowerCase())) {
+      return { error: t('La talla "{size}" está repetida.', { size }) };
     }
-    if (seenSizes.has(parsedRow.data.size)) {
-      return { error: t('La talla "{size}" está repetida.', { size: parsedRow.data.size }) };
-    }
-    seenSizes.add(parsedRow.data.size);
-    parsedVariants.push(parsedRow.data);
+    seenSizes.add(size.toLowerCase());
   }
 
   let product;
@@ -122,9 +108,9 @@ export async function createProductAction(
     }
   }
 
-  for (const variant of parsedVariants) {
+  for (const size of variantSizes) {
     try {
-      await createVariant(product.id, variant);
+      await createVariant(product.id, { size });
     } catch {
       creationPartiallyFailed = true;
       break;
@@ -160,10 +146,11 @@ export async function updateProductAction(
     throw error;
   }
 
+  // Sin redirect: la administradora sigue en la página de editar.
   revalidatePath("/admin/productos");
   updateTag(SHOP_CATEGORIES_TAG);
   revalidatePath(`/admin/productos/${id}/editar`);
-  redirect("/admin/productos");
+  return { success: true };
 }
 
 export async function deleteProductAction(

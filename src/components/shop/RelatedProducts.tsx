@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils";
 
 // Recibe las tarjetas ya renderizadas por el Server Component padre (children),
 // en vez de un array de datos + renderizar ProductCard aquí adentro: ProductCard
-// usa PriceDual, que ahora depende de next/headers (i18n) — importarlo desde
+// traduce con t(), que depende de next/headers — importarlo desde
 // este Client Component metería ese código server-only en el bundle del
 // navegador y rompería la página con un error de build.
 export function RelatedProducts({

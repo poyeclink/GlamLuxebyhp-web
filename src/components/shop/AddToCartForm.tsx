@@ -12,7 +12,7 @@ import { QuantityInput } from "@/components/ui/QuantityInput";
 type VariantOption = {
   id: string;
   size: string;
-  stock: number;
+  soldOut: boolean;
 };
 
 export type AddToCartCopy = {
@@ -32,16 +32,17 @@ const initialState: CartActionState = {};
 export function AddToCartForm({
   productId,
   hasVariants,
+  soldOut,
   variants,
   copy,
 }: {
   productId: string;
   hasVariants: boolean;
+  soldOut: boolean;
   variants: VariantOption[];
   copy: AddToCartCopy;
 }) {
   const [state, formAction] = useActionState(addToCartAction.bind(null, productId), initialState);
-  const soldOut = hasVariants && variants.length > 0 && variants.every((v) => v.stock === 0);
 
   return (
     <form action={formAction} className="flex flex-col gap-5">
@@ -55,7 +56,7 @@ export function AddToCartForm({
                   type="radio"
                   name="variantId"
                   value={variant.id}
-                  disabled={variant.stock === 0}
+                  disabled={variant.soldOut}
                   required
                   className="peer sr-only"
                 />

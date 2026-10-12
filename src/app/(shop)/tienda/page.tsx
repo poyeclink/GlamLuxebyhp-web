@@ -64,8 +64,8 @@ export async function generateMetadata({ searchParams }: PageProps<"/tienda">): 
   const copy = await tMany({
     shop: "Tienda",
     categoryDescription:
-      "Compra {name} de alta calidad en Glam Luxe by HJ, al detalle o con precio mayorista.",
-    description: "Ropa, bolsos y accesorios de alta calidad, al detalle o por mayor.",
+      "Compra {name} de alta calidad en Glam Luxe by HJ.",
+    description: "Ropa, bolsos y accesorios de alta calidad, seleccionados pieza por pieza.",
   });
   return category
     ? {
@@ -121,12 +121,12 @@ export default async function TiendaPage({ searchParams }: PageProps<"/tienda">)
     }),
     tMany({
       sortBy: "Ordenar por",
-      price: "Precio individual",
+      price: "Precio",
       from: "Desde",
       to: "Hasta",
       size: "Talla",
       availability: "Disponibilidad",
-      inStock: "Solo con stock",
+      inStock: "Solo disponibles",
       apply: "Aplicar filtros",
       clear: "Limpiar",
       filters: "Filtros",

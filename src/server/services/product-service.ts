@@ -11,14 +11,14 @@ import type { Prisma } from "@/generated/prisma/client";
 const categoryWithParent = { include: { parent: true } } as const;
 
 // Lo que necesita una ProductCard: principal primero y una segunda foto para
-// el hover, más el stock de las tallas para marcar "Agotado".
+// el hover, más la disponibilidad de las tallas para marcar "Agotado".
 const cardInclude = {
   category: categoryWithParent,
   images: {
     orderBy: [{ isPrimary: "desc" as const }, { position: "asc" as const }],
     take: 2,
   },
-  variants: { select: { stock: true } },
+  variants: { select: { soldOut: true } },
 } satisfies Prisma.ProductInclude;
 
 const NEW_PRODUCT_DAYS = 21;
@@ -27,23 +27,26 @@ export class ProductError extends Error {}
 
 // Sizes are a free-text column (no enum), so Prisma's `orderBy: { size: "asc" }`
 // sorts lexicographically ("L" < "M" < "S", "10" < "2") — wrong for both letter
-// and numeric sizes. Standard letter sizes get a known order; anything else
-// falls back to numeric, then alphabetical.
+// and numeric sizes. Letter sizes go first in their known order, then numeric
+// sizes ascending, then anything else alphabetically — groups never interleave,
+// so a product mixing "M" and "38" still reads S, M, L, 38, 40.
 const LETTER_SIZE_ORDER = ["XS", "S", "M", "L", "XL", "XXL", "XXXL"];
 
-function compareSizes(a: string, b: string) {
-  const letterA = LETTER_SIZE_ORDER.indexOf(a.toUpperCase());
-  const letterB = LETTER_SIZE_ORDER.indexOf(b.toUpperCase());
-  if (letterA !== -1 && letterB !== -1) return letterA - letterB;
-
-  const numA = Number(a);
-  const numB = Number(b);
-  if (!Number.isNaN(numA) && !Number.isNaN(numB)) return numA - numB;
-
-  return a.localeCompare(b);
+function sizeRank(size: string): [group: number, value: number] {
+  const letter = LETTER_SIZE_ORDER.indexOf(size.toUpperCase());
+  if (letter !== -1) return [0, letter];
+  const number = Number(size.replace(",", "."));
+  if (size.trim() !== "" && !Number.isNaN(number)) return [1, number];
+  return [2, 0];
 }
 
-function sortVariantsBySize<T extends { size: string }>(variants: T[]) {
+function compareSizes(a: string, b: string) {
+  const [groupA, valueA] = sizeRank(a);
+  const [groupB, valueB] = sizeRank(b);
+  return groupA - groupB || valueA - valueB || a.localeCompare(b);
+}
+
+export function sortVariantsBySize<T extends { size: string }>(variants: T[]) {
   return [...variants].sort((a, b) => compareSizes(a.size, b.size));
 }
 
@@ -99,9 +102,24 @@ const SHOP_ORDER_BY = {
   nombre: [{ name: "asc" }, { id: "desc" }],
 } satisfies Record<ShopFilters["orden"], Prisma.ProductOrderByWithRelationInput[]>;
 
-const inStock: Prisma.ProductWhereInput = {
-  OR: [{ hasVariants: false }, { variants: { some: { stock: { gt: 0 } } } }],
+const available: Prisma.ProductWhereInput = {
+  OR: [
+    { hasVariants: false, soldOut: false },
+    { hasVariants: true, variants: { some: { soldOut: false } } },
+  ],
 };
+
+// Con tallas, agotado = todas agotadas (o ninguna cargada); sin tallas, el
+// flag del propio producto.
+export function isProductSoldOut(product: {
+  hasVariants: boolean;
+  soldOut: boolean;
+  variants: { soldOut: boolean }[];
+}) {
+  return product.hasVariants
+    ? product.variants.every((variant) => variant.soldOut)
+    : product.soldOut;
+}
 
 function categoryScope(filters: ShopFilters): Prisma.ProductWhereInput {
   return {
@@ -122,9 +140,9 @@ export async function searchShopProducts(filters: ShopFilters) {
         ? { individualPrice: { gte: filters.min, lte: filters.max } }
         : {},
       filters.tallas.length > 0
-        ? { variants: { some: { size: { in: filters.tallas }, stock: { gt: 0 } } } }
+        ? { hasVariants: true, variants: { some: { size: { in: filters.tallas }, soldOut: false } } }
         : {},
-      filters.disponible ? inStock : {},
+      filters.disponible ? available : {},
     ],
   };
   const [items, total] = await Promise.all([
@@ -139,13 +157,13 @@ export async function searchShopProducts(filters: ShopFilters) {
   return { items, total };
 }
 
-// Opciones de los filtros dentro de la categoría actual: tallas con stock y
+// Opciones de los filtros dentro de la categoría actual: tallas disponibles y
 // rango de precios, para no ofrecer filtros que dan cero resultados.
 export async function getShopFilterOptions(filters: ShopFilters) {
   const scope = categoryScope(filters);
   const [variants, prices] = await Promise.all([
     prisma.productVariant.findMany({
-      where: { stock: { gt: 0 }, product: scope },
+      where: { soldOut: false, product: { ...scope, hasVariants: true } },
       distinct: ["size"],
       select: { size: true },
     }),
@@ -165,13 +183,13 @@ export async function getShopFilterOptions(filters: ShopFilters) {
 type ProductForCard = {
   slug: string;
   name: string;
-  wholesalePrice: unknown;
   individualPrice: unknown;
   createdAt: Date;
   hasVariants: boolean;
+  soldOut: boolean;
   category: { name: string; parent: { name: string } | null };
   images: { key: string }[];
-  variants: { stock: number }[];
+  variants: { soldOut: boolean }[];
 };
 
 export function toProductCardItem(product: ProductForCard): ProductCardItem {
@@ -179,12 +197,11 @@ export function toProductCardItem(product: ProductForCard): ProductCardItem {
     slug: product.slug,
     name: product.name,
     categoryName: categoryLabel(product.category),
-    wholesalePrice: Number(product.wholesalePrice),
     individualPrice: Number(product.individualPrice),
     imageUrl: product.images[0] ? r2PublicUrl(product.images[0].key) : null,
     hoverImageUrl: product.images[1] ? r2PublicUrl(product.images[1].key) : null,
     isNew: Date.now() - product.createdAt.getTime() < NEW_PRODUCT_DAYS * 86_400_000,
-    soldOut: product.hasVariants && product.variants.every((variant) => variant.stock <= 0),
+    soldOut: isProductSoldOut(product),
   };
 }
 
@@ -250,11 +267,11 @@ type ProductInput = {
   slug: string;
   categoryId: string;
   description: string;
-  wholesalePrice: number;
   individualPrice: number;
   boxed: boolean;
   hasVariants: boolean;
   active: boolean;
+  soldOut: boolean;
 };
 
 async function assertSlugAvailable(slug: string, excludeId?: string) {
@@ -272,13 +289,23 @@ async function assertCategoryExists(categoryId: string) {
 export async function createProduct(data: ProductInput) {
   await assertSlugAvailable(data.slug);
   await assertCategoryExists(data.categoryId);
-  return prisma.product.create({ data });
+  // Solo se vende al detalle, pero la columna wholesalePrice sigue siendo
+  // obligatoria (y conserva los valores de los productos existentes por si
+  // vuelve la venta mayorista): un producto nuevo la llena con su precio.
+  return prisma.product.create({ data: { ...data, wholesalePrice: data.individualPrice } });
 }
 
 export async function updateProduct(id: string, data: ProductInput) {
   await assertSlugAvailable(data.slug, id);
   await assertCategoryExists(data.categoryId);
-  return prisma.product.update({ where: { id }, data });
+  const product = await prisma.product.update({ where: { id }, data });
+  // Al activar o quitar las tallas, las líneas de carrito que quedaron del
+  // otro modo (con talla en un producto sin tallas, o al revés) ya no
+  // describen algo comprable: se borran en vez de dejarlas colgadas.
+  await prisma.cartItem.deleteMany({
+    where: { productId: id, variantId: data.hasVariants ? null : { not: null } },
+  });
+  return product;
 }
 
 export async function deleteProduct(id: string) {

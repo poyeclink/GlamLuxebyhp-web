@@ -55,13 +55,6 @@ export default function ReturnPolicyPage() {
           ],
         },
         {
-          id: "mayoristas",
-          title: "Pedidos mayoristas",
-          body: [
-            "Las mismas condiciones aplican a pedidos con precio mayorista. Te pedimos revisar todas las piezas al recibirlas y reportar cualquier daño de fábrica dentro del mismo plazo de 24 horas.",
-          ],
-        },
-        {
           id: "cancelaciones",
           title: "Cancelaciones antes del pago",
           body: [

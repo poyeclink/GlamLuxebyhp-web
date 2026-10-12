@@ -5,7 +5,7 @@
 
   /* Paleta del PDF de branding: Negro Noche #0A0A0B, Zafiro #1B6FB8,
      Azul Hielo #5CB8F0, Bruma #EAF6FD, Blanco. Negro y blanco dominan; el azul
-     es solo acento (CTAs, precio mayorista, links, estados activos) — nunca un
+     es solo acento (CTAs, precios, links, estados activos) — nunca un
      fondo azul grande. Sobre blanco el acento es Zafiro (AA), sobre negro Azul
      Hielo (--inverse-accent). */
   --background: #ffffff;

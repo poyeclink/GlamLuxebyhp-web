@@ -3,7 +3,6 @@ import { AuthShell } from "@/components/auth/AuthShell";
 import { STOCK_IMAGES } from "@/lib/stock-images";
 import { RegisterForm } from "@/components/auth/RegisterForm";
 import { t, tMany } from "@/lib/i18n";
-import { WHOLESALE_ITEM_THRESHOLD } from "@/server/services/cart-service";
 
 export async function generateMetadata(): Promise<Metadata> {
   return { title: await t("Crear cuenta"), robots: { index: false } };
@@ -14,9 +13,9 @@ export default async function RegisterPage() {
     eyebrow: "Nueva cuenta",
     title: "Crea tu cuenta",
     subtitle: "Guarda tus direcciones, sigue tus pedidos y compra más rápido.",
-    brandTitle: "Moda de alta calidad, al detalle o al por mayor.",
+    brandTitle: "Moda de alta calidad, seleccionada pieza por pieza.",
     point1: "Registro gratis, sin compromisos",
-    point2: `Precio mayorista automático desde ${WHOLESALE_ITEM_THRESHOLD} artículos`,
+    point2: "Seguimiento de cada pedido",
     point3: "Tu carrito se conserva al registrarte",
     photo: "Foto de perfil (opcional)",
     choose: "Agregar foto",

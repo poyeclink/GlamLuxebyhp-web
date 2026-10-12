@@ -20,6 +20,7 @@ export type CartLineItem = {
   unitPrice: number;
   lineTotal: number;
   imageUrl: string | null;
+  soldOut: boolean;
 };
 
 export type CartItemRowCopy = {
@@ -28,6 +29,7 @@ export type CartItemRowCopy = {
   update: string;
   remove: string;
   pending: string;
+  soldOut: string;
 };
 
 const initialState: CartActionState = {};
@@ -70,6 +72,9 @@ export function CartItemRow({ item, copy }: { item: CartLineItem; copy: CartItem
         <span className="text-sm text-muted-foreground">
           {formatCurrency(item.unitPrice)} {copy.each}
         </span>
+        {item.soldOut ? (
+          <span className="text-sm font-medium text-destructive">{copy.soldOut}</span>
+        ) : null}
         <FormError message={state.error} />
         <FormError message={removeState.error} />
       </div>

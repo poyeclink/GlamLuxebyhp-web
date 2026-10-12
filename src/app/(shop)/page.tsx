@@ -11,7 +11,6 @@ import { Faq } from "@/components/marketing/Faq";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { t, tMany } from "@/lib/i18n";
 import { CONTACT, SITE_DESCRIPTION, SITE_NAME, SITE_URL } from "@/lib/site";
-import { WHOLESALE_ITEM_THRESHOLD } from "@/server/services/cart-service";
 import { listFeaturedCategories, listShopCategories } from "@/server/services/category-service";
 import { listFeaturedProducts, toProductCardItem } from "@/server/services/product-service";
 
@@ -97,13 +96,11 @@ export default async function HomePage() {
       q1: "¿Qué métodos de pago aceptan?",
       a1: "Tarjeta de crédito o débito, en una página de pago segura. Tu pedido se confirma al instante.",
       q2: "¿Cuánto cuesta el envío?",
-      a2: "En compras al detalle el envío depende de la cantidad de artículos y lo ves en tu carrito antes de pagar. En pedidos mayoristas coordinamos el envío contigo.",
+      a2: "El envío depende de la cantidad de artículos y lo ves en tu carrito antes de pagar.",
       q3: "¿Cuándo se confirma mi pedido?",
       a3: "En el momento en que se completa el pago. Si no terminas de pagar, el pedido se cancela solo y las piezas vuelven a tu carrito.",
-      q4: "¿Cómo obtengo el precio mayorista?",
-      a4: `Solo agrega ${WHOLESALE_ITEM_THRESHOLD} o más artículos a tu carrito —pueden ser distintos productos y tallas—. El precio mayorista se aplica automáticamente a todas las piezas.`,
-      q5: "¿Aceptan devoluciones?",
-      a5: "Todas las ventas son finales. Si recibes una pieza con daño de fábrica, repórtalo dentro de las primeras 24 horas y lo resolvemos contigo.",
+      q4: "¿Aceptan devoluciones?",
+      a4: "Todas las ventas son finales. Si recibes una pieza con daño de fábrica, repórtalo dentro de las primeras 24 horas y lo resolvemos contigo.",
       contactCta: "¿Otra pregunta? Escríbenos",
     }),
     Promise.all(navCategories.map((category) => t(category.name))),
@@ -258,7 +255,6 @@ export default async function HomePage() {
               { question: copy.q2, answer: copy.a2 },
               { question: copy.q3, answer: copy.a3 },
               { question: copy.q4, answer: copy.a4 },
-              { question: copy.q5, answer: copy.a5 },
             ]}
           />
           <div className="self-center">

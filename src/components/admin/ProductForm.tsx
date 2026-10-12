@@ -1,11 +1,11 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState, useState, useTransition } from "react";
 import { TextField } from "@/components/ui/TextField";
 import { Textarea } from "@/components/ui/Textarea";
 import { SelectField } from "@/components/ui/SelectField";
 import { Checkbox } from "@/components/ui/Checkbox";
-import { SubmitButton } from "@/components/ui/SubmitButton";
+import { Button } from "@/components/ui/Button";
 import { FormError } from "@/components/ui/FormError";
 import { ImageDropzone } from "@/components/admin/ImageDropzone";
 import { VariantSelector } from "@/components/admin/VariantSelector";
@@ -31,11 +31,11 @@ type ProductDefaultValues = {
   slug: string;
   categoryId: string;
   description: string;
-  wholesalePrice: number;
   individualPrice: number;
   boxed: boolean;
   hasVariants: boolean;
   active: boolean;
+  soldOut: boolean;
 };
 
 export function ProductForm({
@@ -50,7 +50,10 @@ export function ProductForm({
   submitLabel: string;
 }) {
   const t = useAdminT();
-  const [state, formAction] = useActionState(action, initialState);
+  const [state, formAction, pending] = useActionState(action, initialState);
+  const [, startTransition] = useTransition();
+  // Oculta el aviso de "guardado" en cuanto se vuelve a editar algo.
+  const [dirty, setDirty] = useState(false);
   const [slug, setSlug] = useState(defaultValues?.slug ?? "");
   // Al editar, el slug ya fue elegido antes: no se debe regenerar solo por tocar el nombre.
   const [slugTouched, setSlugTouched] = useState(defaultValues !== undefined);
@@ -59,13 +62,24 @@ export function ProductForm({
   // llevaría a dos formularios distintos subiendo imágenes del mismo producto.
   const isCreating = defaultValues === undefined;
   // Controlado (no defaultChecked) solo para poder mostrar/ocultar
-  // VariantSelector en vivo — al editar, VariantManager ya cubre esto con el
-  // productId real, así que ahí el checkbox sigue siendo informativo nada más
-  // (ver nota en VariantManager/CLAUDE.md: no condiciona si se pueden cargar tallas).
+  // VariantSelector en vivo al crear; al editar, VariantManager aparece según
+  // el valor ya guardado.
   const [hasVariants, setHasVariants] = useState(defaultValues?.hasVariants ?? false);
 
   return (
-    <form action={formAction} className="flex flex-col gap-4">
+    // onSubmit + startTransition en vez de action={formAction}: con action,
+    // React reinicia el formulario al terminar y, si el servidor devuelve un
+    // error, se pierde lo que la administradora había escrito.
+    <form
+      onSubmit={(event) => {
+        event.preventDefault();
+        const data = new FormData(event.currentTarget);
+        setDirty(false);
+        startTransition(() => formAction(data));
+      }}
+      onChange={() => setDirty(true)}
+      className="flex flex-col gap-4"
+    >
       <TextField
         label={t("Nombre")}
         name="name"
@@ -91,7 +105,9 @@ export function ProductForm({
       <SelectField
         label={t("Categoría")}
         name="categoryId"
-        defaultValue={defaultValues?.categoryId}
+        // "" deja visible "Selecciona una categoría": sin esto el navegador
+        // preselecciona la primera categoría y se puede guardar sin elegirla.
+        defaultValue={defaultValues?.categoryId ?? ""}
         required
       >
         <option value="" disabled>
@@ -116,28 +132,16 @@ export function ProductForm({
         />
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
-        <TextField
-          label={t("Precio mayorista")}
-          name="wholesalePrice"
-          type="number"
-          inputMode="decimal"
-          step="0.01"
-          min="0"
-          defaultValue={defaultValues?.wholesalePrice}
-          required
-        />
-        <TextField
-          label={t("Precio individual")}
-          name="individualPrice"
-          type="number"
-          inputMode="decimal"
-          step="0.01"
-          min="0"
-          defaultValue={defaultValues?.individualPrice}
-          required
-        />
-      </div>
+      <TextField
+        label={t("Precio")}
+        name="individualPrice"
+        type="number"
+        inputMode="decimal"
+        step="0.01"
+        min="0"
+        defaultValue={defaultValues?.individualPrice}
+        required
+      />
 
       <fieldset className="flex flex-col divide-y divide-border rounded-xl border border-border px-4 sm:py-1 sm:*:py-2">
         <legend className="sr-only">{t("Opciones del producto")}</legend>
@@ -148,6 +152,15 @@ export function ProductForm({
           checked={hasVariants}
           onChange={(event) => setHasVariants(event.target.checked)}
         />
+        {/* Con tallas, cada talla se marca agotada por separado. Se oculta en
+            vez de desmontarse para no perder el valor guardado al enviar. */}
+        <div className={hasVariants ? "hidden" : undefined}>
+          <Checkbox
+            label={t("Agotado (se ve en la tienda, pero no se puede comprar)")}
+            name="soldOut"
+            defaultChecked={defaultValues?.soldOut}
+          />
+        </div>
         <Checkbox
           label={t("Activo (visible en la tienda)")}
           name="active"
@@ -157,7 +170,7 @@ export function ProductForm({
 
       {isCreating && hasVariants && (
         <div className="flex flex-col gap-1.5">
-          <span className="text-sm font-medium text-foreground">{t("Tallas y stock")}</span>
+          <span className="text-sm font-medium text-foreground">{t("Tallas")}</span>
           <VariantSelector />
         </div>
       )}
@@ -175,9 +188,17 @@ export function ProductForm({
           (p-4 / sm:p-8 en las páginas de producto) para cubrir todo su ancho. */}
       <div className="sticky bottom-[calc(4rem+env(safe-area-inset-bottom))] z-10 -mx-4 flex flex-col gap-3 border-t border-border bg-background/95 px-4 py-3 sm:-mx-8 sm:px-8 md:static md:mx-0 md:border-0 md:bg-transparent md:p-0">
         <FormError message={state.error} />
-        <SubmitButton className="md:w-auto md:self-start" pendingLabel={t("Enviando…")}>
-          {submitLabel}
-        </SubmitButton>
+        {state.success && !dirty && !pending && (
+          <p role="status" className="flex items-center gap-1.5 text-sm font-medium text-accent">
+            <span className="material-symbols-outlined text-[18px]" aria-hidden="true">
+              check_circle
+            </span>
+            {t("Cambios guardados.")}
+          </p>
+        )}
+        <Button type="submit" loading={pending} className="w-full md:w-auto md:self-start">
+          {pending ? t("Enviando…") : submitLabel}
+        </Button>
       </div>
     </form>
   );

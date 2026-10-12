@@ -18,11 +18,10 @@ export type ShippingActionState = {
 };
 
 function shippingErrorMessage(t: AdminT, error: ShippingError) {
-  return t(error.message, error.vars && { ...error.vars, tier: t(String(error.vars.tier)) });
+  return t(error.message, error.vars);
 }
 
 const shippingRateSchema = z.object({
-  tier: z.enum(["individual", "mayorista"]),
   minQuantity: z.coerce.number().int().min(1, "La cantidad mínima debe ser al menos 1."),
   maxQuantity: z
     .string()

@@ -1,4 +1,3 @@
-import type { PricingTier } from "@/generated/prisma/client";
 import { prisma } from "@/lib/prisma";
 import { isUuid } from "@/lib/utils";
 
@@ -8,12 +7,15 @@ export class ShippingError extends Error {
   }
 }
 
-// Sin tarifa configurada para la cantidad/tier dados = "se coordina aparte"
-// (así es como hoy se representa el envío mayorista: no hay fila para ese tier).
-export async function resolveShippingCost(tier: PricingTier, quantity: number) {
+// Solo se vende al detalle: las tarifas "mayorista" que pudiera haber en la
+// base se conservan pero se ignoran (no se muestran ni se aplican).
+const RETAIL_TIER = "individual";
+
+// Sin tarifa configurada para la cantidad = "se coordina aparte".
+export async function resolveShippingCost(quantity: number) {
   const rate = await prisma.shippingRate.findFirst({
     where: {
-      tier,
+      tier: RETAIL_TIER,
       minQuantity: { lte: quantity },
       OR: [{ maxQuantity: null }, { maxQuantity: { gte: quantity } }],
     },
@@ -23,11 +25,13 @@ export async function resolveShippingCost(tier: PricingTier, quantity: number) {
 }
 
 export function listShippingRates() {
-  return prisma.shippingRate.findMany({ orderBy: [{ tier: "asc" }, { minQuantity: "asc" }] });
+  return prisma.shippingRate.findMany({
+    where: { tier: RETAIL_TIER },
+    orderBy: { minQuantity: "asc" },
+  });
 }
 
 type ShippingRateInput = {
-  tier: PricingTier;
   minQuantity: number;
   maxQuantity: number | null;
   price: number;
@@ -39,15 +43,15 @@ function assertValidRange(data: ShippingRateInput) {
   }
 }
 
-// Rechaza no solo el (tier, minQuantity) exacto (eso ya lo protege el
+// Rechaza no solo el minQuantity exacto (eso ya lo protege el
 // @@unique del schema, solo se pre-valida para un mensaje amigable, mismo
 // patrón que assertSlugAvailable/assertSizeAvailable) sino cualquier tarifa
-// del mismo tier cuyo rango [minQuantity, maxQuantity] se solape con el
+// cuyo rango [minQuantity, maxQuantity] se solape con el
 // nuevo — sin esto, dos tarifas podían cubrir la misma cantidad y
 // resolveShippingCost elegía una en silencio (la de minQuantity más alto)
 // sin que el admin se enterara de que la otra quedó parcialmente inútil.
 async function assertRangeAvailable(data: ShippingRateInput, excludeId?: string) {
-  const candidates = await prisma.shippingRate.findMany({ where: { tier: data.tier } });
+  const candidates = await prisma.shippingRate.findMany({ where: { tier: RETAIL_TIER } });
   const newMax = data.maxQuantity ?? Infinity;
 
   for (const existing of candidates) {
@@ -55,13 +59,9 @@ async function assertRangeAvailable(data: ShippingRateInput, excludeId?: string)
     const existingMax = existing.maxQuantity ?? Infinity;
     const overlaps = data.minQuantity <= existingMax && existing.minQuantity <= newMax;
     if (overlaps) {
-      throw new ShippingError(
-        'Se solapa con la tarifa existente de "{tier}" ({range}).',
-        {
-          tier: data.tier,
-          range: `${existing.minQuantity}${existing.maxQuantity === null ? "+" : `–${existing.maxQuantity}`}`,
-        },
-      );
+      throw new ShippingError("Se solapa con la tarifa existente ({range}).", {
+        range: `${existing.minQuantity}${existing.maxQuantity === null ? "+" : `–${existing.maxQuantity}`}`,
+      });
     }
   }
 }
@@ -69,7 +69,7 @@ async function assertRangeAvailable(data: ShippingRateInput, excludeId?: string)
 export async function createShippingRate(data: ShippingRateInput) {
   assertValidRange(data);
   await assertRangeAvailable(data);
-  return prisma.shippingRate.create({ data });
+  return prisma.shippingRate.create({ data: { ...data, tier: RETAIL_TIER } });
 }
 
 export async function updateShippingRate(id: string, data: ShippingRateInput) {

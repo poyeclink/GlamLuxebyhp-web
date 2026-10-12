@@ -4,17 +4,18 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { BadgeCheck, Package, ShieldCheck, Sparkles } from "lucide-react";
 import { Accordion } from "@/components/ui/Accordion";
-import { PriceDual } from "@/components/ui/PriceDual";
 import { ImageGallery } from "@/components/shop/ImageGallery";
 import { AddToCartForm } from "@/components/shop/AddToCartForm";
 import { ProductCard } from "@/components/shop/ProductCard";
 import { RelatedProducts } from "@/components/shop/RelatedProducts";
 import {
   getProductBySlug,
+  isProductSoldOut,
   listRelatedProducts,
   toProductCardItem,
 } from "@/server/services/product-service";
 import { r2PublicUrl } from "@/lib/r2";
+import { formatCurrency } from "@/lib/utils";
 import { SITE_NAME, SITE_URL } from "@/lib/site";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { t, tMany } from "@/lib/i18n";
@@ -29,7 +30,7 @@ const PURCHASE_INFO = [
   {
     question: "Envío",
     answer:
-      "En compras al detalle el envío depende de la cantidad de artículos y lo ves en tu carrito antes de pagar. En pedidos mayoristas coordinamos el envío contigo.",
+      "En compras al detalle el envío depende de la cantidad de artículos y lo ves en tu carrito antes de pagar.",
   },
   {
     question: "Pago",
@@ -141,7 +142,7 @@ export default async function ProductoPage({ params }: PageProps<"/producto/[slu
     toProductCardItem,
   );
 
-  const inStock = !product.hasVariants || product.variants.some((variant) => variant.stock > 0);
+  const soldOut = isProductSoldOut(product);
 
   return (
     <div className="mx-auto flex max-w-6xl flex-col gap-8 px-4 py-10 sm:py-14">
@@ -161,7 +162,7 @@ export default async function ProductoPage({ params }: PageProps<"/producto/[slu
             priceCurrency: "USD",
             price: Number(product.individualPrice),
             itemCondition: "https://schema.org/NewCondition",
-            availability: inStock ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
+            availability: soldOut ? "https://schema.org/OutOfStock" : "https://schema.org/InStock",
             seller: { "@type": "Organization", name: SITE_NAME },
           },
         }}
@@ -214,10 +215,9 @@ export default async function ProductoPage({ params }: PageProps<"/producto/[slu
           <h1 className="font-display text-3xl leading-tight text-foreground sm:text-4xl">
             {name}
           </h1>
-          <PriceDual
-            wholesalePrice={Number(product.wholesalePrice)}
-            individualPrice={Number(product.individualPrice)}
-          />
+          <p className="text-2xl font-semibold text-foreground">
+            {formatCurrency(Number(product.individualPrice))}
+          </p>
 
           {product.boxed ? (
             <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
@@ -230,6 +230,7 @@ export default async function ProductoPage({ params }: PageProps<"/producto/[slu
             <AddToCartForm
               productId={product.id}
               hasVariants={product.hasVariants}
+              soldOut={soldOut}
               variants={product.variants}
               copy={cartCopy}
             />

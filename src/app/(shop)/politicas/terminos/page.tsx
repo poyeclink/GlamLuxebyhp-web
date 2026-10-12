@@ -1,12 +1,11 @@
 import type { Metadata } from "next";
 import { t } from "@/lib/i18n";
 import { PolicyPage } from "@/components/policies/PolicyPage";
-import { WHOLESALE_ITEM_THRESHOLD } from "@/server/services/cart-service";
 
 export async function generateMetadata(): Promise<Metadata> {
   const [title, description] = await Promise.all([
     t("Términos y condiciones"),
-    t("Condiciones de compra en Glam Luxe by HJ: precios, precio mayorista, pagos y envíos."),
+    t("Condiciones de compra en Glam Luxe by HJ: precios, pagos y envíos."),
   ]);
   return { title, description, alternates: { canonical: "/politicas/terminos" } };
 }
@@ -30,8 +29,7 @@ export default function TermsPage() {
           id: "precios",
           title: "Productos y precios",
           body: [
-            "Todos los precios se muestran en dólares estadounidenses (USD). Cada producto tiene un precio individual y un precio mayorista.",
-            `El precio mayorista se aplica automáticamente cuando tu carrito suma ${WHOLESALE_ITEM_THRESHOLD} o más artículos, que pueden ser de distintos productos y tallas. Al alcanzarlo, el precio mayorista se aplica a todas las piezas del carrito.`,
+            "Todos los precios se muestran en dólares estadounidenses (USD). El precio que ves en cada producto es el que se cobra por cada pieza.",
             "Los precios pueden cambiar sin previo aviso, pero el precio de un pedido ya confirmado queda congelado y no se modifica después.",
           ],
         },
@@ -55,8 +53,7 @@ export default function TermsPage() {
           id: "envios",
           title: "Envíos",
           body: [
-            "En compras al detalle, el costo de envío depende de la cantidad de artículos y se muestra en tu carrito antes de pagar.",
-            "En pedidos con precio mayorista, el envío se coordina directamente contigo según el volumen y el destino.",
+            "El costo de envío depende de la cantidad de artículos y se muestra en tu carrito antes de pagar.",
             "Los tiempos de entrega son estimados y pueden variar por causas ajenas a nosotros, como demoras de la empresa transportista.",
           ],
         },

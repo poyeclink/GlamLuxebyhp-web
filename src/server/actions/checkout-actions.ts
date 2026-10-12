@@ -9,11 +9,12 @@ import {
   getAddressForEdit,
   parseAddressInput,
 } from "@/server/services/address-service";
-import { getCartWithPricing } from "@/server/services/cart-service";
+import { requirePurchasableCart } from "@/lib/checkout";
 import {
   OrderError,
   createReservedOrder,
   getOrderForCustomer,
+  orderHasUnavailableItems,
   releaseUnpaidOrder,
 } from "@/server/services/order-service";
 import {
@@ -44,8 +45,7 @@ export async function acceptCheckoutTermsAction(
 ): Promise<CheckoutTermsActionState> {
   const session = await requireCustomer();
 
-  const cart = await getCartWithPricing({ userId: session.userId });
-  if (cart.items.length === 0) redirect("/carrito");
+  await requirePurchasableCart(session.userId);
 
   if (formData.get("termsAccepted") !== "on") {
     return { error: await t("Debes aceptar los términos para continuar.") };
@@ -75,8 +75,7 @@ export async function confirmCheckoutOrderAction(
 ): Promise<ConfirmOrderActionState> {
   const session = await requireCustomer();
 
-  const cart = await getCartWithPricing({ userId: session.userId });
-  if (cart.items.length === 0) redirect("/carrito");
+  await requirePurchasableCart(session.userId);
 
   if (!stripe) return { error: await t("El pago con tarjeta no está disponible en este momento.") };
 
@@ -137,6 +136,12 @@ async function requireUnpaidOrder(orderId: string) {
 
 export async function resumeCardPaymentAction(orderId: string) {
   const order = await requireUnpaidOrder(orderId);
+  if (await orderHasUnavailableItems(order.id)) {
+    // Lo que sigue disponible vuelve al carrito (releaseUnpaidOrder).
+    await expireCheckoutSession(order.id);
+    await releaseUnpaidOrder(order.id, "cancelado");
+    redirect("/carrito");
+  }
   const url = await getOpenCheckoutUrl(order.id);
   redirect(url ?? `/pedidos/${order.id}`);
 }

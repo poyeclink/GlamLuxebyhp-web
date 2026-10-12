@@ -20,10 +20,6 @@ export const STOCK_IMAGES = {
     alt: "Modelo sentada con las piernas cruzadas y zapatos de tacón negros",
     position: "75% center",
   },
-  boutique: {
-    src: unsplash("1441984904996-e0b6ba687e04"),
-    alt: "Interior de una boutique de ropa",
-  },
   tailoring: {
     src: unsplash("1753162660069-d4145d9a95f7"),
     alt: "Costura de una prenda en máquina de coser",
@@ -55,10 +51,6 @@ export const STOCK_IMAGES = {
   scarfWoman: {
     src: unsplash("1764179690237-6c9a7a48406c"),
     alt: "Mujer con pañuelo y abrigo claro sosteniendo un bolso",
-  },
-  leatherTote: {
-    src: unsplash("1624687943971-e86af76d57de"),
-    alt: "Bolso tote de cuero color miel colgado en la pared",
   },
   pearlBox: {
     src: unsplash("1515562141207-7a88fb7ce338"),

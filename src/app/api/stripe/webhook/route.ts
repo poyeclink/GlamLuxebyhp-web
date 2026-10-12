@@ -3,11 +3,7 @@ import type Stripe from "stripe";
 import { stripe } from "@/lib/stripe";
 import { prisma } from "@/lib/prisma";
 import { confirmCardPayment, releaseUnpaidOrder } from "@/server/services/order-service";
-import {
-  notifyAdminNewOrder,
-  notifyLowStockFromOrder,
-  sendOrderStatusEmail,
-} from "@/server/email/notifications";
+import { notifyAdminNewOrder, sendOrderStatusEmail } from "@/server/email/notifications";
 
 export async function POST(request: Request) {
   const secret = process.env.STRIPE_WEBHOOK_SECRET;
@@ -40,13 +36,7 @@ export async function POST(request: Request) {
     const orderId = session.metadata?.orderId;
     if (session.payment_status === "paid" && orderId) {
       if (await confirmCardPayment(orderId)) {
-        after(() =>
-          Promise.all([
-            sendOrderStatusEmail(orderId),
-            notifyAdminNewOrder(orderId),
-            notifyLowStockFromOrder(orderId),
-          ]),
-        );
+        after(() => Promise.all([sendOrderStatusEmail(orderId), notifyAdminNewOrder(orderId)]));
       } else {
         await refundIfOrderClosed(orderId, session);
       }
@@ -57,8 +47,8 @@ export async function POST(request: Request) {
 }
 
 // Pago que llegó para un pedido ya cancelado o vencido (carrera mínima: el
-// cliente pagó justo mientras se cancelaba). Su stock ya se liberó, así que se
-// devuelve el dinero en vez de confirmarlo. Un evento repetido de un pedido ya
+// cliente pagó justo mientras se cancelaba). Sus piezas ya volvieron al
+// carrito, así que se devuelve el dinero en vez de confirmarlo. Un evento repetido de un pedido ya
 // confirmado no entra aquí.
 async function refundIfOrderClosed(orderId: string, session: Stripe.Checkout.Session) {
   const order = await prisma.order.findUnique({ where: { id: orderId }, select: { status: true } });

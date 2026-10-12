@@ -14,26 +14,23 @@ import {
   ShieldAlert,
   ShieldCheck,
   Sparkles,
-  Store,
 } from "lucide-react";
 import { PageHero } from "@/components/marketing/PageHero";
 import { ContactForm } from "@/components/marketing/ContactForm";
 import { Faq } from "@/components/marketing/Faq";
 import { SectionHeading } from "@/components/marketing/SectionHeading";
 import { FacebookIcon, InstagramIcon, TikTokIcon } from "@/components/layout/SocialIcons";
-import { Button } from "@/components/ui/Button";
 import { Spotlight } from "@/components/motion/Spotlight";
 
 import { tMany } from "@/lib/i18n";
 import { CONTACT, whatsappUrl } from "@/lib/site";
 import { ADMIN_INBOX, isMailConfigured } from "@/lib/mailer";
 import { STOCK_IMAGES } from "@/lib/stock-images";
-import { WHOLESALE_ITEM_THRESHOLD } from "@/server/services/cart-service";
 
 export const metadata: Metadata = {
   title: "Contacto",
   description:
-    "Escríbenos por WhatsApp o correo: te ayudamos con tallas, disponibilidad, pedidos mayoristas y el estado de tu compra.",
+    "Escríbenos por WhatsApp o correo: te ayudamos con tallas, disponibilidad y el estado de tu compra.",
   alternates: { canonical: "/contacto" },
 };
 
@@ -90,20 +87,19 @@ function CardAction({
 export default async function ContactPage() {
   const canSubmit = isMailConfigured() && Boolean(ADMIN_INBOX);
   const c = await tMany({
-    leatherToteAlt: STOCK_IMAGES.leatherTote.alt,
     shopWindowAlt: STOCK_IMAGES.shopWindow.alt,
     home: "Inicio",
     eyebrow: "Contacto",
     title: "Estamos para ayudarte",
     description:
-      "Tallas, disponibilidad, pedidos mayoristas o el estado de tu compra: escríbenos y te responde una persona de nuestro equipo, no un robot.",
+      "Tallas, disponibilidad o el estado de tu compra: escríbenos y te responde una persona de nuestro equipo, no un robot.",
     whatsTitle: "WhatsApp",
     whatsText:
       "La vía más rápida para resolver dudas sobre tallas, disponibilidad o el estado de tu pedido.",
     whatsCta: "Escribir por WhatsApp",
     mailTitle: "Correo",
     mailText:
-      "Ideal para consultas detalladas, pedidos mayoristas o para enviarnos fotos de una pieza.",
+      "Ideal para consultas detalladas o para enviarnos fotos de una pieza.",
     socialTitle: "Redes sociales",
     socialText: "Nuevas llegadas, lanzamientos y piezas destacadas antes que nadie.",
     socialSoon: "Muy pronto",
@@ -117,11 +113,9 @@ export default async function ContactPage() {
     tip1: "Tu número de pedido, si ya compraste",
     tip2: "El producto y la talla que te interesan",
     tip3: "Fotos claras si una pieza llegó con daño de fábrica",
-    tip4: "La cantidad aproximada, si es una compra mayorista",
     name: "Tu nombre",
     topic: "Motivo",
     topicOrder: "Consulta sobre un pedido",
-    topicWholesale: "Compra mayorista",
     topicProduct: "Información de un producto",
     topicOther: "Otro",
     email: "Tu correo",
@@ -148,21 +142,9 @@ export default async function ContactPage() {
     h2: "Tallas y disponibilidad",
     h2t: "Cada producto muestra sus tallas y cuáles están agotadas. Si dudas, pregúntanos.",
     h2l: "Explorar la tienda",
-    h3: "Compras mayoristas",
-    h3t: `Desde ${WHOLESALE_ITEM_THRESHOLD} artículos variados obtienes precio mayorista automático en todo tu carrito.`,
-    h3l: "Cómo funciona",
-    h4: "Daño de fábrica",
-    h4t: "Repórtalo dentro de las primeras 24 horas desde que recibes tu pedido, con fotos del daño.",
-    h4l: "Política de devoluciones",
-    wEyebrow: "Para boutiques y revendedores",
-    wTitle: "¿Compras para tu negocio?",
-    wText:
-      "Surte tu tienda con piezas de alta calidad sin cuentas especiales ni aprobaciones previas. Te asesoramos con tallas, surtido y envíos para pedidos grandes.",
-    w1: `Precio mayorista desde ${WHOLESALE_ITEM_THRESHOLD} artículos, combinando productos`,
-    w2: "Envío coordinado directamente contigo",
-    w3: "Tu pedido confirmado al instante al pagar",
-    wShop: "Ver la tienda",
-    wTalk: "Hablar con nosotros",
+    h3: "Daño de fábrica",
+    h3t: "Repórtalo dentro de las primeras 24 horas desde que recibes tu pedido, con fotos del daño.",
+    h3l: "Política de devoluciones",
     faqEyebrow: "Preguntas frecuentes",
     faqTitle: "Antes de escribirnos",
     faqText:
@@ -183,8 +165,6 @@ export default async function ContactPage() {
     a3: "Escríbenos dentro de las primeras 24 horas desde que la recibes, con fotos del daño de fábrica, y lo resolvemos contigo.",
     q4: "¿Puedo cambiar una talla?",
     a4: "Todas las ventas son finales, por eso te recomendamos revisar las tallas disponibles y consultarnos antes de comprar.",
-    q5: "¿Necesito una cuenta especial para comprar al por mayor?",
-    a5: `No. Con tu cuenta normal de cliente, al sumar ${WHOLESALE_ITEM_THRESHOLD} o más artículos el precio mayorista se aplica automáticamente.`,
   });
 
   const whatsapp = whatsappUrl();
@@ -199,8 +179,7 @@ export default async function ContactPage() {
   const helpTopics = [
     { icon: PackageSearch, title: c.h1, text: c.h1t, href: "/pedidos", link: c.h1l },
     { icon: Ruler, title: c.h2, text: c.h2t, href: "/tienda", link: c.h2l },
-    { icon: Store, title: c.h3, text: c.h3t, href: "/#mayorista", link: c.h3l },
-    { icon: ShieldAlert, title: c.h4, text: c.h4t, href: "/politicas/devoluciones", link: c.h4l },
+    { icon: ShieldAlert, title: c.h3, text: c.h3t, href: "/politicas/devoluciones", link: c.h3l },
   ];
 
   return (
@@ -279,7 +258,6 @@ export default async function ContactPage() {
                 { icon: Hash, text: c.tip1 },
                 { icon: Ruler, text: c.tip2 },
                 { icon: Camera, text: c.tip3 },
-                { icon: Store, text: c.tip4 },
               ].map(({ icon: Icon, text }) => (
                 <li key={text} className="flex items-center gap-3 text-sm text-foreground">
                   <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-background text-accent">
@@ -307,7 +285,7 @@ export default async function ContactPage() {
               sentText: c.sentText,
               submitHint: c.submitHint,
               topic: c.topic,
-              topics: [c.topicOrder, c.topicWholesale, c.topicProduct, c.topicOther],
+              topics: [c.topicOrder, c.topicProduct, c.topicOther],
               message: c.message,
               placeholder: c.placeholder,
               sendWhatsapp: c.sendWhatsapp,
@@ -330,7 +308,7 @@ export default async function ContactPage() {
             </p>
             <h2 className="font-display text-4xl sm:text-5xl">{c.helpTitle}</h2>
           </div>
-          <ul className="grid gap-px overflow-hidden rounded-2xl bg-inverse-border sm:grid-cols-2 lg:grid-cols-4">
+          <ul className="grid gap-px overflow-hidden rounded-2xl bg-inverse-border md:grid-cols-3">
             {helpTopics.map(({ icon: Icon, title, text, href, link }) => (
               <li key={title}>
                 <Spotlight className="h-full bg-inverse">
@@ -350,52 +328,6 @@ export default async function ContactPage() {
               </li>
             ))}
           </ul>
-        </div>
-      </section>
-
-      <section className="mx-auto grid max-w-7xl items-center gap-12 px-4 py-16 sm:py-24 sm:px-6 lg:grid-cols-2 lg:gap-20">
-        <div className="group relative aspect-[4/3] overflow-hidden rounded-3xl bg-muted lg:aspect-[5/4]">
-          <Image
-            src={STOCK_IMAGES.leatherTote.src}
-            alt={c.leatherToteAlt}
-            fill
-            sizes="(min-width: 1024px) 50vw, 100vw"
-            className="object-cover transition-transform duration-1000 group-hover:scale-105"
-          />
-        </div>
-        <div className="flex flex-col gap-6">
-          <p className="eyebrow text-accent">{c.wEyebrow}</p>
-          <h2 className="font-display text-4xl text-foreground sm:text-5xl">{c.wTitle}</h2>
-          <p className="leading-relaxed text-muted-foreground">{c.wText}</p>
-          <ul className="flex flex-col gap-3">
-            {[c.w1, c.w2, c.w3].map((point, index) => (
-              <li
-                key={point}
-                className="flex items-center gap-4 border-b border-border pb-3 text-sm text-foreground"
-              >
-                <span className="font-display text-accent">
-                  {String(index + 1).padStart(2, "0")}
-                </span>
-                {point}
-              </li>
-            ))}
-          </ul>
-          <div className="flex flex-col gap-3 pt-2 sm:flex-row">
-            <Link href="/tienda">
-              <Button size="lg" className="w-full sm:w-auto">
-                {c.wShop}
-                <ArrowRight className="h-4 w-4" />
-              </Button>
-            </Link>
-            <a
-              href={whatsapp ?? FORM_ANCHOR}
-              {...(whatsapp ? { target: "_blank", rel: "noopener noreferrer" } : {})}
-            >
-              <Button size="lg" variant="outline" className="w-full sm:w-auto">
-                {c.wTalk}
-              </Button>
-            </a>
-          </div>
         </div>
       </section>
 
@@ -454,7 +386,6 @@ export default async function ContactPage() {
               { question: c.q2, answer: c.a2 },
               { question: c.q3, answer: c.a3 },
               { question: c.q4, answer: c.a4 },
-              { question: c.q5, answer: c.a5 },
             ]}
           />
         </div>

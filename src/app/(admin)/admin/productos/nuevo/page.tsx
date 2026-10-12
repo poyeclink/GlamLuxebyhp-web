@@ -14,7 +14,7 @@ export default async function NewProductPage() {
         back={{ href: "/admin/productos", label: t("Volver a productos") }}
         eyebrow={t("Catálogo")}
         title={t("Nuevo producto")}
-        description={t("Completa los datos, sube las fotos y, si aplica, las tallas con su stock.")}
+        description={t("Completa los datos, sube las fotos y, si aplica, las tallas.")}
       />
       {categories.length === 0 ? (
         <p className="text-muted-foreground">

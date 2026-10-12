@@ -24,7 +24,7 @@ export default async function OrderHistoryPage() {
       countOne: "{count} pedido en tu historial.",
       countMany: "{count} pedidos en tu historial.",
       emptyTitle: "Todavía no has hecho ningún pedido",
-      emptyText: "Explora la colección y arma tu primer pedido, al detalle o al por mayor.",
+      emptyText: "Explora la colección y arma tu primer pedido.",
       cta: "Ir a la tienda",
       order: "Pedido #{id}",
       itemOne: "artículo",

@@ -2,9 +2,8 @@ import fs from "node:fs";
 import path from "node:path";
 import { Document, Page, Path, StyleSheet, Svg, Text, View } from "@react-pdf/renderer";
 import type { InventoryReport, ReportFilters, SalesReport } from "@/server/services/report-service";
-import { NO_CATEGORY, TIER_LABELS, formatReportDay, paymentMethodLabel } from "@/server/services/report-service";
+import { NO_CATEGORY, formatReportDay, paymentMethodLabel } from "@/server/services/report-service";
 import { ORDER_STATUS_LABELS } from "@/server/services/order-service";
-import { LOW_STOCK_THRESHOLD } from "@/server/services/inventory-service";
 import { SITE_NAME } from "@/lib/site";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import type { AdminT } from "@/lib/admin-i18n";
@@ -29,9 +28,14 @@ const BRAND = {
 // bundle de esta ruta (outputFileTracingIncludes).
 const LOGO_PATHS = [
   ...fs
-    .readFileSync(path.join(process.cwd(), "public/brand/glamluxe-horizontal-color-oscuro.svg"), "utf8")
+    .readFileSync(
+      path.join(process.cwd(), "public/brand/glamluxe-horizontal-color-oscuro.svg"),
+      "utf8",
+    )
     .matchAll(/<path ([^>]+)\/>/g),
-].map(([, attrs]) => Object.fromEntries([...attrs.matchAll(/([\w-]+)="([^"]*)"/g)].map(([, k, v]) => [k, v])));
+].map(([, attrs]) =>
+  Object.fromEntries([...attrs.matchAll(/([\w-]+)="([^"]*)"/g)].map(([, k, v]) => [k, v])),
+);
 
 const styles = StyleSheet.create({
   page: {
@@ -266,12 +270,6 @@ function SalesBody({ report, t, locale }: BodyProps<SalesReport>) {
               rows={summary.byCategory}
               empty={t("Sin ventas cobradas.")}
             />
-            <Text style={[styles.sectionTitle, { marginTop: 14 }]}>{t("Tipo de precio")}</Text>
-            <Table
-              columns={bucketColumns(t, t("Tipo"))}
-              rows={summary.byTier}
-              empty={t("Sin ventas cobradas.")}
-            />
           </View>
         </View>
       </View>
@@ -282,13 +280,12 @@ function SalesBody({ report, t, locale }: BodyProps<SalesReport>) {
           columns={[
             { label: t("Fecha"), width: "12%", render: (row) => formatDate(row.createdAt, locale) },
             { label: t("Pedido"), width: "11%", render: (row) => `#${row.id.slice(0, 8)}` },
-            { label: t("Cliente"), width: "23%", render: (row) => row.fullName },
+            { label: t("Cliente"), width: "34%", render: (row) => row.fullName },
             {
               label: t("Método"),
               width: "11%",
               render: (row) => t(paymentMethodLabel(row.paymentMethod)),
             },
-            { label: t("Tipo"), width: "11%", render: (row) => t(TIER_LABELS[row.pricingTier]) },
             {
               label: t("Estado"),
               width: "12%",
@@ -300,7 +297,12 @@ function SalesBody({ report, t, locale }: BodyProps<SalesReport>) {
                     ? BRAND.zafiro
                     : undefined,
             },
-            { label: t("Art."), width: "7%", align: "right", render: (row) => String(row.itemCount) },
+            {
+              label: t("Art."),
+              width: "7%",
+              align: "right",
+              render: (row) => String(row.itemCount),
+            },
             {
               label: t("Total"),
               width: "13%",
@@ -311,11 +313,7 @@ function SalesBody({ report, t, locale }: BodyProps<SalesReport>) {
           rows={orders}
           empty={t("No hay pedidos con estos filtros.")}
         />
-        <Text style={styles.note}>
-          {t(
-            "Ventas cobradas = pedidos confirmados o enviados. En pedidos mayoristas el total no incluye envío (se coordina aparte).",
-          )}
-        </Text>
+        <Text style={styles.note}>{t("Ventas cobradas = pedidos confirmados o enviados.")}</Text>
       </View>
     </>
   );
@@ -328,89 +326,39 @@ function InventoryBody({ report, t }: BodyProps<InventoryReport>) {
       <View style={styles.kpis}>
         <Kpi
           featured
-          label={t("Valor del inventario")}
-          value={formatCurrency(summary.value)}
-          hint={t("A precio mayorista")}
+          label={t("Agotados")}
+          value={String(summary.soldOut)}
+          hint={t("No se pueden comprar")}
         />
+        <Kpi label={t("Disponibles")} value={String(summary.available)} hint={t("A la venta")} />
         <Kpi
-          label={t("Unidades en stock")}
-          value={String(summary.units)}
-          hint={t("{count} tallas", { count: summary.variantCount })}
-        />
-        <Kpi
-          label={t("Stock bajo")}
-          value={String(summary.lowStock)}
-          hint={t("{threshold} o menos unidades", { threshold: LOW_STOCK_THRESHOLD })}
-        />
-        <Kpi
-          label={t("Agotadas")}
-          value={String(summary.outOfStock)}
-          hint={t("Sin unidades")}
-        />
-      </View>
-
-      <View style={styles.section} wrap={false}>
-        <Text style={styles.sectionTitle}>{t("Movimientos en el período")}</Text>
-        <Table
-          columns={[
-            { label: t("Tipo de movimiento"), width: "50%", render: (row) => t(row.label) },
-            {
-              label: t("Registros"),
-              width: "20%",
-              align: "right",
-              render: (row) => String(row.count),
-            },
-            {
-              label: t("Unidades"),
-              width: "30%",
-              align: "right",
-              render: (row) => (row.units > 0 ? `+${row.units}` : String(row.units)),
-            },
-          ]}
-          rows={summary.movements}
-          empty={t("Sin movimientos.")}
+          label={t("Productos y tallas")}
+          value={String(summary.rowCount)}
+          hint={t("Con estos filtros")}
         />
       </View>
 
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>{t("Stock por talla")}</Text>
+        <Text style={styles.sectionTitle}>{t("Disponibilidad")}</Text>
         <Table
           columns={[
             {
               label: t("Producto"),
-              width: "34%",
+              width: "42%",
               render: (row) => (row.active ? row.product : `${row.product} (${t("inactivo")})`),
             },
-            { label: t("Categoría"), width: "20%", render: (row) => row.category },
-            { label: t("Talla"), width: "10%", render: (row) => row.size },
+            { label: t("Categoría"), width: "26%", render: (row) => row.category },
+            { label: t("Talla"), width: "12%", render: (row) => row.size ?? "-" },
             {
               label: t("Estado"),
-              width: "12%",
-              render: (row) =>
-                t(row.stock === 0 ? "Agotado" : row.stock <= LOW_STOCK_THRESHOLD ? "Bajo" : "OK"),
-              color: (row) =>
-                row.stock === 0
-                  ? BRAND.danger
-                  : row.stock <= LOW_STOCK_THRESHOLD
-                    ? BRAND.zafiro
-                    : undefined,
-            },
-            { label: t("Stock"), width: "10%", align: "right", render: (row) => String(row.stock) },
-            {
-              label: t("Valor"),
-              width: "14%",
-              align: "right",
-              render: (row) => formatCurrency(row.value),
+              width: "20%",
+              render: (row) => t(row.soldOut ? "Agotado" : "Disponible"),
+              color: (row) => (row.soldOut ? BRAND.danger : undefined),
             },
           ]}
           rows={rows}
-          empty={t("No hay tallas con estos filtros.")}
+          empty={t("No hay productos con estos filtros.")}
         />
-        <Text style={styles.note}>
-          {t(
-            "Solo productos con tallas llevan control de stock. El valor usa el precio mayorista actual.",
-          )}
-        </Text>
       </View>
     </>
   );
@@ -461,7 +409,7 @@ export function ReportDocument({
           <View style={styles.headerRight}>
             <Text style={styles.eyebrow}>{t("Panel administrativo")}</Text>
             <Text style={styles.title}>{title}</Text>
-            <Text style={styles.headerMeta}>{t("Período: {period}", { period })}</Text>
+            {sales && <Text style={styles.headerMeta}>{t("Período: {period}", { period })}</Text>}
             <Text style={styles.headerMeta}>
               {t("Generado el {date} por {name}", {
                 date: formatDate(new Date(), locale),

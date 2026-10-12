@@ -1,12 +1,11 @@
 import { prisma } from "@/lib/prisma";
 import { ADMIN_INBOX, sendMail } from "@/lib/mailer";
-import { SITE_NAME, SITE_URL } from "@/lib/site";
+import { SITE_URL } from "@/lib/site";
 import { formatCurrency } from "@/lib/utils";
 import type { Locale } from "@/lib/i18n";
 import { RESET_TOKEN_MINUTES } from "@/lib/password-reset";
 import { translate } from "@/server/services/translation-service";
 import { getOrderStatusMessage } from "@/server/services/order-service";
-import { LOW_STOCK_THRESHOLD, crossedLowStock } from "@/server/services/inventory-service";
 import { logoAttachments, renderEmail, type EmailContent } from "@/server/email/template";
 
 const NAV = { shop: "Tienda", contact: "Contacto", policies: "Políticas" };
@@ -224,7 +223,6 @@ export async function notifyAdminNewOrder(orderId: string) {
         ["Correo", order.email],
         ["WhatsApp", order.whatsapp],
         ["Dirección", `${order.addressLine}\n${order.city}, ${order.state} ${order.zip}`],
-        ["Precio", order.pricingTier === "mayorista" ? "Mayorista" : "Individual"],
         ...itemRows(order, { size: "Talla", quantity: "Cantidad" }),
       ],
       total: ["Total", formatCurrency(Number(order.total))],
@@ -268,42 +266,4 @@ export function notifyAdminContactMessage(lead: {
     },
     lead.email,
   );
-}
-
-// ——— Inventario ———
-
-export async function notifyAdminLowStock(variantIds: string[]) {
-  if (variantIds.length === 0) return false;
-  const variants = await prisma.productVariant.findMany({
-    where: { id: { in: variantIds } },
-    orderBy: { stock: "asc" },
-    include: { product: { select: { name: true } } },
-  });
-  if (variants.length === 0) return false;
-
-  const soldOut = variants.some((v) => v.stock === 0);
-  return sendToAdmin(soldOut ? `Producto agotado en ${SITE_NAME}` : `Stock bajo en ${SITE_NAME}`, {
-    heading: soldOut ? "Hay tallas agotadas" : "Hay tallas con stock bajo",
-    paragraphs: [
-      `Estas tallas bajaron a ${LOW_STOCK_THRESHOLD} unidades o menos. Repón inventario o desactiva el producto si ya no lo vas a vender.`,
-    ],
-    rows: variants.map((v) => [
-      `${v.product.name} · Talla ${v.size}`,
-      v.stock === 0 ? "Agotado" : `${v.stock} ${v.stock === 1 ? "unidad" : "unidades"}`,
-    ]),
-    cta: { label: "Gestionar inventario", href: `${SITE_URL}/admin/inventario` },
-  });
-}
-
-// Solo avisa de las tallas que este pedido hizo cruzar el umbral: una talla
-// que ya estaba baja no vuelve a generar un correo con cada venta.
-export async function notifyLowStockFromOrder(orderId: string) {
-  const logs = await prisma.inventoryLog.findMany({
-    where: { orderId, reason: "reserva" },
-    select: { variantId: true, stockAfter: true, quantityChange: true },
-  });
-  const crossed = logs.filter(
-    (log) => log.variantId && crossedLowStock(log.stockAfter - log.quantityChange, log.stockAfter),
-  );
-  return notifyAdminLowStock(crossed.map((log) => log.variantId!));
 }

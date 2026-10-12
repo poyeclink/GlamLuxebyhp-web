@@ -44,7 +44,12 @@ export async function GET(request: NextRequest) {
   }) as unknown as ReactElement<DocumentProps>;
   const buffer = await renderToBuffer(document);
 
-  const filename = `${t("reporte")}-${filters.type === "ventas" ? t("ventas") : t("inventario")}-${toDayParam(filters.from)}_${toDayParam(filters.to)}.pdf`;
+  // El inventario es una foto de hoy, sin período.
+  const dates =
+    filters.type === "ventas"
+      ? `${toDayParam(filters.from)}_${toDayParam(filters.to)}`
+      : toDayParam(new Date());
+  const filename = `${t("reporte")}-${filters.type === "ventas" ? t("ventas") : t("inventario")}-${dates}.pdf`;
   return new Response(new Uint8Array(buffer), {
     headers: {
       "Content-Type": "application/pdf",

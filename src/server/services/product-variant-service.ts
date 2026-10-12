@@ -1,5 +1,4 @@
 import { prisma } from "@/lib/prisma";
-import { LOW_STOCK_THRESHOLD } from "@/server/services/inventory-service";
 
 export class ProductVariantError extends Error {
   constructor(
@@ -10,30 +9,25 @@ export class ProductVariantError extends Error {
   }
 }
 
-// Para la alerta de stock bajo del dashboard admin — solo variantes de
-// productos activos (una desactivada no necesita reponerse).
-export function listLowStockVariants(limit = 10) {
-  return prisma.productVariant.findMany({
-    where: { stock: { lte: LOW_STOCK_THRESHOLD }, product: { active: true } },
-    orderBy: { stock: "asc" },
-    take: limit,
-    include: { product: { select: { name: true, slug: true } } },
-  });
-}
-
 type VariantInput = {
   size: string;
-  stock: number;
 };
 
 async function assertSizeAvailable(productId: string, size: string, excludeId?: string) {
-  const existing = await prisma.productVariant.findFirst({ where: { productId, size } });
+  // Sin distinguir mayúsculas: "s" y "S" son la misma talla para la clienta.
+  const existing = await prisma.productVariant.findFirst({
+    where: { productId, size: { equals: size, mode: "insensitive" } },
+  });
   if (existing && existing.id !== excludeId) {
     throw new ProductVariantError('Ya existe la talla "{size}" para este producto.', { size });
   }
 }
 
 export async function createVariant(productId: string, data: VariantInput) {
+  const product = await prisma.product.findUnique({ where: { id: productId } });
+  if (!product?.hasVariants) {
+    throw new ProductVariantError("Este producto no maneja tallas.");
+  }
   await assertSizeAvailable(productId, data.size);
   return prisma.productVariant.create({ data: { productId, ...data } });
 }

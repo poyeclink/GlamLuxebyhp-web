@@ -35,8 +35,8 @@ export async function createCardCheckoutUrl(order: {
       },
     ],
     locale: order.locale === "es" ? "es" : "en",
-    // Vence junto con el pedido: al vencer, Stripe avisa por webhook y el
-    // stock vuelve al inventario.
+    // Vence junto con el pedido: al vencer, Stripe avisa por webhook y las
+    // piezas vuelven al carrito del cliente.
     expires_at: Math.floor(order.reservedUntil.getTime() / 1000),
     success_url: `${SITE_URL}/pedidos/${order.id}?pago=ok`,
     cancel_url: `${SITE_URL}/pedidos/${order.id}`,

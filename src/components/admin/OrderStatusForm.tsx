@@ -39,7 +39,7 @@ function StatusButtons({ statuses }: { statuses: OrderStatus[] }) {
             : "w-full"
         }
         onClick={(event) => {
-          // Cancelar devuelve el stock y no tiene vuelta atrás: un toque accidental en el teléfono no debe bastar.
+          // Cancelar no tiene vuelta atrás: un toque accidental en el teléfono no debe bastar.
           if (isCancel && !confirm(t("¿Cancelar este pedido? Si ya se pagó con tarjeta, se reembolsa automáticamente. Esta acción no se puede deshacer."))) {
             event.preventDefault();
           }

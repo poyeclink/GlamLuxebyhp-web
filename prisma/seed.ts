@@ -43,9 +43,8 @@ async function main() {
     console.log(`Cliente demo listo: ${customer.email}`);
   }
 
-  // Tramos documentados del PDF. El tramo mayorista no tiene fila (envío se
-  // coordina aparte); si WHOLESALE_ITEM_THRESHOLD (cart-service.ts) cambia,
-  // estos tramos deben cubrir hasta threshold-1 o quedará un hueco sin tarifa.
+  // Tramos documentados del PDF. Una cantidad sin tramo que la cubra muestra
+  // "se coordina aparte" y no cobra envío.
   const individualRates = [
     { minQuantity: 1, maxQuantity: 2, price: 10 },
     { minQuantity: 3, maxQuantity: 5, price: 35 },
