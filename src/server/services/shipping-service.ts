@@ -2,7 +2,11 @@ import type { PricingTier } from "@/generated/prisma/client";
 import { prisma } from "@/lib/prisma";
 import { isUuid } from "@/lib/utils";
 
-export class ShippingError extends Error {}
+export class ShippingError extends Error {
+  constructor(message: string, readonly vars?: Record<string, string | number>) {
+    super(message);
+  }
+}
 
 // Sin tarifa configurada para la cantidad/tier dados = "se coordina aparte"
 // (así es como hoy se representa el envío mayorista: no hay fila para ese tier).
@@ -52,8 +56,11 @@ async function assertRangeAvailable(data: ShippingRateInput, excludeId?: string)
     const overlaps = data.minQuantity <= existingMax && existing.minQuantity <= newMax;
     if (overlaps) {
       throw new ShippingError(
-        `Se solapa con la tarifa existente de "${data.tier}" (${existing.minQuantity}` +
-          `${existing.maxQuantity === null ? "+" : `–${existing.maxQuantity}`}).`,
+        'Se solapa con la tarifa existente de "{tier}" ({range}).',
+        {
+          tier: data.tier,
+          range: `${existing.minQuantity}${existing.maxQuantity === null ? "+" : `–${existing.maxQuantity}`}`,
+        },
       );
     }
   }

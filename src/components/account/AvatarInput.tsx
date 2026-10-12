@@ -4,27 +4,9 @@ import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { Camera } from "lucide-react";
 import { Button } from "@/components/ui/Button";
+import { shrinkImage } from "@/lib/shrink-image";
 
 const MAX_SIDE = 640;
-
-// Se reduce en el navegador antes de subir: una foto de teléfono pesa varios
-// MB y supera el límite de cuerpo de los Server Actions / funciones de Vercel.
-async function shrink(file: File) {
-  const bitmap = await createImageBitmap(file);
-  const scale = Math.min(1, MAX_SIDE / Math.max(bitmap.width, bitmap.height));
-  const canvas = document.createElement("canvas");
-  canvas.width = Math.round(bitmap.width * scale);
-  canvas.height = Math.round(bitmap.height * scale);
-  const context = canvas.getContext("2d")!;
-  // Fondo blanco: un PNG transparente pasado a JPEG quedaría negro.
-  context.fillStyle = "#ffffff";
-  context.fillRect(0, 0, canvas.width, canvas.height);
-  context.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
-  const blob = await new Promise<Blob | null>((resolve) =>
-    canvas.toBlob(resolve, "image/jpeg", 0.85),
-  );
-  return blob ? new File([blob], "avatar.jpg", { type: "image/jpeg" }) : file;
-}
 
 export type AvatarInputCopy = { choose: string; change: string; hint: string };
 
@@ -53,7 +35,7 @@ export function AvatarInput({
     const input = event.currentTarget;
     const file = input.files?.[0];
     if (!file) return;
-    const small = await shrink(file).catch(() => file);
+    const small = await shrinkImage(file, MAX_SIDE, 1024 * 1024);
     const transfer = new DataTransfer();
     transfer.items.add(small);
     input.files = transfer.files;

@@ -15,6 +15,7 @@ import { LOW_STOCK_THRESHOLD } from "@/server/services/inventory-service";
 import { ORDER_STATUS_LABELS } from "@/server/services/order-service";
 import { PAYMENT_METHOD_OPTIONS } from "@/server/services/payment-service";
 import {
+  NO_CATEGORY,
   TIER_LABELS,
   describeFilters,
   formatReportDay,
@@ -29,8 +30,13 @@ import {
   type SalesReport,
 } from "@/server/services/report-service";
 import { cn, filterPillClass, formatCurrency, formatDate } from "@/lib/utils";
+import { getAdminT, getLocale } from "@/lib/i18n";
+import type { AdminT } from "@/lib/admin-i18n";
 
-export const metadata: Metadata = { title: "Reportes" };
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getAdminT();
+  return { title: t("Reportes") };
+}
 
 // En pantalla basta una muestra; el PDF siempre lleva el detalle completo.
 const PREVIEW_ROWS = 25;
@@ -154,35 +160,40 @@ function BreakdownCard({
   );
 }
 
-function StockBadge({ stock }: { stock: number }) {
-  if (stock === 0) return <Badge variant="destructive">Agotado</Badge>;
-  if (stock <= LOW_STOCK_THRESHOLD) return <Badge variant="accent">Bajo</Badge>;
-  return <Badge variant="secondary">OK</Badge>;
+function StockBadge({ stock, t }: { stock: number; t: AdminT }) {
+  if (stock === 0) return <Badge variant="destructive">{t("Agotado")}</Badge>;
+  if (stock <= LOW_STOCK_THRESHOLD) return <Badge variant="accent">{t("Bajo")}</Badge>;
+  return <Badge variant="secondary">{t("OK")}</Badge>;
 }
 
 export default async function AdminReportsPage({ searchParams }: PageProps<"/admin/reportes">) {
   const params = await searchParams;
   const now = new Date();
   const filters = parseReportFilters(params, now);
-  const [categories, sales, inventory] = await Promise.all([
+  const [t, locale, categories, sales, inventory] = await Promise.all([
+    getAdminT(),
+    getLocale(),
     listCategories(),
     filters.type === "ventas" ? getSalesReport(filters) : undefined,
     filters.type === "inventario" ? getInventoryReport(filters) : undefined,
   ]);
   const categoryName = categories.find((category) => category.id === filters.categoryId)?.label;
   const pdfHref = `/admin/reportes/pdf?${reportQueryString(filters)}`;
+  const translateLabel = (row: Bucket) => ({ ...row, label: t(row.label) });
 
   return (
     <div className="mx-auto flex max-w-6xl flex-col gap-8 px-4 py-10 sm:px-8 lg:py-12">
       <AdminPageHeader
-        eyebrow="Análisis"
-        title="Reportes"
-        description="Filtra la información que necesitas y descárgala en PDF con el mismo detalle que ves aquí."
+        eyebrow={t("Análisis")}
+        title={t("Reportes")}
+        description={t(
+          "Filtra la información que necesitas y descárgala en PDF con el mismo detalle que ves aquí.",
+        )}
         action={
           <a href={pdfHref} download>
             <Button>
               <Download className="h-4 w-4" aria-hidden="true" />
-              Descargar PDF
+              {t("Descargar PDF")}
             </Button>
           </a>
         }
@@ -219,14 +230,14 @@ export default async function AdminReportsPage({ searchParams }: PageProps<"/adm
                 </span>
               </span>
               <span className="flex flex-col gap-1">
-                <span className="font-display text-xl">{type.label}</span>
+                <span className="font-display text-xl">{t(type.label)}</span>
                 <span
                   className={cn(
                     "hidden text-sm sm:block",
                     active ? "text-inverse-muted" : "text-muted-foreground",
                   )}
                 >
-                  {type.text}
+                  {t(type.text)}
                 </span>
               </span>
             </Link>
@@ -241,7 +252,7 @@ export default async function AdminReportsPage({ searchParams }: PageProps<"/adm
       >
         <input type="hidden" name="tipo" value={filters.type} />
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-          <span className="text-sm font-medium text-foreground sm:mr-1">Período rápido:</span>
+          <span className="text-sm font-medium text-foreground sm:mr-1">{t("Período rápido:")}</span>
           <div className="-mx-5 flex gap-2 overflow-x-auto px-5 [scrollbar-width:none] sm:mx-0 sm:flex-wrap sm:px-0 [&::-webkit-scrollbar]:hidden">
             {quickRanges(now).map((range) => {
               const active =
@@ -256,7 +267,7 @@ export default async function AdminReportsPage({ searchParams }: PageProps<"/adm
                   aria-current={active ? "true" : undefined}
                   className={cn(filterPillClass(active), "whitespace-nowrap")}
                 >
-                  {range.label}
+                  {t(range.label)}
                 </Link>
               );
             })}
@@ -265,39 +276,44 @@ export default async function AdminReportsPage({ searchParams }: PageProps<"/adm
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <TextField
-            label="Desde"
+            label={t("Desde")}
             name="desde"
             type="date"
             defaultValue={toDayParam(filters.from)}
           />
-          <TextField label="Hasta" name="hasta" type="date" defaultValue={toDayParam(filters.to)} />
+          <TextField
+            label={t("Hasta")}
+            name="hasta"
+            type="date"
+            defaultValue={toDayParam(filters.to)}
+          />
           {filters.type === "ventas" ? (
             <>
-              <SelectField label="Estado" name="estado" defaultValue={filters.status ?? ""}>
-                <option value="">Todos</option>
+              <SelectField label={t("Estado")} name="estado" defaultValue={filters.status ?? ""}>
+                <option value="">{t("Todos")}</option>
                 {Object.entries(ORDER_STATUS_LABELS).map(([value, label]) => (
                   <option key={value} value={value}>
-                    {label}
+                    {t(label)}
                   </option>
                 ))}
               </SelectField>
               <SelectField
-                label="Método de pago"
+                label={t("Método de pago")}
                 name="metodo"
                 defaultValue={filters.paymentMethod ?? ""}
               >
-                <option value="">Todos</option>
+                <option value="">{t("Todos")}</option>
                 {PAYMENT_METHOD_OPTIONS.map((option) => (
                   <option key={option.value} value={option.value}>
-                    {option.label}
+                    {t(option.label)}
                   </option>
                 ))}
               </SelectField>
-              <SelectField label="Tipo de precio" name="tier" defaultValue={filters.tier ?? ""}>
-                <option value="">Todos</option>
+              <SelectField label={t("Tipo de precio")} name="tier" defaultValue={filters.tier ?? ""}>
+                <option value="">{t("Todos")}</option>
                 {Object.entries(TIER_LABELS).map(([value, label]) => (
                   <option key={value} value={value}>
-                    {label}
+                    {t(label)}
                   </option>
                 ))}
               </SelectField>
@@ -305,11 +321,11 @@ export default async function AdminReportsPage({ searchParams }: PageProps<"/adm
           ) : (
             <>
               <SelectField
-                label="Categoría"
+                label={t("Categoría")}
                 name="categoria"
                 defaultValue={filters.categoryId ?? ""}
               >
-                <option value="">Todas</option>
+                <option value="">{t("Todas")}</option>
                 {categories.map((category) => (
                   <option key={category.id} value={category.id}>
                     {category.label}
@@ -318,7 +334,7 @@ export default async function AdminReportsPage({ searchParams }: PageProps<"/adm
               </SelectField>
               <div className="flex items-end sm:pb-3">
                 <Checkbox
-                  label={`Solo stock bajo (${LOW_STOCK_THRESHOLD} o menos)`}
+                  label={t("Solo stock bajo ({threshold} o menos)", { threshold: LOW_STOCK_THRESHOLD })}
                   name="stockBajo"
                   value="1"
                   defaultChecked={filters.lowStockOnly}
@@ -330,7 +346,7 @@ export default async function AdminReportsPage({ searchParams }: PageProps<"/adm
 
         <div className="flex flex-col-reverse gap-3 border-t border-border pt-5 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex flex-wrap gap-2">
-            {describeFilters(filters, categoryName).map((label) => (
+            {describeFilters(filters, t, categoryName).map((label) => (
               <Badge key={label} variant="accent">
                 {label}
               </Badge>
@@ -339,20 +355,21 @@ export default async function AdminReportsPage({ searchParams }: PageProps<"/adm
           <div className="flex flex-col-reverse gap-2 sm:flex-row">
             <Link href={`/admin/reportes?tipo=${filters.type}`}>
               <Button type="button" variant="ghost" className="w-full sm:w-auto">
-                Limpiar
+                {t("Limpiar")}
               </Button>
             </Link>
             <Button type="submit" className="w-full sm:w-auto">
-              Aplicar filtros
+              {t("Aplicar filtros")}
             </Button>
           </div>
         </div>
       </form>
 
       <p className="-mt-3 text-sm text-muted-foreground">
-        Período:{" "}
-        <span className="font-medium text-foreground">{formatReportDay(filters.from)}</span> –{" "}
-        <span className="font-medium text-foreground">{formatReportDay(filters.to)}</span>
+        {t("Período:")}{" "}
+        <span className="font-medium text-foreground">{formatReportDay(filters.from, locale)}</span>{" "}
+        –{" "}
+        <span className="font-medium text-foreground">{formatReportDay(filters.to, locale)}</span>
       </p>
 
       {sales && (
@@ -360,66 +377,71 @@ export default async function AdminReportsPage({ searchParams }: PageProps<"/adm
           <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
             <Kpi
               featured
-              label="Ventas cobradas"
+              label={t("Ventas cobradas")}
               value={formatCurrency(sales.summary.paidRevenue)}
-              hint={`${sales.summary.paidCount} pedidos confirmados o enviados`}
+              hint={t("{count} pedidos confirmados o enviados", { count: sales.summary.paidCount })}
             />
             <Kpi
-              label="Ticket promedio"
+              label={t("Ticket promedio")}
               value={formatCurrency(sales.summary.averageTicket)}
-              hint="Sobre ventas cobradas"
+              hint={t("Sobre ventas cobradas")}
             />
             <Kpi
-              label="Pendiente de pago"
+              label={t("Pendiente de pago")}
               value={formatCurrency(sales.summary.pendingRevenue)}
-              hint="Pedidos con pago pendiente"
+              hint={t("Pedidos con pago pendiente")}
             />
             <Kpi
-              label="Unidades vendidas"
+              label={t("Unidades vendidas")}
               value={String(sales.summary.unitsSold)}
-              hint={`${sales.summary.orderCount} pedidos en el período`}
+              hint={t("{count} pedidos en el período", { count: sales.summary.orderCount })}
             />
           </div>
 
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
             <BreakdownCard
-              title="Pedidos por estado"
-              rows={sales.summary.byStatus}
-              countLabel="pedidos"
-              empty="Sin pedidos."
+              title={t("Pedidos por estado")}
+              rows={sales.summary.byStatus.map(translateLabel)}
+              countLabel={t("pedidos")}
+              empty={t("Sin pedidos.")}
             />
             <BreakdownCard
-              title="Métodos de pago"
-              rows={sales.summary.byMethod}
-              countLabel="pedidos"
-              empty="Sin ventas cobradas."
+              title={t("Métodos de pago")}
+              rows={sales.summary.byMethod.map(translateLabel)}
+              countLabel={t("pedidos")}
+              empty={t("Sin ventas cobradas.")}
             />
             <BreakdownCard
-              title="Productos más vendidos"
+              title={t("Productos más vendidos")}
               rows={sales.summary.topProducts}
-              countLabel="unid."
-              empty="Sin ventas cobradas."
+              countLabel={t("unid.")}
+              empty={t("Sin ventas cobradas.")}
             />
             <BreakdownCard
-              title="Ventas por categoría"
-              rows={sales.summary.byCategory}
-              countLabel="unid."
-              empty="Sin ventas cobradas."
+              title={t("Ventas por categoría")}
+              rows={sales.summary.byCategory.map((row) =>
+                row.label === NO_CATEGORY ? translateLabel(row) : row,
+              )}
+              countLabel={t("unid.")}
+              empty={t("Sin ventas cobradas.")}
             />
           </div>
 
           <section className="flex flex-col gap-4">
             <div className="flex flex-wrap items-end justify-between gap-2">
-              <h2 className="font-display text-2xl text-foreground">Detalle de pedidos</h2>
+              <h2 className="font-display text-2xl text-foreground">{t("Detalle de pedidos")}</h2>
               {sales.orders.length > PREVIEW_ROWS && (
                 <span className="text-xs text-muted-foreground">
-                  Mostrando {PREVIEW_ROWS} de {sales.orders.length} · el PDF incluye todos
+                  {t("Mostrando {shown} de {total} · el PDF incluye todos", {
+                    shown: PREVIEW_ROWS,
+                    total: sales.orders.length,
+                  })}
                 </span>
               )}
             </div>
             {sales.orders.length === 0 ? (
               <p className="rounded-2xl border border-dashed border-border bg-background p-10 text-center text-sm text-muted-foreground">
-                No hay pedidos con estos filtros.
+                {t("No hay pedidos con estos filtros.")}
               </p>
             ) : (
               <>
@@ -429,8 +451,13 @@ export default async function AdminReportsPage({ searchParams }: PageProps<"/adm
                       key={order.id}
                       href={`/admin/pedidos/${order.id}`}
                       title={order.fullName}
-                      badge={<OrderStatusBadge status={order.status} />}
-                      meta={`${formatDate(order.createdAt)} · ${paymentMethodLabel(order.paymentMethod)} · ${TIER_LABELS[order.pricingTier]}`}
+                      badge={
+                        <OrderStatusBadge
+                          status={order.status}
+                          label={t(ORDER_STATUS_LABELS[order.status])}
+                        />
+                      }
+                      meta={`${formatDate(order.createdAt, locale)} · ${t(paymentMethodLabel(order.paymentMethod))} · ${t(TIER_LABELS[order.pricingTier])}`}
                       aside={<span className="tabular-nums">{formatCurrency(order.total)}</span>}
                     />
                   ))}
@@ -438,18 +465,20 @@ export default async function AdminReportsPage({ searchParams }: PageProps<"/adm
                 <DataTable className="hidden md:block">
                   <thead>
                     <tr>
-                      <th>Fecha</th>
-                      <th>Cliente</th>
-                      <th>Método</th>
-                      <th>Tipo</th>
-                      <th>Estado</th>
-                      <th className="text-right">Total</th>
+                      <th>{t("Fecha")}</th>
+                      <th>{t("Cliente")}</th>
+                      <th>{t("Método")}</th>
+                      <th>{t("Tipo")}</th>
+                      <th>{t("Estado")}</th>
+                      <th className="text-right">{t("Total")}</th>
                     </tr>
                   </thead>
                   <tbody>
                     {sales.orders.slice(0, PREVIEW_ROWS).map((order) => (
                       <tr key={order.id}>
-                        <td className="text-muted-foreground">{formatDate(order.createdAt)}</td>
+                        <td className="text-muted-foreground">
+                          {formatDate(order.createdAt, locale)}
+                        </td>
                         <td>
                           <Link
                             href={`/admin/pedidos/${order.id}`}
@@ -459,11 +488,16 @@ export default async function AdminReportsPage({ searchParams }: PageProps<"/adm
                           </Link>
                         </td>
                         <td className="text-muted-foreground">
-                          {paymentMethodLabel(order.paymentMethod)}
+                          {t(paymentMethodLabel(order.paymentMethod))}
                         </td>
-                        <td className="text-muted-foreground">{TIER_LABELS[order.pricingTier]}</td>
+                        <td className="text-muted-foreground">
+                          {t(TIER_LABELS[order.pricingTier])}
+                        </td>
                         <td>
-                          <OrderStatusBadge status={order.status} />
+                          <OrderStatusBadge
+                            status={order.status}
+                            label={t(ORDER_STATUS_LABELS[order.status])}
+                          />
                         </td>
                         <td className="text-right font-medium tabular-nums text-foreground">
                           {formatCurrency(order.total)}
@@ -483,24 +517,24 @@ export default async function AdminReportsPage({ searchParams }: PageProps<"/adm
           <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
             <Kpi
               featured
-              label="Valor del inventario"
+              label={t("Valor del inventario")}
               value={formatCurrency(inventory.summary.value)}
-              hint="A precio mayorista"
+              hint={t("A precio mayorista")}
             />
             <Kpi
-              label="Unidades en stock"
+              label={t("Unidades en stock")}
               value={String(inventory.summary.units)}
-              hint={`${inventory.summary.variantCount} tallas`}
+              hint={t("{count} tallas", { count: inventory.summary.variantCount })}
             />
             <Kpi
-              label="Stock bajo"
+              label={t("Stock bajo")}
               value={String(inventory.summary.lowStock)}
-              hint={`${LOW_STOCK_THRESHOLD} o menos unidades`}
+              hint={t("{threshold} o menos unidades", { threshold: LOW_STOCK_THRESHOLD })}
             />
             <Kpi
-              label="Agotadas"
+              label={t("Agotadas")}
               value={String(inventory.summary.outOfStock)}
-              hint="Sin unidades"
+              hint={t("Sin unidades")}
             />
           </div>
 
@@ -510,12 +544,14 @@ export default async function AdminReportsPage({ searchParams }: PageProps<"/adm
                 key={movement.reason}
                 className="flex flex-col gap-1 rounded-2xl border border-border bg-background p-5"
               >
-                <span className="text-sm text-muted-foreground">{movement.label}</span>
+                <span className="text-sm text-muted-foreground">{t(movement.label)}</span>
                 <span className="text-2xl font-semibold tabular-nums text-foreground">
                   {movement.units > 0 ? `+${movement.units}` : movement.units}
                 </span>
                 <span className="text-xs text-muted-foreground">
-                  {movement.count} {movement.count === 1 ? "registro" : "registros"} en el período
+                  {movement.count === 1
+                    ? t("1 registro en el período")
+                    : t("{count} registros en el período", { count: movement.count })}
                 </span>
               </div>
             ))}
@@ -523,16 +559,19 @@ export default async function AdminReportsPage({ searchParams }: PageProps<"/adm
 
           <section className="flex flex-col gap-4">
             <div className="flex flex-wrap items-end justify-between gap-2">
-              <h2 className="font-display text-2xl text-foreground">Stock por talla</h2>
+              <h2 className="font-display text-2xl text-foreground">{t("Stock por talla")}</h2>
               {inventory.rows.length > PREVIEW_ROWS && (
                 <span className="text-xs text-muted-foreground">
-                  Mostrando {PREVIEW_ROWS} de {inventory.rows.length} · el PDF incluye todas
+                  {t("Mostrando {shown} de {total} · el PDF incluye todas", {
+                    shown: PREVIEW_ROWS,
+                    total: inventory.rows.length,
+                  })}
                 </span>
               )}
             </div>
             {inventory.rows.length === 0 ? (
               <p className="rounded-2xl border border-dashed border-border bg-background p-10 text-center text-sm text-muted-foreground">
-                No hay tallas con estos filtros.
+                {t("No hay tallas con estos filtros.")}
               </p>
             ) : (
               <>
@@ -542,8 +581,13 @@ export default async function AdminReportsPage({ searchParams }: PageProps<"/adm
                       key={row.id}
                       href={`/admin/inventario/${row.id}`}
                       title={row.product}
-                      badge={<StockBadge stock={row.stock} />}
-                      meta={`${row.category} · Talla ${row.size} · ${row.stock} unid.${row.active ? "" : " · inactivo"}`}
+                      badge={<StockBadge stock={row.stock} t={t} />}
+                      meta={[
+                        row.category,
+                        t("Talla {size}", { size: row.size }),
+                        t("{count} unid.", { count: row.stock }),
+                        ...(row.active ? [] : [t("inactivo")]),
+                      ].join(" · ")}
                       aside={<span className="tabular-nums">{formatCurrency(row.value)}</span>}
                     />
                   ))}
@@ -551,12 +595,12 @@ export default async function AdminReportsPage({ searchParams }: PageProps<"/adm
                 <DataTable className="hidden md:block">
                   <thead>
                     <tr>
-                      <th>Producto</th>
-                      <th>Categoría</th>
-                      <th>Talla</th>
-                      <th>Estado</th>
-                      <th className="text-right">Stock</th>
-                      <th className="text-right">Valor</th>
+                      <th>{t("Producto")}</th>
+                      <th>{t("Categoría")}</th>
+                      <th>{t("Talla")}</th>
+                      <th>{t("Estado")}</th>
+                      <th className="text-right">{t("Stock")}</th>
+                      <th className="text-right">{t("Valor")}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -568,14 +612,14 @@ export default async function AdminReportsPage({ searchParams }: PageProps<"/adm
                           </Link>
                           {!row.active && (
                             <span className="ml-2 text-xs font-normal text-muted-foreground">
-                              (inactivo)
+                              ({t("inactivo")})
                             </span>
                           )}
                         </td>
                         <td className="text-muted-foreground">{row.category}</td>
                         <td className="text-muted-foreground">{row.size}</td>
                         <td>
-                          <StockBadge stock={row.stock} />
+                          <StockBadge stock={row.stock} t={t} />
                         </td>
                         <td className="text-right tabular-nums text-foreground">{row.stock}</td>
                         <td className="text-right tabular-nums text-foreground">

@@ -348,9 +348,7 @@ export async function updateOrderStatus(orderId: string, newStatus: OrderStatus)
 
   const allowed = getAllowedNextStatuses(order.status);
   if (!allowed.includes(newStatus)) {
-    throw new OrderError(
-      `No se puede pasar un pedido de "${order.status}" a "${newStatus}".`,
-    );
+    throw new OrderError("Este pedido no admite ese cambio de estado.");
   }
 
   await prisma.$transaction(async (tx) => {

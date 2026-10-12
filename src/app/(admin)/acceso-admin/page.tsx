@@ -3,12 +3,23 @@ import Link from "next/link";
 import { ArrowLeft, LockKeyhole } from "lucide-react";
 import { AdminLoginForm } from "@/components/auth/AdminLoginForm";
 import { LogoPrincipal } from "@/components/brand/Logo";
+import { AdminLocaleProvider } from "@/components/admin/AdminLocaleProvider";
+import { LanguageSwitcher } from "@/components/layout/LanguageSwitcher";
+import { getAdminT, getLocale } from "@/lib/i18n";
 
-export const metadata: Metadata = { title: "Acceso administrativo", robots: { index: false } };
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getAdminT();
+  return { title: t("Acceso administrativo"), robots: { index: false } };
+}
 
-export default function AdminLoginPage() {
+export default async function AdminLoginPage() {
+  const [t, locale] = await Promise.all([getAdminT(), getLocale()]);
+
   return (
     <main className="relative isolate flex min-h-screen flex-col items-center justify-center overflow-hidden bg-inverse px-4 py-12 text-inverse-foreground [--logo-accent:var(--inverse-accent)]">
+      <div className="absolute right-4 top-4 sm:right-6 sm:top-6">
+        <LanguageSwitcher locale={locale} inverse />
+      </div>
       <div
         aria-hidden="true"
         className="absolute -left-40 -top-40 -z-10 h-[32rem] w-[32rem] rounded-full bg-inverse-accent/15 blur-3xl"
@@ -30,13 +41,15 @@ export default function AdminLoginPage() {
             <span className="flex h-11 w-11 items-center justify-center rounded-full bg-inverse text-inverse-accent">
               <LockKeyhole className="h-5 w-5" aria-hidden="true" />
             </span>
-            <span className="eyebrow text-accent">Panel administrativo</span>
-            <h1 className="font-display text-3xl sm:text-4xl">Acceso restringido</h1>
+            <span className="eyebrow text-accent">{t("Panel administrativo")}</span>
+            <h1 className="font-display text-3xl sm:text-4xl">{t("Acceso restringido")}</h1>
             <p className="text-sm text-muted-foreground">
-              Ingresa con tu cuenta de administrador para gestionar pedidos, catálogo e inventario.
+              {t("Ingresa con tu cuenta de administrador para gestionar pedidos, catálogo e inventario.")}
             </p>
           </div>
-          <AdminLoginForm />
+          <AdminLocaleProvider locale={locale}>
+            <AdminLoginForm />
+          </AdminLocaleProvider>
         </div>
 
         <Link
@@ -44,7 +57,7 @@ export default function AdminLoginPage() {
           className="group flex items-center gap-2 text-sm text-inverse-muted transition-colors hover:text-inverse-foreground"
         >
           <ArrowLeft className="h-4 w-4 transition-transform duration-300 group-hover:-translate-x-1" />
-          Volver a la tienda
+          {t("Volver a la tienda")}
         </Link>
       </div>
     </main>

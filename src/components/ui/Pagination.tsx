@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/Button";
+import type { AdminT } from "@/lib/admin-i18n";
 
 function PageButton({ href, children }: { href: string | null; children: React.ReactNode }) {
   const button = (
@@ -15,32 +16,34 @@ export function Pagination({
   page,
   totalPages,
   buildHref,
+  t,
 }: {
   page: number;
   totalPages: number;
   buildHref: (page: number) => string;
+  t: AdminT;
 }) {
   if (totalPages <= 1) return null;
 
   return (
     <nav
-      aria-label="Paginación"
+      aria-label={t("Paginación")}
       className="flex items-center justify-between gap-2 border-t border-border pt-4 sm:justify-end"
     >
       <PageButton href={page > 1 ? buildHref(page - 1) : null}>
         <ChevronLeft className="h-4 w-4" aria-hidden="true" />
-        Anterior
+        {t("Anterior")}
       </PageButton>
       <span className="text-sm tabular-nums text-muted-foreground sm:order-first sm:mr-auto">
         <span className="sm:hidden">
           {page} / {totalPages}
         </span>
         <span className="hidden sm:inline">
-          Página {page} de {totalPages}
+          {t("Página {page} de {totalPages}", { page, totalPages })}
         </span>
       </span>
       <PageButton href={page < totalPages ? buildHref(page + 1) : null}>
-        Siguiente
+        {t("Siguiente")}
         <ChevronRight className="h-4 w-4" aria-hidden="true" />
       </PageButton>
     </nav>

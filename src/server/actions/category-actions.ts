@@ -3,6 +3,7 @@
 import { revalidatePath, updateTag } from "next/cache";
 import { z } from "zod";
 import { requireAdmin } from "@/lib/session";
+import { getAdminT } from "@/lib/i18n";
 import {
   CategoryError,
   SHOP_CATEGORIES_TAG,
@@ -34,16 +35,17 @@ export async function createCategoryAction(
   formData: FormData,
 ): Promise<CategoryActionState> {
   await requireAdmin();
+  const t = await getAdminT();
 
   const parsed = categorySchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) {
-    return { error: parsed.error.issues[0]?.message ?? "Datos inválidos." };
+    return { error: t(parsed.error.issues[0]?.message ?? "Datos inválidos.") };
   }
 
   try {
     await createCategory(parsed.data);
   } catch (error) {
-    if (error instanceof CategoryError) return { error: error.message };
+    if (error instanceof CategoryError) return { error: t(error.message, error.vars) };
     throw error;
   }
 
@@ -61,16 +63,17 @@ export async function updateCategoryAction(
   formData: FormData,
 ): Promise<CategoryActionState> {
   await requireAdmin();
+  const t = await getAdminT();
 
   const parsed = categorySchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) {
-    return { error: parsed.error.issues[0]?.message ?? "Datos inválidos." };
+    return { error: t(parsed.error.issues[0]?.message ?? "Datos inválidos.") };
   }
 
   try {
     await updateCategory(id, parsed.data);
   } catch (error) {
-    if (error instanceof CategoryError) return { error: error.message };
+    if (error instanceof CategoryError) return { error: t(error.message, error.vars) };
     throw error;
   }
 
@@ -84,11 +87,12 @@ export async function deleteCategoryAction(
   _prevState: CategoryActionState,
 ): Promise<CategoryActionState> {
   await requireAdmin();
+  const t = await getAdminT();
 
   try {
     await deleteCategory(id);
   } catch (error) {
-    if (error instanceof CategoryError) return { error: error.message };
+    if (error instanceof CategoryError) return { error: t(error.message, error.vars) };
     throw error;
   }
 

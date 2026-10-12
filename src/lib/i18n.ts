@@ -1,6 +1,7 @@
 import { cache } from "react";
 import { cookies } from "next/headers";
 import { translate } from "@/server/services/translation-service";
+import { adminTranslator } from "@/lib/admin-i18n";
 
 export const LOCALE_COOKIE_NAME = "glamluxe_locale";
 export type Locale = "es" | "en";
@@ -31,3 +32,6 @@ export async function tMany<T extends Record<string, string>>(texts: T): Promise
   );
   return Object.fromEntries(entries) as T;
 }
+
+// Panel admin: diccionario fijo (src/i18n/admin.en.json), no traducción por LLM.
+export const getAdminT = cache(async () => adminTranslator(await getLocale()));

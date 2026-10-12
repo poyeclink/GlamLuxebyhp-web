@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Checkbox } from "@/components/ui/Checkbox";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
+import { useAdminT } from "@/components/admin/AdminLocaleProvider";
 
 // Mismo vocabulario que LETTER_SIZE_ORDER (product-service.ts) — duplicado a
 // propósito en vez de importarlo: ese archivo trae `prisma`, y este es un
@@ -13,6 +14,7 @@ const PRESET_SIZES = ["XS", "S", "M", "L", "XL", "XXL", "XXXL"];
 type CustomRow = { id: string; size: string; stock: string };
 
 export function VariantSelector() {
+  const t = useAdminT();
   const [presetStock, setPresetStock] = useState<Record<string, string>>({});
   const [customRows, setCustomRows] = useState<CustomRow[]>([]);
 
@@ -58,7 +60,7 @@ export function VariantSelector() {
               <input type="hidden" name="variantSize" value={size} />
               <span className="w-10 text-sm font-medium text-foreground">{size}</span>
               <Input
-                aria-label={`Stock de ${size}`}
+                aria-label={t("Stock de {size}", { size })}
                 name="variantStock"
                 type="number"
                 inputMode="numeric"
@@ -70,7 +72,7 @@ export function VariantSelector() {
                 className="w-28 sm:w-24"
                 required
               />
-              <span className="text-xs text-muted-foreground">en stock</span>
+              <span className="text-xs text-muted-foreground">{t("en stock")}</span>
             </div>
           ))}
         </div>
@@ -81,10 +83,10 @@ export function VariantSelector() {
           <div key={row.id} className="flex items-center gap-2">
             <Input
               name="variantSize"
-              placeholder="Talla (ej. 38)"
+              placeholder={t("Talla (ej. 38)")}
               value={row.size}
               onChange={(event) => updateCustomRow(row.id, { size: event.target.value })}
-              aria-label="Talla"
+              aria-label={t("Talla")}
               className="min-w-0 flex-1 sm:w-32 sm:flex-none"
               required
             />
@@ -94,7 +96,7 @@ export function VariantSelector() {
               inputMode="numeric"
               min="0"
               value={row.stock}
-              aria-label="Stock"
+              aria-label={t("Stock")}
               onChange={(event) => updateCustomRow(row.id, { stock: event.target.value })}
               className="w-24 shrink-0"
               required
@@ -105,7 +107,7 @@ export function VariantSelector() {
               size="sm"
               className="w-10 shrink-0 px-0 sm:w-8"
               onClick={() => removeCustomRow(row.id)}
-              aria-label={`Quitar talla ${row.size || "personalizada"}`}
+              aria-label={row.size ? t("Quitar talla {size}", { size: row.size }) : t("Quitar talla personalizada")}
             >
               <span
                 className="material-symbols-outlined text-[18px] leading-none"
@@ -124,7 +126,7 @@ export function VariantSelector() {
           className="w-full sm:w-fit"
           onClick={addCustomRow}
         >
-          Agregar talla personalizada
+          {t("Agregar talla personalizada")}
         </Button>
       </div>
     </div>

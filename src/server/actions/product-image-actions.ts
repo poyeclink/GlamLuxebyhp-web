@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { requireAdmin } from "@/lib/session";
+import { getAdminT } from "@/lib/i18n";
 import {
   ProductImageError,
   addProductImage,
@@ -20,16 +21,17 @@ export async function uploadProductImageAction(
   formData: FormData,
 ): Promise<ProductImageActionState> {
   await requireAdmin();
+  const t = await getAdminT();
 
   const file = formData.get("file");
   if (!(file instanceof File) || file.size === 0) {
-    return { error: "Selecciona una imagen." };
+    return { error: t("Selecciona una imagen.") };
   }
 
   try {
     await addProductImage(productId, file);
   } catch (error) {
-    if (error instanceof ProductImageError) return { error: error.message };
+    if (error instanceof ProductImageError) return { error: t(error.message) };
     throw error;
   }
 
@@ -44,16 +46,17 @@ export async function replaceProductImageAction(
   formData: FormData,
 ): Promise<ProductImageActionState> {
   await requireAdmin();
+  const t = await getAdminT();
 
   const file = formData.get("file");
   if (!(file instanceof File) || file.size === 0) {
-    return { error: "Selecciona una imagen." };
+    return { error: t("Selecciona una imagen.") };
   }
 
   try {
     await replaceProductImage(imageId, file);
   } catch (error) {
-    if (error instanceof ProductImageError) return { error: error.message };
+    if (error instanceof ProductImageError) return { error: t(error.message) };
     throw error;
   }
 

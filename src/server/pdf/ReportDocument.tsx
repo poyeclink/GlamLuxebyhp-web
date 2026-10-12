@@ -2,11 +2,13 @@ import fs from "node:fs";
 import path from "node:path";
 import { Document, Page, Path, StyleSheet, Svg, Text, View } from "@react-pdf/renderer";
 import type { InventoryReport, ReportFilters, SalesReport } from "@/server/services/report-service";
-import { TIER_LABELS, formatReportDay, paymentMethodLabel } from "@/server/services/report-service";
+import { NO_CATEGORY, TIER_LABELS, formatReportDay, paymentMethodLabel } from "@/server/services/report-service";
 import { ORDER_STATUS_LABELS } from "@/server/services/order-service";
 import { LOW_STOCK_THRESHOLD } from "@/server/services/inventory-service";
 import { SITE_NAME } from "@/lib/site";
 import { formatCurrency, formatDate } from "@/lib/utils";
+import type { AdminT } from "@/lib/admin-i18n";
+import type { Locale } from "@/lib/i18n";
 
 // El PDF no ve las variables CSS del sitio: la paleta de marca va literal,
 // igual que en la imagen OG (pieza de marca fija, ver CLAUDE.md).
@@ -183,52 +185,63 @@ function Kpi({
 
 type Bucket = SalesReport["summary"]["byMethod"][number];
 
-const bucketColumns = (first: string, countLabel = "Pedidos"): Column<Bucket>[] => [
-  { label: first, width: "50%", render: (row) => row.label },
+const bucketColumns = (
+  t: AdminT,
+  first: string,
+  countLabel = t("Pedidos"),
+  label: (row: Bucket) => string = (row) => t(row.label),
+): Column<Bucket>[] => [
+  { label: first, width: "50%", render: label },
   { label: countLabel, width: "20%", align: "right", render: (row) => String(row.count) },
-  { label: "Monto", width: "30%", align: "right", render: (row) => formatCurrency(row.amount) },
+  { label: t("Monto"), width: "30%", align: "right", render: (row) => formatCurrency(row.amount) },
 ];
 
-function SalesBody({ report }: { report: SalesReport }) {
+type BodyProps<R> = { report: R; t: AdminT; locale: Locale };
+
+function SalesBody({ report, t, locale }: BodyProps<SalesReport>) {
   const { summary, orders } = report;
   return (
     <>
       <View style={styles.kpis}>
         <Kpi
           featured
-          label="Ventas cobradas"
+          label={t("Ventas cobradas")}
           value={formatCurrency(summary.paidRevenue)}
-          hint={`${summary.paidCount} pedidos confirmados/enviados`}
+          hint={t("{count} pedidos confirmados/enviados", { count: summary.paidCount })}
         />
         <Kpi
-          label="Ticket promedio"
+          label={t("Ticket promedio")}
           value={formatCurrency(summary.averageTicket)}
-          hint="Sobre ventas cobradas"
+          hint={t("Sobre ventas cobradas")}
         />
         <Kpi
-          label="Pendiente de pago"
+          label={t("Pendiente de pago")}
           value={formatCurrency(summary.pendingRevenue)}
-          hint="Pedidos con pago pendiente"
+          hint={t("Pedidos con pago pendiente")}
         />
         <Kpi
-          label="Unidades vendidas"
+          label={t("Unidades vendidas")}
           value={String(summary.unitsSold)}
-          hint={`${summary.orderCount} pedidos en el período`}
+          hint={t("{count} pedidos en el período", { count: summary.orderCount })}
         />
       </View>
 
       <View style={styles.section} wrap={false}>
         <View style={styles.columns}>
           <View style={styles.column}>
-            <Text style={styles.sectionTitle}>Pedidos por estado</Text>
-            <Table columns={bucketColumns("Estado")} rows={summary.byStatus} empty="Sin pedidos." />
+            <Text style={styles.sectionTitle}>{t("Pedidos por estado")}</Text>
+            <Table
+              columns={bucketColumns(t, t("Estado"))}
+              rows={summary.byStatus}
+              empty={t("Sin pedidos.")}
+            />
           </View>
           <View style={styles.column}>
-            <Text style={styles.sectionTitle}>Métodos de pago</Text>
+            <Text style={styles.sectionTitle}>{t("Métodos de pago")}</Text>
             <Table
-              columns={bucketColumns("Método")}
+              columns={bucketColumns(t, t("Método"))}
               rows={summary.byMethod}
-              empty="Sin ventas cobradas."
+              empty={t("Sin ventas cobradas.")}
             />
           </View>
         </View>
@@ -237,47 +250,49 @@ function SalesBody({ report }: { report: SalesReport }) {
       <View style={styles.section} wrap={false}>
         <View style={styles.columns}>
           <View style={styles.column}>
-            <Text style={styles.sectionTitle}>Productos más vendidos</Text>
+            <Text style={styles.sectionTitle}>{t("Productos más vendidos")}</Text>
             <Table
-              columns={bucketColumns("Producto", "Unidades")}
+              columns={bucketColumns(t, t("Producto"), t("Unidades"), (row) => row.label)}
               rows={summary.topProducts}
-              empty="Sin ventas cobradas."
+              empty={t("Sin ventas cobradas.")}
             />
           </View>
           <View style={styles.column}>
-            <Text style={styles.sectionTitle}>Ventas por categoría</Text>
+            <Text style={styles.sectionTitle}>{t("Ventas por categoría")}</Text>
             <Table
-              columns={bucketColumns("Categoría", "Unidades")}
+              columns={bucketColumns(t, t("Categoría"), t("Unidades"), (row) =>
+                row.label === NO_CATEGORY ? t(row.label) : row.label,
+              )}
               rows={summary.byCategory}
-              empty="Sin ventas cobradas."
+              empty={t("Sin ventas cobradas.")}
             />
-            <Text style={[styles.sectionTitle, { marginTop: 14 }]}>Tipo de precio</Text>
+            <Text style={[styles.sectionTitle, { marginTop: 14 }]}>{t("Tipo de precio")}</Text>
             <Table
-              columns={bucketColumns("Tipo")}
+              columns={bucketColumns(t, t("Tipo"))}
               rows={summary.byTier}
-              empty="Sin ventas cobradas."
+              empty={t("Sin ventas cobradas.")}
             />
           </View>
         </View>
       </View>
 
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Detalle de pedidos</Text>
+        <Text style={styles.sectionTitle}>{t("Detalle de pedidos")}</Text>
         <Table
           columns={[
-            { label: "Fecha", width: "12%", render: (row) => formatDate(row.createdAt) },
-            { label: "Pedido", width: "11%", render: (row) => `#${row.id.slice(0, 8)}` },
-            { label: "Cliente", width: "23%", render: (row) => row.fullName },
+            { label: t("Fecha"), width: "12%", render: (row) => formatDate(row.createdAt, locale) },
+            { label: t("Pedido"), width: "11%", render: (row) => `#${row.id.slice(0, 8)}` },
+            { label: t("Cliente"), width: "23%", render: (row) => row.fullName },
             {
-              label: "Método",
+              label: t("Método"),
               width: "11%",
-              render: (row) => paymentMethodLabel(row.paymentMethod),
+              render: (row) => t(paymentMethodLabel(row.paymentMethod)),
             },
-            { label: "Tipo", width: "11%", render: (row) => TIER_LABELS[row.pricingTier] },
+            { label: t("Tipo"), width: "11%", render: (row) => t(TIER_LABELS[row.pricingTier]) },
             {
-              label: "Estado",
+              label: t("Estado"),
               width: "12%",
-              render: (row) => ORDER_STATUS_LABELS[row.status],
+              render: (row) => t(ORDER_STATUS_LABELS[row.status]),
               color: (row) =>
                 row.status === "cancelado" || row.status === "vencido"
                   ? BRAND.danger
@@ -285,89 +300,94 @@ function SalesBody({ report }: { report: SalesReport }) {
                     ? BRAND.zafiro
                     : undefined,
             },
-            { label: "Art.", width: "7%", align: "right", render: (row) => String(row.itemCount) },
+            { label: t("Art."), width: "7%", align: "right", render: (row) => String(row.itemCount) },
             {
-              label: "Total",
+              label: t("Total"),
               width: "13%",
               align: "right",
               render: (row) => formatCurrency(row.total),
             },
           ]}
           rows={orders}
-          empty="No hay pedidos con estos filtros."
+          empty={t("No hay pedidos con estos filtros.")}
         />
         <Text style={styles.note}>
-          Ventas cobradas = pedidos confirmados o enviados. En pedidos mayoristas el total no
-          incluye envío (se coordina aparte).
+          {t(
+            "Ventas cobradas = pedidos confirmados o enviados. En pedidos mayoristas el total no incluye envío (se coordina aparte).",
+          )}
         </Text>
       </View>
     </>
   );
 }
 
-function InventoryBody({ report }: { report: InventoryReport }) {
+function InventoryBody({ report, t }: BodyProps<InventoryReport>) {
   const { summary, rows } = report;
   return (
     <>
       <View style={styles.kpis}>
         <Kpi
           featured
-          label="Valor del inventario"
+          label={t("Valor del inventario")}
           value={formatCurrency(summary.value)}
-          hint="A precio mayorista"
+          hint={t("A precio mayorista")}
         />
         <Kpi
-          label="Unidades en stock"
+          label={t("Unidades en stock")}
           value={String(summary.units)}
-          hint={`${summary.variantCount} tallas`}
+          hint={t("{count} tallas", { count: summary.variantCount })}
         />
         <Kpi
-          label="Stock bajo"
+          label={t("Stock bajo")}
           value={String(summary.lowStock)}
-          hint={`${LOW_STOCK_THRESHOLD} o menos unidades`}
+          hint={t("{threshold} o menos unidades", { threshold: LOW_STOCK_THRESHOLD })}
         />
-        <Kpi label="Agotadas" value={String(summary.outOfStock)} hint="Sin unidades" />
+        <Kpi
+          label={t("Agotadas")}
+          value={String(summary.outOfStock)}
+          hint={t("Sin unidades")}
+        />
       </View>
 
       <View style={styles.section} wrap={false}>
-        <Text style={styles.sectionTitle}>Movimientos en el período</Text>
+        <Text style={styles.sectionTitle}>{t("Movimientos en el período")}</Text>
         <Table
           columns={[
-            { label: "Tipo de movimiento", width: "50%", render: (row) => row.label },
+            { label: t("Tipo de movimiento"), width: "50%", render: (row) => t(row.label) },
             {
-              label: "Registros",
+              label: t("Registros"),
               width: "20%",
               align: "right",
               render: (row) => String(row.count),
             },
             {
-              label: "Unidades",
+              label: t("Unidades"),
               width: "30%",
               align: "right",
               render: (row) => (row.units > 0 ? `+${row.units}` : String(row.units)),
             },
           ]}
           rows={summary.movements}
-          empty="Sin movimientos."
+          empty={t("Sin movimientos.")}
         />
       </View>
 
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Stock por talla</Text>
+        <Text style={styles.sectionTitle}>{t("Stock por talla")}</Text>
         <Table
           columns={[
             {
-              label: "Producto",
+              label: t("Producto"),
               width: "34%",
-              render: (row) => (row.active ? row.product : `${row.product} (inactivo)`),
+              render: (row) => (row.active ? row.product : `${row.product} (${t("inactivo")})`),
             },
-            { label: "Categoría", width: "20%", render: (row) => row.category },
-            { label: "Talla", width: "10%", render: (row) => row.size },
+            { label: t("Categoría"), width: "20%", render: (row) => row.category },
+            { label: t("Talla"), width: "10%", render: (row) => row.size },
             {
-              label: "Estado",
+              label: t("Estado"),
               width: "12%",
               render: (row) =>
-                row.stock === 0 ? "Agotado" : row.stock <= LOW_STOCK_THRESHOLD ? "Bajo" : "OK",
+                t(row.stock === 0 ? "Agotado" : row.stock <= LOW_STOCK_THRESHOLD ? "Bajo" : "OK"),
               color: (row) =>
                 row.stock === 0
                   ? BRAND.danger
@@ -375,20 +395,21 @@ function InventoryBody({ report }: { report: InventoryReport }) {
                     ? BRAND.zafiro
                     : undefined,
             },
-            { label: "Stock", width: "10%", align: "right", render: (row) => String(row.stock) },
+            { label: t("Stock"), width: "10%", align: "right", render: (row) => String(row.stock) },
             {
-              label: "Valor",
+              label: t("Valor"),
               width: "14%",
               align: "right",
               render: (row) => formatCurrency(row.value),
             },
           ]}
           rows={rows}
-          empty="No hay tallas con estos filtros."
+          empty={t("No hay tallas con estos filtros.")}
         />
         <Text style={styles.note}>
-          Solo productos con tallas llevan control de stock. El valor usa el precio mayorista
-          actual.
+          {t(
+            "Solo productos con tallas llevan control de stock. El valor usa el precio mayorista actual.",
+          )}
         </Text>
       </View>
     </>
@@ -401,22 +422,26 @@ export function ReportDocument({
   generatedBy,
   sales,
   inventory,
+  t,
+  locale,
 }: {
   filters: ReportFilters;
   filterLabels: string[];
   generatedBy: string;
   sales?: SalesReport;
   inventory?: InventoryReport;
+  t: AdminT;
+  locale: Locale;
 }) {
-  const title = filters.type === "ventas" ? "Reporte de ventas" : "Reporte de inventario";
-  const period = `${formatReportDay(filters.from)} – ${formatReportDay(filters.to)}`;
+  const title = t(filters.type === "ventas" ? "Reporte de ventas" : "Reporte de inventario");
+  const period = `${formatReportDay(filters.from, locale)} – ${formatReportDay(filters.to, locale)}`;
 
   return (
     <Document
       title={`${title} · ${SITE_NAME}`}
       author={SITE_NAME}
       creator={SITE_NAME}
-      language="es"
+      language={locale}
     >
       <Page size="A4" style={styles.page}>
         <View style={styles.header}>
@@ -434,11 +459,14 @@ export function ReportDocument({
             ))}
           </Svg>
           <View style={styles.headerRight}>
-            <Text style={styles.eyebrow}>Panel administrativo</Text>
+            <Text style={styles.eyebrow}>{t("Panel administrativo")}</Text>
             <Text style={styles.title}>{title}</Text>
-            <Text style={styles.headerMeta}>Período: {period}</Text>
+            <Text style={styles.headerMeta}>{t("Período: {period}", { period })}</Text>
             <Text style={styles.headerMeta}>
-              Generado el {formatDate(new Date())} por {generatedBy}
+              {t("Generado el {date} por {name}", {
+                date: formatDate(new Date(), locale),
+                name: generatedBy,
+              })}
             </Text>
           </View>
         </View>
@@ -451,12 +479,18 @@ export function ReportDocument({
           ))}
         </View>
 
-        {sales && <SalesBody report={sales} />}
-        {inventory && <InventoryBody report={inventory} />}
+        {sales && <SalesBody report={sales} t={t} locale={locale} />}
+        {inventory && <InventoryBody report={inventory} t={t} locale={locale} />}
 
         <View style={styles.footer} fixed>
-          <Text>{SITE_NAME} · Documento interno, uso confidencial</Text>
-          <Text render={({ pageNumber, totalPages }) => `Página ${pageNumber} de ${totalPages}`} />
+          <Text>
+            {SITE_NAME} · {t("Documento interno, uso confidencial")}
+          </Text>
+          <Text
+            render={({ pageNumber, totalPages }) =>
+              t("Página {page} de {totalPages}", { page: pageNumber, totalPages })
+            }
+          />
         </View>
       </Page>
     </Document>

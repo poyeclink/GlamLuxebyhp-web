@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { after } from "next/server";
 import { z } from "zod";
 import { requireAdmin } from "@/lib/session";
+import { getAdminT } from "@/lib/i18n";
 import {
   OrderError,
   getOrderForAdmin,
@@ -17,7 +18,9 @@ export type OrderActionState = {
 };
 
 const statusSchema = z.object({
-  status: z.enum(["reservado", "confirmado", "enviado", "cancelado", "vencido"]),
+  status: z.enum(["reservado", "confirmado", "enviado", "cancelado", "vencido"], {
+    error: "Estado inválido.",
+  }),
 });
 
 export async function updateOrderStatusAction(
@@ -26,10 +29,11 @@ export async function updateOrderStatusAction(
   formData: FormData,
 ): Promise<OrderActionState> {
   await requireAdmin();
+  const t = await getAdminT();
 
   const parsed = statusSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) {
-    return { error: parsed.error.issues[0]?.message ?? "Datos inválidos." };
+    return { error: t(parsed.error.issues[0]?.message ?? "Datos inválidos.") };
   }
 
   try {
@@ -45,7 +49,7 @@ export async function updateOrderStatusAction(
     await updateOrderStatus(orderId, parsed.data.status);
     after(() => sendOrderStatusEmail(orderId));
   } catch (error) {
-    if (error instanceof OrderError) return { error: error.message };
+    if (error instanceof OrderError) return { error: t(error.message) };
     throw error;
   }
 

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { listOrdersForAdmin } from "@/server/services/order-service";
+import { ORDER_STATUS_LABELS, listOrdersForAdmin } from "@/server/services/order-service";
 import { DataTable } from "@/components/ui/DataTable";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { AdminCardList, AdminListCard } from "@/components/admin/AdminListCard";
@@ -8,6 +8,7 @@ import { SearchInput } from "@/components/ui/SearchInput";
 import { Pagination } from "@/components/ui/Pagination";
 import { paymentMethodLabel } from "@/server/services/report-service";
 import { ADMIN_PAGE_SIZE, filterPillClass, formatCurrency, formatDate } from "@/lib/utils";
+import { getAdminT, getLocale } from "@/lib/i18n";
 import type { OrderStatus } from "@/generated/prisma/client";
 
 const STATUS_FILTERS: { value: OrderStatus; label: string }[] = [
@@ -20,6 +21,7 @@ const STATUS_FILTERS: { value: OrderStatus; label: string }[] = [
 
 export default async function AdminOrdersPage({ searchParams }: PageProps<"/admin/pedidos">) {
   const { estado, q, page: pageParam } = await searchParams;
+  const [t, locale] = await Promise.all([getAdminT(), getLocale()]);
   // typeof === "string": searchParams puede traer un array (?estado=a&estado=b);
   // mismo cuidado que TiendaPage con `categoria`.
   const rawStatus = typeof estado === "string" ? estado : undefined;
@@ -46,15 +48,23 @@ export default async function AdminOrdersPage({ searchParams }: PageProps<"/admi
   return (
     <div className="mx-auto flex max-w-6xl flex-col gap-8 px-4 py-10 sm:px-8 lg:py-12">
       <AdminPageHeader
-        eyebrow="Ventas"
-        title="Pedidos"
-        description={`${total} ${total === 1 ? "pedido" : "pedidos"} ${isFiltering ? "con este filtro" : "en total"}.`}
+        eyebrow={t("Ventas")}
+        title={t("Pedidos")}
+        description={
+          isFiltering
+            ? total === 1
+              ? t("1 pedido con este filtro.")
+              : t("{count} pedidos con este filtro.", { count: total })
+            : total === 1
+              ? t("1 pedido en total.")
+              : t("{count} pedidos en total.", { count: total })
+        }
       />
 
       <div className="flex flex-col gap-4">
         <SearchInput
           action="/admin/pedidos"
-          placeholder="Buscar por cliente..."
+          placeholder={t("Buscar por cliente...")}
           defaultValue={search}
           hiddenParams={rawStatus ? { estado: rawStatus } : undefined}
         />
@@ -64,7 +74,7 @@ export default async function AdminOrdersPage({ searchParams }: PageProps<"/admi
             href={`/admin/pedidos${searchQueryString ? `?${searchQueryString}` : ""}`}
             className={filterPillClass(!isFiltering)}
           >
-            Todos
+            {t("Todos")}
           </Link>
           {STATUS_FILTERS.map((option) => (
             <Link
@@ -72,7 +82,7 @@ export default async function AdminOrdersPage({ searchParams }: PageProps<"/admi
               href={`/admin/pedidos?estado=${option.value}${searchQueryString ? `&${searchQueryString}` : ""}`}
               className={filterPillClass(statusFilter === option.value)}
             >
-              {option.label}
+              {t(option.label)}
             </Link>
           ))}
         </div>
@@ -81,10 +91,10 @@ export default async function AdminOrdersPage({ searchParams }: PageProps<"/admi
       {orders.length === 0 ? (
         <p className="rounded-2xl border border-dashed border-border bg-background p-10 text-center text-sm text-muted-foreground">
           {isFiltering && !matchedFilter
-            ? "No reconocemos ese filtro de estado."
+            ? t("No reconocemos ese filtro de estado.")
             : search
-              ? `No encontramos pedidos para "${search}".`
-              : "No hay pedidos con ese filtro."}
+              ? t('No encontramos pedidos para "{search}".', { search })
+              : t("No hay pedidos con ese filtro.")}
         </p>
       ) : (
         <>
@@ -94,8 +104,13 @@ export default async function AdminOrdersPage({ searchParams }: PageProps<"/admi
                 key={order.id}
                 href={`/admin/pedidos/${order.id}`}
                 title={order.fullName}
-                badge={<OrderStatusBadge status={order.status} />}
-                meta={`${formatDate(order.createdAt)} · ${paymentMethodLabel(order.paymentMethod)}`}
+                badge={
+                  <OrderStatusBadge
+                    status={order.status}
+                    label={t(ORDER_STATUS_LABELS[order.status])}
+                  />
+                }
+                meta={`${formatDate(order.createdAt, locale)} · ${t(paymentMethodLabel(order.paymentMethod))}`}
                 aside={formatCurrency(Number(order.total))}
               />
             ))}
@@ -103,11 +118,11 @@ export default async function AdminOrdersPage({ searchParams }: PageProps<"/admi
           <DataTable className="hidden md:block">
             <thead>
               <tr>
-                <th>Cliente</th>
-                <th>Fecha</th>
-                <th>Método de pago</th>
-                <th>Total</th>
-                <th>Estado</th>
+                <th>{t("Cliente")}</th>
+                <th>{t("Fecha")}</th>
+                <th>{t("Método de pago")}</th>
+                <th>{t("Total")}</th>
+                <th>{t("Estado")}</th>
                 <th />
               </tr>
             </thead>
@@ -115,20 +130,23 @@ export default async function AdminOrdersPage({ searchParams }: PageProps<"/admi
               {orders.map((order) => (
                 <tr key={order.id}>
                   <td className="font-medium text-foreground">{order.fullName}</td>
-                  <td className="text-muted-foreground">{formatDate(order.createdAt)}</td>
+                  <td className="text-muted-foreground">{formatDate(order.createdAt, locale)}</td>
                   <td className="text-muted-foreground">
-                    {paymentMethodLabel(order.paymentMethod)}
+                    {t(paymentMethodLabel(order.paymentMethod))}
                   </td>
                   <td className="text-foreground">{formatCurrency(Number(order.total))}</td>
                   <td>
-                    <OrderStatusBadge status={order.status} />
+                    <OrderStatusBadge
+                      status={order.status}
+                      label={t(ORDER_STATUS_LABELS[order.status])}
+                    />
                   </td>
                   <td className="text-right">
                     <Link
                       href={`/admin/pedidos/${order.id}`}
                       className="text-sm font-medium text-accent hover:underline"
                     >
-                      Ver detalle
+                      {t("Ver detalle")}
                     </Link>
                   </td>
                 </tr>
@@ -139,6 +157,7 @@ export default async function AdminOrdersPage({ searchParams }: PageProps<"/admi
       )}
 
       <Pagination
+        t={t}
         page={page}
         totalPages={totalPages}
         buildHref={(target) =>

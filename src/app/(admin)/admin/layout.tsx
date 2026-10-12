@@ -5,18 +5,25 @@ import { LogoHorizontal } from "@/components/brand/Logo";
 import { AdminMobileNav } from "@/components/admin/AdminMobileNav";
 import { AdminUserCard } from "@/components/admin/AdminUserCard";
 import { getSession } from "@/lib/session";
+import { getAdminT, getLocale } from "@/lib/i18n";
+import { LanguageSwitcher } from "@/components/layout/LanguageSwitcher";
+import { AdminLocaleProvider } from "@/components/admin/AdminLocaleProvider";
 
-export const metadata: Metadata = {
-  title: { default: "Panel administrativo", template: "%s | Admin · Glam Luxe by HJ" },
-  robots: { index: false },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getAdminT();
+  return {
+    title: { default: t("Panel administrativo"), template: "%s | Admin · Glam Luxe by HJ" },
+    robots: { index: false },
+  };
+}
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
-  const session = await getSession();
-  const userCard = <AdminUserCard name={session?.name ?? "Administrador"} />;
+  const [session, locale, t] = await Promise.all([getSession(), getLocale(), getAdminT()]);
+  const userCard = <AdminUserCard name={session?.name ?? t("Administrador")} />;
+  const languageSwitcher = <LanguageSwitcher locale={locale} inverse />;
 
   return (
-    <>
+    <AdminLocaleProvider locale={locale}>
       {/* Google Fonts hospeda Material Symbols; Next.js "hoistea" cualquier
           <link> renderizado en el árbol hacia el <head>, así que puede vivir
           aquí (único consumidor) en vez de en el layout raíz. */}
@@ -28,23 +35,26 @@ export default async function AdminLayout({ children }: { children: React.ReactN
       <div className="flex min-h-full flex-1 flex-col bg-muted/50 md:flex-row">
         <aside className="hidden shrink-0 flex-col bg-inverse text-inverse-foreground [--logo-accent:var(--inverse-accent)] md:sticky md:top-0 md:flex md:h-screen md:w-68">
           <div className="flex flex-col gap-2 px-6 pb-6 pt-8">
-            <Link href="/admin" aria-label="Panel admin" className="w-fit">
+            <Link href="/admin" aria-label={t("Panel admin")} className="w-fit">
               <LogoHorizontal className="h-auto w-full max-w-52" title="" />
             </Link>
-            <span className="eyebrow text-inverse-muted">Panel administrativo</span>
+            <div className="flex items-center justify-between gap-3">
+              <span className="eyebrow text-inverse-muted">{t("Panel administrativo")}</span>
+              {languageSwitcher}
+            </div>
           </div>
           <nav className="flex flex-1 flex-col gap-1 overflow-y-auto px-3 py-2">
-            <span className="eyebrow px-3 pb-2 text-[0.625rem] text-inverse-muted/70">Gestión</span>
+            <span className="eyebrow px-3 pb-2 text-[0.625rem] text-inverse-muted/70">{t("Gestión")}</span>
             <AdminNavLinks />
           </nav>
           <div className="p-3">{userCard}</div>
         </aside>
 
         <div className="flex min-w-0 flex-1 flex-col pb-[calc(4rem+env(safe-area-inset-bottom))] md:pb-0">
-          <AdminMobileNav userCard={userCard} />
+          <AdminMobileNav userCard={userCard} languageSwitcher={languageSwitcher} />
           <main className="flex-1">{children}</main>
         </div>
       </div>
-    </>
+    </AdminLocaleProvider>
   );
 }

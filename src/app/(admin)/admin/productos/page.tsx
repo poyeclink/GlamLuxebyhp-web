@@ -14,17 +14,20 @@ import { AdminCardList, AdminListCard } from "@/components/admin/AdminListCard";
 import { Isotipo } from "@/components/brand/Logo";
 import { r2PublicUrl } from "@/lib/r2";
 import { ADMIN_PAGE_SIZE, formatCurrency } from "@/lib/utils";
+import { getAdminT } from "@/lib/i18n";
+import type { AdminT } from "@/lib/admin-i18n";
 
-function StatusBadge({ active }: { active: boolean }) {
+function StatusBadge({ active, t }: { active: boolean; t: AdminT }) {
   return active ? (
-    <Badge variant="accent">Activo</Badge>
+    <Badge variant="accent">{t("Activo")}</Badge>
   ) : (
-    <Badge variant="outline">Inactivo</Badge>
+    <Badge variant="outline">{t("Inactivo")}</Badge>
   );
 }
 
 export default async function AdminProductsPage({ searchParams }: PageProps<"/admin/productos">) {
   const { q, page: pageParam } = await searchParams;
+  const t = await getAdminT();
   const search = typeof q === "string" && q.trim() !== "" ? q.trim() : undefined;
   const page = Math.max(Number(typeof pageParam === "string" ? pageParam : "1") || 1, 1);
 
@@ -34,14 +37,18 @@ export default async function AdminProductsPage({ searchParams }: PageProps<"/ad
   return (
     <div className="mx-auto flex max-w-6xl flex-col gap-8 px-4 py-10 sm:px-8 lg:py-12">
       <AdminPageHeader
-        eyebrow="Catálogo"
-        title="Productos"
-        description={`${total} ${total === 1 ? "producto" : "productos"} en el catálogo.`}
+        eyebrow={t("Catálogo")}
+        title={t("Productos")}
+        description={
+          total === 1
+            ? t("1 producto en el catálogo.")
+            : t("{count} productos en el catálogo.", { count: total })
+        }
         action={
           <Link href="/admin/productos/nuevo">
             <Button>
               <Plus className="h-4 w-4" aria-hidden="true" />
-              Nuevo producto
+              {t("Nuevo producto")}
             </Button>
           </Link>
         }
@@ -49,13 +56,15 @@ export default async function AdminProductsPage({ searchParams }: PageProps<"/ad
 
       <SearchInput
         action="/admin/productos"
-        placeholder="Buscar por nombre..."
+        placeholder={t("Buscar por nombre...")}
         defaultValue={search}
       />
 
       {products.length === 0 ? (
         <p className="rounded-2xl border border-dashed border-border bg-background p-10 text-center text-sm text-muted-foreground">
-          {search ? `No encontramos productos para "${search}".` : "Todavía no hay productos."}
+          {search
+            ? t('No encontramos productos para "{search}".', { search })
+            : t("Todavía no hay productos.")}
         </p>
       ) : (
         <>
@@ -68,13 +77,13 @@ export default async function AdminProductsPage({ searchParams }: PageProps<"/ad
                   key={product.id}
                   href={editHref}
                   title={product.name}
-                  badge={<StatusBadge active={product.active} />}
+                  badge={<StatusBadge active={product.active} t={t} />}
                   meta={categoryLabel(product.category)}
                   aside={
                     <div className="flex flex-col items-end leading-tight">
                       <span>{formatCurrency(Number(product.individualPrice))}</span>
                       <span className="text-xs font-normal text-accent">
-                        {formatCurrency(Number(product.wholesalePrice))} mayorista
+                        {t("{price} mayorista", { price: formatCurrency(Number(product.wholesalePrice)) })}
                       </span>
                     </div>
                   }
@@ -100,7 +109,7 @@ export default async function AdminProductsPage({ searchParams }: PageProps<"/ad
                     <>
                       <Link href={editHref}>
                         <Button variant="outline" size="sm">
-                          Editar
+                          {t("Editar")}
                         </Button>
                       </Link>
                       <DeleteProductButton productId={product.id} />
@@ -113,10 +122,10 @@ export default async function AdminProductsPage({ searchParams }: PageProps<"/ad
           <DataTable className="hidden md:block">
             <thead>
               <tr>
-                <th>Nombre</th>
-                <th>Categoría</th>
-                <th>Mayorista</th>
-                <th>Estado</th>
+                <th>{t("Nombre")}</th>
+                <th>{t("Categoría")}</th>
+                <th>{t("Mayorista")}</th>
+                <th>{t("Estado")}</th>
                 <th />
               </tr>
             </thead>
@@ -129,13 +138,13 @@ export default async function AdminProductsPage({ searchParams }: PageProps<"/ad
                     {formatCurrency(Number(product.wholesalePrice))}
                   </td>
                   <td>
-                    <StatusBadge active={product.active} />
+                    <StatusBadge active={product.active} t={t} />
                   </td>
                   <td>
                     <div className="flex items-center justify-end gap-2">
                       <Link href={`/admin/productos/${product.id}/editar`}>
                         <Button variant="outline" size="sm">
-                          Editar
+                          {t("Editar")}
                         </Button>
                       </Link>
                       <DeleteProductButton productId={product.id} />
@@ -149,6 +158,7 @@ export default async function AdminProductsPage({ searchParams }: PageProps<"/ad
       )}
 
       <Pagination
+        t={t}
         page={page}
         totalPages={totalPages}
         buildHref={(target) =>

@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { requireAdmin } from "@/lib/session";
+import { getAdminT } from "@/lib/i18n";
 import {
   ProductVariantError,
   createVariant,
@@ -28,16 +29,17 @@ export async function createVariantAction(
   formData: FormData,
 ): Promise<VariantActionState> {
   await requireAdmin();
+  const t = await getAdminT();
 
   const parsed = variantSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) {
-    return { error: parsed.error.issues[0]?.message ?? "Datos inválidos." };
+    return { error: t(parsed.error.issues[0]?.message ?? "Datos inválidos.") };
   }
 
   try {
     await createVariant(productId, parsed.data);
   } catch (error) {
-    if (error instanceof ProductVariantError) return { error: error.message };
+    if (error instanceof ProductVariantError) return { error: t(error.message, error.vars) };
     throw error;
   }
 
@@ -52,16 +54,17 @@ export async function updateVariantAction(
   formData: FormData,
 ): Promise<VariantActionState> {
   await requireAdmin();
+  const t = await getAdminT();
 
   const parsed = variantSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) {
-    return { error: parsed.error.issues[0]?.message ?? "Datos inválidos." };
+    return { error: t(parsed.error.issues[0]?.message ?? "Datos inválidos.") };
   }
 
   try {
     await updateVariant(id, parsed.data);
   } catch (error) {
-    if (error instanceof ProductVariantError) return { error: error.message };
+    if (error instanceof ProductVariantError) return { error: t(error.message, error.vars) };
     throw error;
   }
 

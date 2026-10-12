@@ -1,7 +1,9 @@
 import Link from "next/link";
 import { AdminLogoutButton } from "@/components/auth/AdminLogoutButton";
+import { getAdminT } from "@/lib/i18n";
 
-export function AdminUserCard({ name }: { name: string }) {
+export async function AdminUserCard({ name }: { name: string }) {
+  const t = await getAdminT();
   return (
     <div className="flex flex-col gap-1 rounded-2xl border border-inverse-border bg-inverse-border/30 p-2">
       <div className="flex items-center gap-3 px-2 py-2">
@@ -10,7 +12,7 @@ export function AdminUserCard({ name }: { name: string }) {
         </span>
         <span className="flex min-w-0 flex-col">
           <span className="truncate text-sm font-medium text-inverse-foreground">{name}</span>
-          <span className="text-xs text-inverse-muted">Administrador</span>
+          <span className="text-xs text-inverse-muted">{t("Administrador")}</span>
         </span>
       </div>
       <Link
@@ -21,7 +23,7 @@ export function AdminUserCard({ name }: { name: string }) {
         <span className="material-symbols-outlined text-[20px] leading-none" aria-hidden="true">
           storefront
         </span>
-        Ver tienda
+        {t("Ver tienda")}
       </Link>
       <AdminLogoutButton className="w-full py-3 active:bg-inverse-border/60 md:py-2" />
     </div>

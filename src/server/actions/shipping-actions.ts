@@ -3,6 +3,8 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { requireAdmin } from "@/lib/session";
+import { getAdminT } from "@/lib/i18n";
+import type { AdminT } from "@/lib/admin-i18n";
 import {
   ShippingError,
   createShippingRate,
@@ -14,6 +16,10 @@ export type ShippingActionState = {
   error?: string;
   success?: boolean;
 };
+
+function shippingErrorMessage(t: AdminT, error: ShippingError) {
+  return t(error.message, error.vars && { ...error.vars, tier: t(String(error.vars.tier)) });
+}
 
 const shippingRateSchema = z.object({
   tier: z.enum(["individual", "mayorista"]),
@@ -33,16 +39,17 @@ export async function createShippingRateAction(
   formData: FormData,
 ): Promise<ShippingActionState> {
   await requireAdmin();
+  const t = await getAdminT();
 
   const parsed = shippingRateSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) {
-    return { error: parsed.error.issues[0]?.message ?? "Datos inválidos." };
+    return { error: t(parsed.error.issues[0]?.message ?? "Datos inválidos.") };
   }
 
   try {
     await createShippingRate(parsed.data);
   } catch (error) {
-    if (error instanceof ShippingError) return { error: error.message };
+    if (error instanceof ShippingError) return { error: shippingErrorMessage(t, error) };
     throw error;
   }
 
@@ -59,16 +66,17 @@ export async function updateShippingRateAction(
   formData: FormData,
 ): Promise<ShippingActionState> {
   await requireAdmin();
+  const t = await getAdminT();
 
   const parsed = shippingRateSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) {
-    return { error: parsed.error.issues[0]?.message ?? "Datos inválidos." };
+    return { error: t(parsed.error.issues[0]?.message ?? "Datos inválidos.") };
   }
 
   try {
     await updateShippingRate(id, parsed.data);
   } catch (error) {
-    if (error instanceof ShippingError) return { error: error.message };
+    if (error instanceof ShippingError) return { error: shippingErrorMessage(t, error) };
     throw error;
   }
 
@@ -81,11 +89,12 @@ export async function deleteShippingRateAction(
   _prevState: ShippingActionState,
 ): Promise<ShippingActionState> {
   await requireAdmin();
+  const t = await getAdminT();
 
   try {
     await deleteShippingRate(id);
   } catch (error) {
-    if (error instanceof ShippingError) return { error: error.message };
+    if (error instanceof ShippingError) return { error: shippingErrorMessage(t, error) };
     throw error;
   }
 

@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/Badge";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { formatDate } from "@/lib/utils";
+import { getAdminT, getLocale } from "@/lib/i18n";
 import type { InventoryLogReason } from "@/generated/prisma/client";
 
 const REASON_LABELS: Record<InventoryLogReason, string> = {
@@ -24,18 +25,22 @@ export default async function AdminInventoryVariantPage({
   const variant = await getVariantForAdjustment(variantId);
   if (!variant) notFound();
 
-  const logs = await listInventoryLogsForVariant(variantId);
+  const [logs, t, locale] = await Promise.all([
+    listInventoryLogsForVariant(variantId),
+    getAdminT(),
+    getLocale(),
+  ]);
 
   return (
     <div className="mx-auto flex max-w-3xl flex-col gap-8 px-4 py-10 sm:px-8 lg:py-12">
       <AdminPageHeader
-        back={{ href: "/admin/inventario", label: "Volver a inventario" }}
-        eyebrow={`Talla ${variant.size}`}
+        back={{ href: "/admin/inventario", label: t("Volver a inventario") }}
+        eyebrow={t("Talla {size}", { size: variant.size })}
         title={variant.product.name}
       />
 
       <div className="flex items-center justify-between rounded-2xl bg-inverse p-5 text-inverse-foreground sm:p-6">
-        <span className="eyebrow text-inverse-muted">Stock actual</span>
+        <span className="eyebrow text-inverse-muted">{t("Stock actual")}</span>
         <span className="text-5xl font-semibold leading-none tracking-tight tabular-nums">{variant.stock}</span>
       </div>
 
@@ -45,30 +50,32 @@ export default async function AdminInventoryVariantPage({
           vive aparte, más abajo y marcado como tal, para que no se confunda
           con este registro informativo. */}
       <div className="flex flex-col gap-3">
-        <h2 className="font-display text-2xl text-foreground">Historial de movimientos</h2>
+        <h2 className="font-display text-2xl text-foreground">{t("Historial de movimientos")}</h2>
         <p className="text-sm text-muted-foreground">
-          Registro de solo lectura: reservas, liberaciones y ajustes manuales de esta talla.
+          {t("Registro de solo lectura: reservas, liberaciones y ajustes manuales de esta talla.")}
         </p>
         {logs.length === 0 ? (
-          <p className="text-sm text-muted-foreground">Todavía no hay movimientos registrados.</p>
+          <p className="text-sm text-muted-foreground">{t("Todavía no hay movimientos registrados.")}</p>
         ) : (
           <ul className="flex flex-col divide-y divide-border rounded-2xl border border-border bg-background px-4 sm:px-5">
             {logs.map((log) => (
               <li key={log.id} className="flex flex-col gap-1 py-3 text-sm">
                 <div className="flex items-center justify-between gap-3">
                   <Badge variant={log.quantityChange < 0 ? "destructive" : "secondary"}>
-                    {REASON_LABELS[log.reason]}
+                    {t(REASON_LABELS[log.reason])}
                   </Badge>
                   <span className="shrink-0 tabular-nums text-foreground">
-                    {log.quantityChange > 0 ? "+" : ""}
-                    {log.quantityChange} → stock {log.stockAfter}
+                    {t("{change} → stock {stock}", {
+                      change: `${log.quantityChange > 0 ? "+" : ""}${log.quantityChange}`,
+                      stock: log.stockAfter,
+                    })}
                   </span>
                 </div>
                 <div className="flex items-center justify-between gap-4 text-xs text-muted-foreground">
                   <span>
-                    {formatDate(log.createdAt)}
+                    {formatDate(log.createdAt, locale)}
                     {log.admin ? ` · ${log.admin.name}` : ""}
-                    {log.order ? ` · pedido ${log.order.id.slice(0, 8)}` : ""}
+                    {log.order ? ` · ${t("pedido {id}", { id: log.order.id.slice(0, 8) })}` : ""}
                   </span>
                 </div>
                 {log.note && <p className="text-xs text-muted-foreground">{log.note}</p>}
@@ -84,11 +91,12 @@ export default async function AdminInventoryVariantPage({
             <span className="material-symbols-outlined text-destructive" aria-hidden="true">
               warning
             </span>
-            <CardTitle className="text-base">Ajustar stock manualmente</CardTitle>
+            <CardTitle className="text-base">{t("Ajustar stock manualmente")}</CardTitle>
           </div>
           <p className="text-sm text-muted-foreground">
-            Esto cambia el inventario real de inmediato, no es una simulación. Un número negativo
-            resta stock, uno positivo lo suma.
+            {t(
+              "Esto cambia el inventario real de inmediato, no es una simulación. Un número negativo resta stock, uno positivo lo suma.",
+            )}
           </p>
         </CardHeader>
         <CardContent>

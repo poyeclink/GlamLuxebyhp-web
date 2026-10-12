@@ -5,6 +5,7 @@ import { TextField } from "@/components/ui/TextField";
 import { SelectField } from "@/components/ui/SelectField";
 import { SubmitButton } from "@/components/ui/SubmitButton";
 import { FormError } from "@/components/ui/FormError";
+import { useAdminT } from "@/components/admin/AdminLocaleProvider";
 import type { CategoryActionState } from "@/server/actions/category-actions";
 
 function slugify(value: string) {
@@ -32,6 +33,7 @@ export function CategoryForm({
   submitLabel: string;
   onSuccess?: () => void;
 }) {
+  const t = useAdminT();
   const [state, formAction] = useActionState(action, initialState);
   const [name, setName] = useState(defaultValues?.name ?? "");
   const [parentId, setParentId] = useState(defaultValues?.parentId ?? "");
@@ -56,7 +58,7 @@ export function CategoryForm({
   return (
     <form action={formAction} className="flex flex-col gap-4">
       <TextField
-        label="Nombre"
+        label={t("Nombre")}
         name="name"
         type="text"
         value={name}
@@ -68,7 +70,7 @@ export function CategoryForm({
       />
       {parents ? (
         <SelectField
-          label="Categoría principal"
+          label={t("Categoría principal")}
           name="parentId"
           value={parentId}
           onChange={(event) => {
@@ -76,7 +78,7 @@ export function CategoryForm({
             suggestSlug(name, event.target.value);
           }}
         >
-          <option value="">Ninguna (es una categoría principal)</option>
+          <option value="">{t("Ninguna (es una categoría principal)")}</option>
           {parents.map((parent) => (
             <option key={parent.id} value={parent.id}>
               {parent.name}
@@ -85,11 +87,11 @@ export function CategoryForm({
         </SelectField>
       ) : (
         <p className="text-xs text-muted-foreground">
-          Tiene subcategorías, así que se mantiene como categoría principal.
+          {t("Tiene subcategorías, así que se mantiene como categoría principal.")}
         </p>
       )}
       <TextField
-        label="Slug"
+        label={t("Slug")}
         name="slug"
         type="text"
         value={slug}
@@ -100,7 +102,9 @@ export function CategoryForm({
         required
       />
       <FormError message={state.error} />
-      <SubmitButton className="sm:w-auto">{submitLabel}</SubmitButton>
+      <SubmitButton className="sm:w-auto" pendingLabel={t("Enviando…")}>
+        {submitLabel}
+      </SubmitButton>
     </form>
   );
 }

@@ -1,7 +1,9 @@
 import { adminLogoutAction } from "@/server/actions/auth-actions";
 import { cn } from "@/lib/utils";
+import { getAdminT } from "@/lib/i18n";
 
-export function AdminLogoutButton({ className }: { className?: string }) {
+export async function AdminLogoutButton({ className }: { className?: string }) {
+  const t = await getAdminT();
   return (
     <form action={adminLogoutAction}>
       <button
@@ -14,7 +16,7 @@ export function AdminLogoutButton({ className }: { className?: string }) {
         <span className="material-symbols-outlined text-[20px] leading-none" aria-hidden="true">
           logout
         </span>
-        Cerrar sesión
+        {t("Cerrar sesión")}
       </button>
     </form>
   );

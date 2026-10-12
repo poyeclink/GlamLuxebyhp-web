@@ -2,7 +2,11 @@ import { prisma } from "@/lib/prisma";
 import type { InventoryLogReason, Prisma } from "@/generated/prisma/client";
 import { ADMIN_PAGE_SIZE, isUuid } from "@/lib/utils";
 
-export class InventoryError extends Error {}
+export class InventoryError extends Error {
+  constructor(message: string, readonly vars?: Record<string, string | number>) {
+    super(message);
+  }
+}
 
 // Umbral para "stock bajo" en el dashboard y el listado de inventario — un
 // solo lugar, igual que WHOLESALE_ITEM_THRESHOLD en cart-service.ts.
@@ -138,7 +142,8 @@ export async function adjustVariantStock(params: {
 
     if (updated.stock < 0) {
       throw new InventoryError(
-        `Este ajuste dejaría el stock en ${updated.stock}. El stock no puede ser negativo.`,
+        "Este ajuste dejaría el stock en {stock}. El stock no puede ser negativo.",
+        { stock: updated.stock },
       );
     }
 

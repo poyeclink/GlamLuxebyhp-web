@@ -5,6 +5,7 @@ import { TextField } from "@/components/ui/TextField";
 import { SelectField } from "@/components/ui/SelectField";
 import { SubmitButton } from "@/components/ui/SubmitButton";
 import { FormError } from "@/components/ui/FormError";
+import { useAdminT } from "@/components/admin/AdminLocaleProvider";
 import type { ShippingActionState } from "@/server/actions/shipping-actions";
 
 // PricingTier son solo estos dos valores (enum del schema) — no vale la pena
@@ -28,6 +29,7 @@ export function ShippingRateForm({
   submitLabel: string;
   onSuccess?: () => void;
 }) {
+  const t = useAdminT();
   const [state, formAction] = useActionState(action, initialState);
 
   // El formulario vive en un modal (categorías/envíos): sin redirect a una
@@ -38,15 +40,15 @@ export function ShippingRateForm({
 
   return (
     <form action={formAction} className="flex flex-col gap-4">
-      <SelectField label="Tier" name="tier" defaultValue={defaultValues?.tier} required>
+      <SelectField label={t("Tier")} name="tier" defaultValue={defaultValues?.tier} required>
         {TIER_OPTIONS.map((option) => (
           <option key={option.value} value={option.value}>
-            {option.label}
+            {t(option.label)}
           </option>
         ))}
       </SelectField>
       <TextField
-        label="Cantidad mínima"
+        label={t("Cantidad mínima")}
         name="minQuantity"
         type="number"
         inputMode="numeric"
@@ -55,7 +57,7 @@ export function ShippingRateForm({
         required
       />
       <TextField
-        label="Cantidad máxima (vacío = sin límite)"
+        label={t("Cantidad máxima (vacío = sin límite)")}
         name="maxQuantity"
         type="number"
         inputMode="numeric"
@@ -63,7 +65,7 @@ export function ShippingRateForm({
         defaultValue={defaultValues?.maxQuantity ?? undefined}
       />
       <TextField
-        label="Precio"
+        label={t("Precio")}
         name="price"
         type="number"
         inputMode="decimal"
@@ -73,7 +75,9 @@ export function ShippingRateForm({
         required
       />
       <FormError message={state.error} />
-      <SubmitButton className="sm:w-auto">{submitLabel}</SubmitButton>
+      <SubmitButton className="sm:w-auto" pendingLabel={t("Enviando…")}>
+        {submitLabel}
+      </SubmitButton>
     </form>
   );
 }

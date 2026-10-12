@@ -7,12 +7,17 @@ import { getProduct } from "@/server/services/product-service";
 import { updateProductAction } from "@/server/actions/product-actions";
 import { listCategories } from "@/server/services/category-service";
 import { r2PublicUrl } from "@/lib/r2";
+import { getAdminT } from "@/lib/i18n";
 
 export default async function EditProductPage({
   params,
 }: PageProps<"/admin/productos/[id]/editar">) {
   const { id } = await params;
-  const [product, categories] = await Promise.all([getProduct(id), listCategories()]);
+  const [product, categories, t] = await Promise.all([
+    getProduct(id),
+    listCategories(),
+    getAdminT(),
+  ]);
   if (!product) notFound();
 
   const images = product.images.map((image) => ({
@@ -25,13 +30,13 @@ export default async function EditProductPage({
   return (
     <div className="mx-auto flex max-w-3xl flex-col gap-8 px-4 py-10 sm:px-8 lg:py-12">
       <AdminPageHeader
-        back={{ href: "/admin/productos", label: "Volver a productos" }}
-        eyebrow="Editar producto"
+        back={{ href: "/admin/productos", label: t("Volver a productos") }}
+        eyebrow={t("Editar producto")}
         title={product.name}
       />
 
       <section className="flex flex-col gap-5 rounded-2xl border border-border bg-background p-4 sm:p-8">
-        <h2 className="font-display text-2xl text-foreground">Información</h2>
+        <h2 className="font-display text-2xl text-foreground">{t("Información")}</h2>
         <ProductForm
           action={updateProductAction.bind(null, id)}
           categories={categories}
@@ -46,17 +51,17 @@ export default async function EditProductPage({
             hasVariants: product.hasVariants,
             active: product.active,
           }}
-          submitLabel="Guardar cambios"
+          submitLabel={t("Guardar cambios")}
         />
       </section>
 
       <section className="flex flex-col gap-5 rounded-2xl border border-border bg-background p-4 sm:p-8">
-        <h2 className="font-display text-2xl text-foreground">Imágenes</h2>
+        <h2 className="font-display text-2xl text-foreground">{t("Imágenes")}</h2>
         <ProductImageUploader productId={product.id} images={images} />
       </section>
 
       <section className="flex flex-col gap-5 rounded-2xl border border-border bg-background p-4 sm:p-8">
-        <h2 className="font-display text-2xl text-foreground">Tallas y stock</h2>
+        <h2 className="font-display text-2xl text-foreground">{t("Tallas y stock")}</h2>
         <VariantManager productId={product.id} variants={product.variants} />
       </section>
     </div>

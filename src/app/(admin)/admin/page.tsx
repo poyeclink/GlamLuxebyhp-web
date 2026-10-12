@@ -1,7 +1,11 @@
 import Link from "next/link";
 import { ArrowUpRight, Plus } from "lucide-react";
 import { getSession } from "@/lib/session";
-import { getOrderStatusCounts, listRecentOrders } from "@/server/services/order-service";
+import {
+  ORDER_STATUS_LABELS,
+  getOrderStatusCounts,
+  listRecentOrders,
+} from "@/server/services/order-service";
 import { listLowStockVariants } from "@/server/services/product-variant-service";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
@@ -9,6 +13,7 @@ import { Button } from "@/components/ui/Button";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { OrderStatusBadge } from "@/components/orders/OrderStatusBadge";
 import { cn, formatCurrency, formatDate } from "@/lib/utils";
+import { getAdminT, getLocale } from "@/lib/i18n";
 import type { OrderStatus } from "@/generated/prisma/client";
 
 // Plural porque son encabezados de tarjeta ("Pago pendiente: 3"), a diferencia de
@@ -47,25 +52,27 @@ function CardLink({ href, children }: { href: string; children: React.ReactNode 
 }
 
 export default async function AdminHomePage() {
-  const [session, statusCounts, recentOrders, lowStockVariants] = await Promise.all([
+  const [session, statusCounts, recentOrders, lowStockVariants, t, locale] = await Promise.all([
     getSession(),
     getOrderStatusCounts(),
     listRecentOrders(8),
     listLowStockVariants(8),
+    getAdminT(),
+    getLocale(),
   ]);
-  const firstName = (session?.name ?? "Administrador").split(" ")[0];
+  const firstName = (session?.name ?? t("Administrador")).split(" ")[0];
 
   return (
     <div className="mx-auto flex max-w-7xl flex-col gap-6 px-4 py-6 sm:gap-10 sm:px-8 sm:py-10 lg:py-12">
       <AdminPageHeader
-        eyebrow={formatDate(new Date())}
-        title={`Hola, ${firstName}`}
-        description="Este es el resumen de tu tienda: pedidos por estado, ventas recientes y tallas por reponer."
+        eyebrow={formatDate(new Date(), locale)}
+        title={t("Hola, {name}", { name: firstName })}
+        description={t("Este es el resumen de tu tienda: pedidos por estado, ventas recientes y tallas por reponer.")}
         action={
           <Link href="/admin/productos/nuevo">
             <Button>
               <Plus className="h-4 w-4" aria-hidden="true" />
-              Nuevo producto
+              {t("Nuevo producto")}
             </Button>
           </Link>
         }
@@ -112,14 +119,14 @@ export default async function AdminHomePage() {
                   <span className="text-2xl font-semibold leading-none tracking-tight tabular-nums sm:text-4xl">
                     {statusCounts[status]}
                   </span>
-                  <span className="truncate text-xs font-medium sm:text-sm">{label}</span>
+                  <span className="truncate text-xs font-medium sm:text-sm">{t(label)}</span>
                   <span
                     className={cn(
                       "text-xs",
                       featured ? "text-inverse-muted" : "hidden text-muted-foreground sm:block",
                     )}
                   >
-                    {hint}
+                    {t(hint)}
                   </span>
                 </div>
               </Link>
@@ -131,12 +138,12 @@ export default async function AdminHomePage() {
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1.4fr_1fr]">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between border-b border-border p-4 sm:p-6">
-            <CardTitle>Ventas recientes</CardTitle>
-            <CardLink href="/admin/pedidos">Ver todos</CardLink>
+            <CardTitle>{t("Ventas recientes")}</CardTitle>
+            <CardLink href="/admin/pedidos">{t("Ver todos")}</CardLink>
           </CardHeader>
           <CardContent className="p-2">
             {recentOrders.length === 0 ? (
-              <p className="p-6 text-sm text-muted-foreground">Todavía no hay pedidos.</p>
+              <p className="p-6 text-sm text-muted-foreground">{t("Todavía no hay pedidos.")}</p>
             ) : (
               <ul className="flex flex-col">
                 {recentOrders.map((order) => (
@@ -153,14 +160,14 @@ export default async function AdminHomePage() {
                           {order.fullName}
                         </span>
                         <span className="text-xs text-muted-foreground">
-                          {formatDate(order.createdAt)}
+                          {formatDate(order.createdAt, locale)}
                         </span>
                       </span>
                       <span className="flex shrink-0 flex-col items-end gap-1 sm:flex-row-reverse sm:items-center sm:gap-4">
                         <span className="text-sm font-medium text-foreground sm:w-20 sm:text-right">
                           {formatCurrency(Number(order.total))}
                         </span>
-                        <OrderStatusBadge status={order.status} />
+                        <OrderStatusBadge status={order.status} label={t(ORDER_STATUS_LABELS[order.status])} />
                       </span>
                     </Link>
                   </li>
@@ -173,8 +180,8 @@ export default async function AdminHomePage() {
         <div className="flex flex-col gap-6">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between border-b border-border p-4 sm:p-6">
-              <CardTitle>Stock bajo</CardTitle>
-              <CardLink href="/admin/inventario">Inventario</CardLink>
+              <CardTitle>{t("Stock bajo")}</CardTitle>
+              <CardLink href="/admin/inventario">{t("Inventario")}</CardLink>
             </CardHeader>
             <CardContent className="p-2">
               {lowStockVariants.length === 0 ? (
@@ -182,7 +189,7 @@ export default async function AdminHomePage() {
                   <span className="material-symbols-outlined text-accent" aria-hidden="true">
                     verified
                   </span>
-                  Ninguna talla está por debajo del umbral de stock bajo.
+                  {t("Ninguna talla está por debajo del umbral de stock bajo.")}
                 </div>
               ) : (
                 <ul className="flex flex-col">
@@ -197,11 +204,13 @@ export default async function AdminHomePage() {
                             {variant.product.name}
                           </span>
                           <span className="text-xs text-muted-foreground">
-                            Talla {variant.size}
+                            {t("Talla {size}", { size: variant.size })}
                           </span>
                         </span>
                         <Badge variant={variant.stock === 0 ? "destructive" : "secondary"}>
-                          {variant.stock === 0 ? "Agotado" : `${variant.stock} en stock`}
+                          {variant.stock === 0
+                            ? t("Agotado")
+                            : t("{count} en stock", { count: variant.stock })}
                         </Badge>
                       </Link>
                     </li>
@@ -213,7 +222,7 @@ export default async function AdminHomePage() {
 
           <Card className="bg-inverse text-inverse-foreground">
             <CardHeader>
-              <CardTitle>Accesos rápidos</CardTitle>
+              <CardTitle>{t("Accesos rápidos")}</CardTitle>
             </CardHeader>
             <CardContent className="grid grid-cols-2 gap-2">
               {QUICK_LINKS.map((link) => (
@@ -228,7 +237,7 @@ export default async function AdminHomePage() {
                   >
                     {link.icon}
                   </span>
-                  {link.label}
+                  {t(link.label)}
                 </Link>
               ))}
             </CardContent>

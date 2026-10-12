@@ -3,11 +3,16 @@ import { Mail, MessageCircle, Phone } from "lucide-react";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { OrderStatusBadge } from "@/components/orders/OrderStatusBadge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
-import { OrderSummary } from "@/components/checkout/OrderSummary";
+import { ORDER_SUMMARY_COPY, OrderSummary } from "@/components/checkout/OrderSummary";
 import { OrderStatusForm } from "@/components/admin/OrderStatusForm";
-import { getAllowedNextStatuses, getOrderForAdmin } from "@/server/services/order-service";
+import {
+  ORDER_STATUS_LABELS,
+  getAllowedNextStatuses,
+  getOrderForAdmin,
+} from "@/server/services/order-service";
 import { paymentMethodLabel } from "@/server/services/report-service";
 import { formatDate } from "@/lib/utils";
+import { getAdminT, getLocale } from "@/lib/i18n";
 
 const CONTACT_BUTTON =
   "inline-flex h-11 min-w-0 items-center justify-center gap-2 rounded-md px-4 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 sm:h-10";
@@ -16,6 +21,10 @@ export default async function AdminOrderDetailPage({ params }: PageProps<"/admin
   const { id } = await params;
   const order = await getOrderForAdmin(id);
   if (!order) notFound();
+  const [t, locale] = await Promise.all([getAdminT(), getLocale()]);
+  const summaryCopy = Object.fromEntries(
+    Object.entries(ORDER_SUMMARY_COPY).map(([key, value]) => [key, t(value)]),
+  ) as typeof ORDER_SUMMARY_COPY;
 
   const phoneDigits = order.whatsapp.replace(/\D/g, "");
   // wa.me exige el código de país; un número de EE.UU. de 10 dígitos sin el 1 no abre el chat.
@@ -24,10 +33,15 @@ export default async function AdminOrderDetailPage({ params }: PageProps<"/admin
   return (
     <div className="mx-auto flex max-w-6xl flex-col gap-8 px-4 py-10 sm:px-8 lg:py-12">
       <AdminPageHeader
-        back={{ href: "/admin/pedidos", label: "Volver a pedidos" }}
-        eyebrow={`Pedido #${order.id.slice(0, 8)} · ${formatDate(order.createdAt)}`}
-        title={`Pedido de ${order.fullName}`}
-        action={<OrderStatusBadge status={order.status} />}
+        back={{ href: "/admin/pedidos", label: t("Volver a pedidos") }}
+        eyebrow={t("Pedido #{id} · {date}", {
+          id: order.id.slice(0, 8),
+          date: formatDate(order.createdAt, locale),
+        })}
+        title={t("Pedido de {name}", { name: order.fullName })}
+        action={
+          <OrderStatusBadge status={order.status} label={t(ORDER_STATUS_LABELS[order.status])} />
+        }
       />
 
       <div className="grid items-start gap-6 lg:grid-cols-[1fr_340px]">
@@ -51,13 +65,14 @@ export default async function AdminOrderDetailPage({ params }: PageProps<"/admin
             }))}
             subtotal={Number(order.subtotal)}
             shippingEstimate={order.shippingCost === null ? null : Number(order.shippingCost)}
+            copy={summaryCopy}
           />
         </div>
 
         <div className="order-first flex flex-col gap-6 lg:sticky lg:top-8 lg:order-none">
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">Estado del pedido</CardTitle>
+              <CardTitle className="text-base">{t("Estado del pedido")}</CardTitle>
             </CardHeader>
             <CardContent>
               <OrderStatusForm
@@ -69,11 +84,11 @@ export default async function AdminOrderDetailPage({ params }: PageProps<"/admin
 
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">Cliente</CardTitle>
+              <CardTitle className="text-base">{t("Cliente")}</CardTitle>
             </CardHeader>
             <CardContent className="flex flex-col gap-4 text-sm">
               <div className="flex flex-col gap-2">
-                <span className="text-xs text-muted-foreground">Contacto</span>
+                <span className="text-xs text-muted-foreground">{t("Contacto")}</span>
                 {whatsappDigits && (
                   <a
                     href={`https://wa.me/${whatsappDigits}`}
@@ -92,7 +107,7 @@ export default async function AdminOrderDetailPage({ params }: PageProps<"/admin
                       className={`${CONTACT_BUTTON} border border-input hover:border-foreground`}
                     >
                       <Phone className="h-4 w-4 shrink-0" aria-hidden="true" />
-                      Llamar
+                      {t("Llamar")}
                     </a>
                   )}
                   <a
@@ -100,14 +115,14 @@ export default async function AdminOrderDetailPage({ params }: PageProps<"/admin
                     className={`${CONTACT_BUTTON} border border-input hover:border-foreground`}
                   >
                     <Mail className="h-4 w-4 shrink-0" aria-hidden="true" />
-                    Correo
+                    {t("Correo")}
                   </a>
                 </div>
                 <span className="break-all text-muted-foreground">{order.email}</span>
               </div>
               <div className="flex flex-col gap-0.5">
-                <span className="text-xs text-muted-foreground">Método de pago</span>
-                <span className="text-foreground">{paymentMethodLabel(order.paymentMethod)}</span>
+                <span className="text-xs text-muted-foreground">{t("Método de pago")}</span>
+                <span className="text-foreground">{t(paymentMethodLabel(order.paymentMethod))}</span>
               </div>
             </CardContent>
           </Card>

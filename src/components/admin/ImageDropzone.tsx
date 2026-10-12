@@ -2,13 +2,24 @@
 
 import { useRef, useState } from "react";
 import { cn } from "@/lib/utils";
+import { useAdminT } from "@/components/admin/AdminLocaleProvider";
+import {
+  MAX_IMAGE_BYTES,
+  PRODUCT_PHOTO_MAX_SIDE,
+  PRODUCT_PHOTO_TARGET_BYTES,
+  PRODUCT_UPLOAD_BUDGET_BYTES,
+  shrinkImage,
+} from "@/lib/shrink-image";
 
 const ACCEPTED_TYPES = ["image/jpeg", "image/png", "image/webp"];
 
 export function ImageDropzone({ name }: { name: string }) {
+  const t = useAdminT();
   const inputRef = useRef<HTMLInputElement>(null);
   const [files, setFiles] = useState<File[]>([]);
   const [isDragging, setIsDragging] = useState(false);
+  const [preparing, setPreparing] = useState(false);
+  const [notice, setNotice] = useState<string | null>(null);
 
   // El input real (oculto) sigue siendo la fuente de verdad que el <form>
   // envía — DataTransfer es la única forma de programáticamente asignarle un
@@ -21,13 +32,42 @@ export function ImageDropzone({ name }: { name: string }) {
     setFiles(nextFiles);
   }
 
-  function addFiles(list: FileList | null) {
-    if (!list) return;
-    const incoming = Array.from(list).filter((file) => ACCEPTED_TYPES.includes(file.type));
-    syncInput([...files, ...incoming]);
+  async function addFiles(list: FileList | null) {
+    const picked = Array.from(list ?? []).filter((file) => ACCEPTED_TYPES.includes(file.type));
+    const incoming = picked.filter((file) => file.size <= MAX_IMAGE_BYTES);
+    // El selector ya dejó los originales en el input: se restauran antes de
+    // reducirlos para que un envío a mitad de camino no mande fotos de varios MB.
+    syncInput(files);
+    if (!incoming.length) {
+      setNotice(picked.length ? t("Algunas fotos pesan más de 8MB y no se agregaron.") : null);
+      return;
+    }
+
+    setPreparing(true);
+    // De a una: decodificar varias fotos de 12MP a la vez agota la memoria
+    // del canvas en iOS Safari.
+    const shrunk: File[] = [];
+    for (const file of incoming) shrunk.push(await shrinkImage(file, PRODUCT_PHOTO_MAX_SIDE, PRODUCT_PHOTO_TARGET_BYTES));
+    setPreparing(false);
+
+    let total = files.reduce((sum, file) => sum + file.size, 0);
+    const accepted = shrunk.filter((file) => {
+      if (total + file.size > PRODUCT_UPLOAD_BUDGET_BYTES) return false;
+      total += file.size;
+      return true;
+    });
+    setNotice(
+      accepted.length < shrunk.length
+        ? t("Llegaste al límite de fotos por envío. Agrega las demás desde «Editar producto» después de crearlo.")
+        : incoming.length < picked.length
+          ? t("Algunas fotos pesan más de 8MB y no se agregaron.")
+          : null,
+    );
+    syncInput([...files, ...accepted]);
   }
 
   function removeFile(index: number) {
+    setNotice(null);
     syncInput(files.filter((_, i) => i !== index));
   }
 
@@ -58,23 +98,24 @@ export function ImageDropzone({ name }: { name: string }) {
           isDragging
             ? "border-ring bg-secondary"
             : "border-input hover:border-ring hover:bg-muted/50",
+          preparing && "pointer-events-none opacity-60",
         )}
       >
         <span
           className="material-symbols-outlined flex h-12 w-12 items-center justify-center rounded-full bg-muted text-[26px] text-foreground"
           aria-hidden="true"
         >
-          add_photo_alternate
+          {preparing ? "progress_activity" : "add_photo_alternate"}
         </span>
         <p className="text-base font-medium text-foreground sm:text-sm">
-          Agregar fotos
+          {preparing ? t("Preparando fotos…") : t("Agregar fotos")}
           <span className="hidden font-normal text-muted-foreground md:inline">
             {" "}
-            o arrástralas aquí
+            {t("o arrástralas aquí")}
           </span>
         </p>
         <p className="text-xs text-muted-foreground">
-          Desde la galería o la cámara · JPEG, PNG o WEBP, máx. 5MB cada una.
+          {t("Desde la galería o la cámara · JPEG, PNG o WEBP. Se optimizan automáticamente.")}
         </p>
       </div>
 
@@ -88,6 +129,8 @@ export function ImageDropzone({ name }: { name: string }) {
         className="hidden"
       />
 
+      {notice && <p className="text-sm text-muted-foreground">{notice}</p>}
+
       {files.length > 0 && (
         <ul className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
           {files.map((file, index) => (
@@ -99,7 +142,7 @@ export function ImageDropzone({ name }: { name: string }) {
               <button
                 type="button"
                 onClick={() => removeFile(index)}
-                aria-label={`Quitar ${file.name}`}
+                aria-label={t("Quitar {name}", { name: file.name })}
                 className="flex h-10 w-10 shrink-0 items-center justify-center rounded text-muted-foreground hover:text-foreground sm:h-6 sm:w-6"
               >
                 <span

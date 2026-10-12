@@ -11,6 +11,8 @@ import { PAYMENT_METHOD_OPTIONS, isPaymentMethod } from "@/server/services/payme
 import { LOW_STOCK_THRESHOLD } from "@/server/services/inventory-service";
 import { isUuid } from "@/lib/utils";
 import { categoryLabel, productInCategory } from "@/server/services/category-service";
+import type { AdminT } from "@/lib/admin-i18n";
+import type { Locale } from "@/lib/i18n";
 
 export type ReportType = "ventas" | "inventario";
 
@@ -46,6 +48,8 @@ export const TIER_LABELS: Record<PricingTier, string> = {
   mayorista: "Mayorista",
 };
 
+export const NO_CATEGORY = "Sin categoría";
+
 export function paymentMethodLabel(method: PaymentMethod) {
   return PAYMENT_METHOD_OPTIONS.find((option) => option.value === method)?.label ?? method;
 }
@@ -64,10 +68,13 @@ function parseDay(value: string | undefined) {
 
 // Los rangos se arman en UTC (parseDay), así que se muestran en UTC: con la
 // zona local del servidor el "desde" podía aparecer un día antes.
-const dayFormatter = new Intl.DateTimeFormat("es-ES", { dateStyle: "medium", timeZone: "UTC" });
+const dayFormatters: Record<Locale, Intl.DateTimeFormat> = {
+  es: new Intl.DateTimeFormat("es-ES", { dateStyle: "medium", timeZone: "UTC" }),
+  en: new Intl.DateTimeFormat("en-US", { dateStyle: "medium", timeZone: "UTC" }),
+};
 
-export function formatReportDay(date: Date) {
-  return dayFormatter.format(date);
+export function formatReportDay(date: Date, locale: Locale = "es") {
+  return dayFormatters[locale].format(date);
 }
 
 export function toDayParam(date: Date) {
@@ -120,17 +127,23 @@ export function reportQueryString(filters: ReportFilters) {
 }
 
 // Etiquetas legibles de los filtros activos (chips en pantalla y en el PDF).
-export function describeFilters(filters: ReportFilters, categoryName?: string) {
+export function describeFilters(filters: ReportFilters, t: AdminT, categoryName?: string) {
   const labels: string[] = [];
   if (filters.type === "ventas") {
     labels.push(
-      filters.status ? `Estado: ${ORDER_STATUS_LABELS[filters.status]}` : "Todos los estados",
+      filters.status
+        ? t("Estado: {status}", { status: t(ORDER_STATUS_LABELS[filters.status]) })
+        : t("Todos los estados"),
     );
-    if (filters.paymentMethod) labels.push(`Método: ${paymentMethodLabel(filters.paymentMethod)}`);
-    if (filters.tier) labels.push(`Precio: ${TIER_LABELS[filters.tier]}`);
+    if (filters.paymentMethod)
+      labels.push(t("Método: {method}", { method: t(paymentMethodLabel(filters.paymentMethod)) }));
+    if (filters.tier) labels.push(t("Precio: {tier}", { tier: t(TIER_LABELS[filters.tier]) }));
   } else {
-    labels.push(categoryName ? `Categoría: ${categoryName}` : "Todas las categorías");
-    if (filters.lowStockOnly) labels.push(`Solo stock bajo (${LOW_STOCK_THRESHOLD} o menos)`);
+    labels.push(
+      categoryName ? t("Categoría: {category}", { category: categoryName }) : t("Todas las categorías"),
+    );
+    if (filters.lowStockOnly)
+      labels.push(t("Solo stock bajo ({threshold} o menos)", { threshold: LOW_STOCK_THRESHOLD }));
   }
   return labels;
 }
@@ -254,7 +267,7 @@ export async function getSalesReport(filters: ReportFilters) {
     items: order.items.map((item) => ({
       productName: item.productName,
       // Producto borrado después de la venta (OrderItem.productId -> null).
-      category: item.product ? categoryLabel(item.product.category) : "Sin categoría",
+      category: item.product ? categoryLabel(item.product.category) : NO_CATEGORY,
       quantity: item.quantity,
       lineTotal: Number(item.unitPrice) * item.quantity,
     })),

@@ -2,9 +2,9 @@ import { randomUUID } from "node:crypto";
 import { DeleteObjectCommand, PutObjectCommand } from "@aws-sdk/client-s3";
 import { prisma } from "@/lib/prisma";
 import { r2, R2_BUCKET_NAME } from "@/lib/r2";
+import { IMAGE_TOO_LARGE, MAX_IMAGE_BYTES } from "@/lib/shrink-image";
 
 const ALLOWED_MIME_TYPES = ["image/jpeg", "image/png", "image/webp"];
-const MAX_FILE_SIZE = 5 * 1024 * 1024;
 
 export class ProductImageError extends Error {}
 
@@ -15,8 +15,8 @@ export function assertValidImageFile(file: File) {
   if (!ALLOWED_MIME_TYPES.includes(file.type)) {
     throw new ProductImageError("Formato no permitido. Usa JPEG, PNG o WEBP.");
   }
-  if (file.size > MAX_FILE_SIZE) {
-    throw new ProductImageError("La imagen no puede pesar más de 5MB.");
+  if (file.size > MAX_IMAGE_BYTES) {
+    throw new ProductImageError(IMAGE_TOO_LARGE);
   }
 }
 

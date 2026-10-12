@@ -7,34 +7,40 @@ import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { SearchInput } from "@/components/ui/SearchInput";
 import { Pagination } from "@/components/ui/Pagination";
 import { ADMIN_PAGE_SIZE } from "@/lib/utils";
+import { getAdminT } from "@/lib/i18n";
 
 export default async function AdminInventoryPage({ searchParams }: PageProps<"/admin/inventario">) {
   const { q, page: pageParam } = await searchParams;
   const search = typeof q === "string" && q.trim() !== "" ? q.trim() : undefined;
   const page = Math.max(Number(typeof pageParam === "string" ? pageParam : "1") || 1, 1);
 
-  const { items: variants, total } = await listVariantsWithStock({ search, page });
+  const [{ items: variants, total }, t] = await Promise.all([
+    listVariantsWithStock({ search, page }),
+    getAdminT(),
+  ]);
   const totalPages = Math.max(1, Math.ceil(total / ADMIN_PAGE_SIZE));
 
   return (
     <div className="mx-auto flex max-w-6xl flex-col gap-8 px-4 py-10 sm:px-8 lg:py-12">
       <AdminPageHeader
-        eyebrow="Catálogo"
-        title="Inventario"
-        description={`Stock por talla, ordenado de menor a mayor. Stock bajo: ${LOW_STOCK_THRESHOLD} o menos.`}
+        eyebrow={t("Catálogo")}
+        title={t("Inventario")}
+        description={t("Stock por talla, ordenado de menor a mayor. Stock bajo: {threshold} o menos.", {
+          threshold: LOW_STOCK_THRESHOLD,
+        })}
       />
 
       <SearchInput
         action="/admin/inventario"
-        placeholder="Buscar por producto..."
+        placeholder={t("Buscar por producto...")}
         defaultValue={search}
       />
 
       {variants.length === 0 ? (
         <p className="rounded-2xl border border-dashed border-border bg-background p-10 text-center text-sm text-muted-foreground">
           {search
-            ? `No encontramos productos para "${search}".`
-            : "Todavía no hay tallas registradas."}
+            ? t('No encontramos productos para "{search}".', { search })
+            : t("Todavía no hay tallas registradas.")}
         </p>
       ) : (
         <>
@@ -48,19 +54,19 @@ export default async function AdminInventoryPage({ searchParams }: PageProps<"/a
                   <Badge
                     variant={variant.stock <= LOW_STOCK_THRESHOLD ? "destructive" : "secondary"}
                   >
-                    {variant.stock === 0 ? "Agotado" : `${variant.stock} unid.`}
+                    {variant.stock === 0 ? t("Agotado") : t("{count} unid.", { count: variant.stock })}
                   </Badge>
                 }
-                meta={`Talla ${variant.size}${variant.product.active ? "" : " · inactivo"}`}
+                meta={`${t("Talla {size}", { size: variant.size })}${variant.product.active ? "" : ` · ${t("inactivo")}`}`}
               />
             ))}
           </AdminCardList>
           <DataTable className="hidden md:block">
             <thead>
               <tr>
-                <th>Producto</th>
-                <th>Talla</th>
-                <th>Stock</th>
+                <th>{t("Producto")}</th>
+                <th>{t("Talla")}</th>
+                <th>{t("Stock")}</th>
                 <th />
               </tr>
             </thead>
@@ -70,7 +76,7 @@ export default async function AdminInventoryPage({ searchParams }: PageProps<"/a
                   <td className="font-medium text-foreground">
                     {variant.product.name}
                     {!variant.product.active && (
-                      <span className="ml-2 text-xs text-muted-foreground">(inactivo)</span>
+                      <span className="ml-2 text-xs text-muted-foreground">({t("inactivo")})</span>
                     )}
                   </td>
                   <td className="text-muted-foreground">{variant.size}</td>
@@ -86,7 +92,7 @@ export default async function AdminInventoryPage({ searchParams }: PageProps<"/a
                       href={`/admin/inventario/${variant.id}`}
                       className="text-sm font-medium text-accent hover:underline"
                     >
-                      Ver historial
+                      {t("Ver historial")}
                     </Link>
                   </td>
                 </tr>
@@ -97,6 +103,7 @@ export default async function AdminInventoryPage({ searchParams }: PageProps<"/a
       )}
 
       <Pagination
+        t={t}
         page={page}
         totalPages={totalPages}
         buildHref={(target) =>

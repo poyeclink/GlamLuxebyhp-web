@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { after } from "next/server";
 import { z } from "zod";
 import { requireAdmin } from "@/lib/session";
+import { getAdminT } from "@/lib/i18n";
 import {
   InventoryError,
   adjustVariantStock,
@@ -33,10 +34,11 @@ export async function adjustVariantStockAction(
   formData: FormData,
 ): Promise<InventoryActionState> {
   const session = await requireAdmin();
+  const t = await getAdminT();
 
   const parsed = adjustSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) {
-    return { error: parsed.error.issues[0]?.message ?? "Datos inválidos." };
+    return { error: t(parsed.error.issues[0]?.message ?? "Datos inválidos.") };
   }
 
   try {
@@ -50,7 +52,7 @@ export async function adjustVariantStockAction(
       after(() => notifyAdminLowStock([variantId]));
     }
   } catch (error) {
-    if (error instanceof InventoryError) return { error: error.message };
+    if (error instanceof InventoryError) return { error: t(error.message, error.vars) };
     throw error;
   }
 

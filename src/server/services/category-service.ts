@@ -2,7 +2,11 @@ import { unstable_cache } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { ADMIN_PAGE_SIZE } from "@/lib/utils";
 
-export class CategoryError extends Error {}
+export class CategoryError extends Error {
+  constructor(message: string, readonly vars?: Record<string, string | number>) {
+    super(message);
+  }
+}
 
 const hasActiveProducts = { products: { some: { active: true } } };
 
@@ -142,12 +146,14 @@ export async function deleteCategory(id: string) {
   ]);
   if (productCount > 0) {
     throw new CategoryError(
-      `No se puede eliminar: tiene ${productCount} producto(s) asociado(s). Reasigna o elimina esos productos primero.`,
+      "No se puede eliminar: tiene {count} producto(s) asociado(s). Reasigna o elimina esos productos primero.",
+      { count: productCount },
     );
   }
   if (childCount > 0) {
     throw new CategoryError(
-      `No se puede eliminar: tiene ${childCount} subcategoría(s). Elimínalas o muévelas primero.`,
+      "No se puede eliminar: tiene {count} subcategoría(s). Elimínalas o muévelas primero.",
+      { count: childCount },
     );
   }
   await prisma.category.delete({ where: { id } });

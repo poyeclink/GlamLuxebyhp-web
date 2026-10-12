@@ -3,23 +3,24 @@ import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { ProductForm } from "@/components/admin/ProductForm";
 import { createProductAction } from "@/server/actions/product-actions";
 import { listCategories } from "@/server/services/category-service";
+import { getAdminT } from "@/lib/i18n";
 
 export default async function NewProductPage() {
-  const categories = await listCategories();
+  const [categories, t] = await Promise.all([listCategories(), getAdminT()]);
 
   return (
     <div className="mx-auto flex max-w-3xl flex-col gap-8 px-4 py-10 sm:px-8 lg:py-12">
       <AdminPageHeader
-        back={{ href: "/admin/productos", label: "Volver a productos" }}
-        eyebrow="Catálogo"
-        title="Nuevo producto"
-        description="Completa los datos, sube las fotos y, si aplica, las tallas con su stock."
+        back={{ href: "/admin/productos", label: t("Volver a productos") }}
+        eyebrow={t("Catálogo")}
+        title={t("Nuevo producto")}
+        description={t("Completa los datos, sube las fotos y, si aplica, las tallas con su stock.")}
       />
       {categories.length === 0 ? (
         <p className="text-muted-foreground">
-          Primero crea una categoría desde{" "}
+          {t("Primero crea una categoría desde")}{" "}
           <Link href="/admin/categorias" className="underline">
-            Categorías
+            {t("Categorías")}
           </Link>
           .
         </p>
@@ -28,7 +29,7 @@ export default async function NewProductPage() {
           <ProductForm
             action={createProductAction}
             categories={categories}
-            submitLabel="Crear producto"
+            submitLabel={t("Crear producto")}
           />
         </div>
       )}

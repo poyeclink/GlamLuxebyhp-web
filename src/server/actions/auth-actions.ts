@@ -22,7 +22,7 @@ import {
   sendPasswordResetEmail,
   sendWelcomeEmail,
 } from "@/server/email/notifications";
-import { getLocale, t } from "@/lib/i18n";
+import { getAdminT, getLocale, t } from "@/lib/i18n";
 
 export type AuthActionState = {
   error?: string;
@@ -118,16 +118,17 @@ export async function adminLoginAction(
   _prevState: AuthActionState,
   formData: FormData,
 ): Promise<AuthActionState> {
+  const tAdmin = await getAdminT();
   const parsed = loginSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) {
-    return { error: parsed.error.issues[0]?.message ?? "Datos inválidos." };
+    return { error: tAdmin(parsed.error.issues[0]?.message ?? "Datos inválidos.") };
   }
 
   try {
     const user = await authenticateAdmin(parsed.data);
     await setSessionCookie({ userId: user.id, role: user.role, name: user.name });
   } catch (error) {
-    if (error instanceof AuthError) return { error: error.message };
+    if (error instanceof AuthError) return { error: tAdmin(error.message) };
     throw error;
   }
 

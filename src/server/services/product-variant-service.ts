@@ -1,7 +1,14 @@
 import { prisma } from "@/lib/prisma";
 import { LOW_STOCK_THRESHOLD } from "@/server/services/inventory-service";
 
-export class ProductVariantError extends Error {}
+export class ProductVariantError extends Error {
+  constructor(
+    message: string,
+    readonly vars?: Record<string, string>,
+  ) {
+    super(message);
+  }
+}
 
 // Para la alerta de stock bajo del dashboard admin — solo variantes de
 // productos activos (una desactivada no necesita reponerse).
@@ -22,7 +29,7 @@ type VariantInput = {
 async function assertSizeAvailable(productId: string, size: string, excludeId?: string) {
   const existing = await prisma.productVariant.findFirst({ where: { productId, size } });
   if (existing && existing.id !== excludeId) {
-    throw new ProductVariantError(`Ya existe la talla "${size}" para este producto.`);
+    throw new ProductVariantError('Ya existe la talla "{size}" para este producto.', { size });
   }
 }
 

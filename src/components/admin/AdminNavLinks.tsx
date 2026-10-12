@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
+import { useAdminT } from "@/components/admin/AdminLocaleProvider";
 
 export const ADMIN_LINKS = [
   { href: "/admin", label: "Inicio", icon: "space_dashboard" },
@@ -31,6 +32,7 @@ export function AdminNavLinks({
   onNavigate?: () => void;
 }) {
   const pathname = usePathname();
+  const t = useAdminT();
 
   return (
     <>
@@ -65,7 +67,7 @@ export function AdminNavLinks({
             >
               {link.icon}
             </span>
-            {link.label}
+            {t(link.label)}
           </Link>
         );
       })}

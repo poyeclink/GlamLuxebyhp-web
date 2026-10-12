@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import Image from "next/image";
 import {
   deleteProductImageAction,
@@ -13,6 +13,15 @@ import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { FormError } from "@/components/ui/FormError";
 import { cn } from "@/lib/utils";
+import { useAdminT } from "@/components/admin/AdminLocaleProvider";
+import {
+  IMAGE_NOT_OPTIMIZED,
+  IMAGE_TOO_LARGE,
+  MAX_IMAGE_BYTES,
+  PRODUCT_PHOTO_MAX_SIDE,
+  PRODUCT_UPLOAD_BUDGET_BYTES,
+  shrinkImage,
+} from "@/lib/shrink-image";
 
 export type ProductImageItem = {
   id: string;
@@ -25,25 +34,44 @@ const initialState: ProductImageActionState = {};
 
 // Elegir el archivo ya envía el formulario: en el teléfono, "elegir" y luego
 // buscar un segundo botón "Subir" era un paso de más.
-function FilePickerInput() {
+function FilePickerInput({ onError }: { onError: (message: string | null) => void }) {
+  const t = useAdminT();
   return (
     <input
       type="file"
       name="file"
       accept="image/jpeg,image/png,image/webp"
       className="sr-only"
-      onChange={(event) => {
-        if (event.currentTarget.files?.length) event.currentTarget.form?.requestSubmit();
+      onChange={async (event) => {
+        const input = event.currentTarget;
+        const file = input.files?.[0];
+        if (!file) return;
+        const small =
+          file.size > MAX_IMAGE_BYTES
+            ? null
+            : await shrinkImage(file, PRODUCT_PHOTO_MAX_SIDE, PRODUCT_UPLOAD_BUDGET_BYTES);
+        if (!small || small.size > PRODUCT_UPLOAD_BUDGET_BYTES) {
+          input.value = "";
+          onError(t(small ? IMAGE_NOT_OPTIMIZED : IMAGE_TOO_LARGE));
+          return;
+        }
+        onError(null);
+        const transfer = new DataTransfer();
+        transfer.items.add(small);
+        input.files = transfer.files;
+        input.form?.requestSubmit();
       }}
     />
   );
 }
 
 function ProductImageCard({ productId, image }: { productId: string; image: ProductImageItem }) {
+  const t = useAdminT();
   const [state, formAction, pending] = useActionState(
     replaceProductImageAction.bind(null, image.id, productId),
     initialState,
   );
+  const [clientError, setClientError] = useState<string | null>(null);
 
   return (
     <div className="flex flex-col gap-2 rounded-lg border border-border p-1.5 sm:p-2">
@@ -55,13 +83,13 @@ function ProductImageCard({ productId, image }: { productId: string; image: Prod
           sizes="(min-width: 768px) 12rem, (min-width: 640px) 33vw, 50vw"
           className={cn("object-cover transition-opacity", pending && "opacity-50")}
         />
-        {image.isPrimary && <Badge className="absolute left-1.5 top-1.5">Principal</Badge>}
+        {image.isPrimary && <Badge className="absolute left-1.5 top-1.5">{t("Principal")}</Badge>}
       </div>
 
       {!image.isPrimary && (
         <form action={setPrimaryProductImageAction.bind(null, image.id, productId)}>
           <Button type="submit" variant="outline" size="sm" className="w-full">
-            Hacer principal
+            {t("Hacer principal")}
           </Button>
         </form>
       )}
@@ -73,18 +101,18 @@ function ProductImageCard({ productId, image }: { productId: string; image: Prod
             pending && "pointer-events-none opacity-60",
           )}
         >
-          <FilePickerInput />
-          {pending ? "Subiendo…" : "Reemplazar"}
+          <FilePickerInput onError={setClientError} />
+          {pending ? t("Subiendo…") : t("Reemplazar")}
         </label>
       </form>
 
       <form action={deleteProductImageAction.bind(null, image.id, productId)}>
         <Button type="submit" variant="ghost" size="sm" className="w-full text-destructive">
-          Eliminar
+          {t("Eliminar")}
         </Button>
       </form>
 
-      <FormError message={state.error} />
+      <FormError message={clientError ?? state.error} />
     </div>
   );
 }
@@ -96,10 +124,12 @@ export function ProductImageUploader({
   productId: string;
   images: ProductImageItem[];
 }) {
+  const t = useAdminT();
   const [state, formAction, pending] = useActionState(
     uploadProductImageAction.bind(null, productId),
     initialState,
   );
+  const [clientError, setClientError] = useState<string | null>(null);
 
   return (
     <div className="flex flex-col gap-4">
@@ -118,7 +148,7 @@ export function ProductImageUploader({
             pending && "pointer-events-none opacity-60",
           )}
         >
-          <FilePickerInput />
+          <FilePickerInput onError={setClientError} />
           <span
             className="material-symbols-outlined flex h-12 w-12 items-center justify-center rounded-full bg-muted text-[26px] text-foreground"
             aria-hidden="true"
@@ -126,14 +156,14 @@ export function ProductImageUploader({
             {pending ? "progress_activity" : "add_photo_alternate"}
           </span>
           <span className="text-base font-medium text-foreground sm:text-sm">
-            {pending ? "Subiendo foto…" : "Agregar foto"}
+            {pending ? t("Subiendo foto…") : t("Agregar foto")}
           </span>
           <span className="text-xs text-muted-foreground">
-            Desde la galería o la cámara · JPEG, PNG o WEBP, máx. 5MB.
+            {t("Desde la galería o la cámara · JPEG, PNG o WEBP. Se optimizan automáticamente.")}
           </span>
         </label>
       </form>
-      <FormError message={state.error} />
+      <FormError message={clientError ?? state.error} />
     </div>
   );
 }

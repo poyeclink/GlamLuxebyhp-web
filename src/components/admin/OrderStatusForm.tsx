@@ -5,6 +5,7 @@ import { useFormStatus } from "react-dom";
 import { updateOrderStatusAction, type OrderActionState } from "@/server/actions/order-actions";
 import { Button } from "@/components/ui/Button";
 import { FormError } from "@/components/ui/FormError";
+import { useAdminT } from "@/components/admin/AdminLocaleProvider";
 import type { OrderStatus } from "@/generated/prisma/client";
 
 const STATUS_ACTIONS: Record<OrderStatus, string> = {
@@ -19,6 +20,7 @@ const initialState: OrderActionState = {};
 
 function StatusButtons({ statuses }: { statuses: OrderStatus[] }) {
   const { pending, data } = useFormStatus();
+  const t = useAdminT();
 
   return statuses.map((status) => {
     const isCancel = status === "cancelado";
@@ -38,12 +40,12 @@ function StatusButtons({ statuses }: { statuses: OrderStatus[] }) {
         }
         onClick={(event) => {
           // Cancelar devuelve el stock y no tiene vuelta atrás: un toque accidental en el teléfono no debe bastar.
-          if (isCancel && !confirm("¿Cancelar este pedido? Si ya se pagó con tarjeta, se reembolsa automáticamente. Esta acción no se puede deshacer.")) {
+          if (isCancel && !confirm(t("¿Cancelar este pedido? Si ya se pagó con tarjeta, se reembolsa automáticamente. Esta acción no se puede deshacer."))) {
             event.preventDefault();
           }
         }}
       >
-        {STATUS_ACTIONS[status]}
+        {t(STATUS_ACTIONS[status])}
       </Button>
     );
   });
@@ -60,11 +62,12 @@ export function OrderStatusForm({
     updateOrderStatusAction.bind(null, orderId),
     initialState,
   );
+  const t = useAdminT();
 
   if (allowedNextStatuses.length === 0) {
     return (
       <p className="text-sm text-muted-foreground">
-        Este pedido no tiene más cambios de estado disponibles.
+        {t("Este pedido no tiene más cambios de estado disponibles.")}
       </p>
     );
   }

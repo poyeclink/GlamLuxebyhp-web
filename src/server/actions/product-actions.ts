@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { revalidatePath, updateTag } from "next/cache";
 import { z } from "zod";
 import { requireAdmin } from "@/lib/session";
+import { getAdminT } from "@/lib/i18n";
 import {
   ProductError,
   createProduct,
@@ -40,7 +41,10 @@ const productSchema = z.object({
 
 const variantRowSchema = z.object({
   size: z.string().trim().min(1, "La talla no puede estar vacía."),
-  stock: z.coerce.number().int().min(0, "El stock no puede ser negativo."),
+  stock: z.coerce
+    .number()
+    .int("El stock debe ser un número entero.")
+    .min(0, "El stock no puede ser negativo."),
 });
 
 export async function createProductAction(
@@ -48,10 +52,11 @@ export async function createProductAction(
   formData: FormData,
 ): Promise<ProductActionState> {
   await requireAdmin();
+  const t = await getAdminT();
 
   const parsed = productSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) {
-    return { error: parsed.error.issues[0]?.message ?? "Datos inválidos." };
+    return { error: t(parsed.error.issues[0]?.message ?? "Datos inválidos.") };
   }
 
   // Input opcional "images" (multiple) del formulario de creación — a
@@ -68,7 +73,7 @@ export async function createProductAction(
     try {
       assertValidImageFile(file);
     } catch (error) {
-      if (error instanceof ProductImageError) return { error: error.message };
+      if (error instanceof ProductImageError) return { error: t(error.message) };
       throw error;
     }
   }
@@ -84,10 +89,10 @@ export async function createProductAction(
   for (let i = 0; i < variantSizes.length; i++) {
     const parsedRow = variantRowSchema.safeParse({ size: variantSizes[i], stock: variantStocks[i] });
     if (!parsedRow.success) {
-      return { error: parsedRow.error.issues[0]?.message ?? "Talla inválida." };
+      return { error: t(parsedRow.error.issues[0]?.message ?? "Talla inválida.") };
     }
     if (seenSizes.has(parsedRow.data.size)) {
-      return { error: `La talla "${parsedRow.data.size}" está repetida.` };
+      return { error: t('La talla "{size}" está repetida.', { size: parsedRow.data.size }) };
     }
     seenSizes.add(parsedRow.data.size);
     parsedVariants.push(parsedRow.data);
@@ -97,7 +102,7 @@ export async function createProductAction(
   try {
     product = await createProduct(parsed.data);
   } catch (error) {
-    if (error instanceof ProductError) return { error: error.message };
+    if (error instanceof ProductError) return { error: t(error.message) };
     throw error;
   }
 
@@ -141,16 +146,17 @@ export async function updateProductAction(
   formData: FormData,
 ): Promise<ProductActionState> {
   await requireAdmin();
+  const t = await getAdminT();
 
   const parsed = productSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) {
-    return { error: parsed.error.issues[0]?.message ?? "Datos inválidos." };
+    return { error: t(parsed.error.issues[0]?.message ?? "Datos inválidos.") };
   }
 
   try {
     await updateProduct(id, parsed.data);
   } catch (error) {
-    if (error instanceof ProductError) return { error: error.message };
+    if (error instanceof ProductError) return { error: t(error.message) };
     throw error;
   }
 
@@ -165,11 +171,12 @@ export async function deleteProductAction(
   _prevState: ProductActionState,
 ): Promise<ProductActionState> {
   await requireAdmin();
+  const t = await getAdminT();
 
   try {
     await deleteProduct(id);
   } catch (error) {
-    if (error instanceof ProductError) return { error: error.message };
+    if (error instanceof ProductError) return { error: t(error.message) };
     throw error;
   }
 

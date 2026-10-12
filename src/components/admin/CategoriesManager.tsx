@@ -9,6 +9,7 @@ import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { Modal } from "@/components/ui/Modal";
 import { SearchInput } from "@/components/ui/SearchInput";
 import { Pagination } from "@/components/ui/Pagination";
+import { useAdminT } from "@/components/admin/AdminLocaleProvider";
 import { CategoryForm } from "@/components/admin/CategoryForm";
 import { DeleteCategoryButton } from "@/components/admin/DeleteCategoryButton";
 import { createCategoryAction, updateCategoryAction } from "@/server/actions/category-actions";
@@ -39,31 +40,36 @@ export function CategoriesManager({
   page: number;
   totalPages: number;
 }) {
+  const t = useAdminT();
   const [modal, setModal] = useState<ModalState>(null);
 
   return (
     <div className="mx-auto flex max-w-6xl flex-col gap-8 px-4 py-10 sm:px-8 lg:py-12">
       <AdminPageHeader
-        eyebrow="Catálogo"
-        title="Categorías"
-        description="Las categorías con productos activos aparecen solas en el menú de la tienda. Las subcategorías (ej. Zapatos › Mujer) se muestran dentro de su categoría principal."
+        eyebrow={t("Catálogo")}
+        title={t("Categorías")}
+        description={t(
+          "Las categorías con productos activos aparecen solas en el menú de la tienda. Las subcategorías (ej. Zapatos › Mujer) se muestran dentro de su categoría principal.",
+        )}
         action={
           <Button onClick={() => setModal({ mode: "create" })}>
             <Plus className="h-4 w-4" aria-hidden="true" />
-            Nueva categoría
+            {t("Nueva categoría")}
           </Button>
         }
       />
 
       <SearchInput
         action="/admin/categorias"
-        placeholder="Buscar por nombre..."
+        placeholder={t("Buscar por nombre...")}
         defaultValue={search}
       />
 
       {categories.length === 0 ? (
         <p className="rounded-2xl border border-dashed border-border bg-background p-10 text-center text-sm text-muted-foreground">
-          {search ? `No encontramos categorías para "${search}".` : "Todavía no hay categorías."}
+          {search
+            ? t('No encontramos categorías para "{search}".', { search })
+            : t("Todavía no hay categorías.")}
         </p>
       ) : (
         <>
@@ -83,11 +89,13 @@ export function CategoriesManager({
                 }
                 meta={[
                   category.parent
-                    ? "Subcategoría"
+                    ? t("Subcategoría")
                     : category._count.children > 0
-                      ? `Principal · ${category._count.children} sub`
-                      : "Principal",
-                  `${category._count.products} ${category._count.products === 1 ? "producto" : "productos"}`,
+                      ? t("Principal · {count} sub", { count: category._count.children })
+                      : t("Principal"),
+                  category._count.products === 1
+                    ? t("1 producto")
+                    : t("{count} productos", { count: category._count.products }),
                 ].join(" · ")}
                 actions={
                   <>
@@ -96,7 +104,7 @@ export function CategoriesManager({
                       size="sm"
                       onClick={() => setModal({ mode: "edit", category })}
                     >
-                      Editar
+                      {t("Editar")}
                     </Button>
                     <DeleteCategoryButton categoryId={category.id} />
                   </>
@@ -107,10 +115,10 @@ export function CategoriesManager({
           <DataTable className="hidden md:block">
             <thead>
               <tr>
-                <th>Nombre</th>
-                <th>Categoría principal</th>
-                <th>Slug</th>
-                <th>Productos</th>
+                <th>{t("Nombre")}</th>
+                <th>{t("Categoría principal")}</th>
+                <th>{t("Slug")}</th>
+                <th>{t("Productos")}</th>
                 <th />
               </tr>
             </thead>
@@ -121,8 +129,8 @@ export function CategoriesManager({
                   <td className="text-muted-foreground">
                     {category.parent?.name ??
                       (category._count.children > 0
-                        ? `Principal · ${category._count.children} sub`
-                        : "Principal")}
+                        ? t("Principal · {count} sub", { count: category._count.children })
+                        : t("Principal"))}
                   </td>
                   <td className="font-mono text-xs text-muted-foreground">{category.slug}</td>
                   <td className="text-muted-foreground">{category._count.products}</td>
@@ -133,7 +141,7 @@ export function CategoriesManager({
                         size="sm"
                         onClick={() => setModal({ mode: "edit", category })}
                       >
-                        Editar
+                        {t("Editar")}
                       </Button>
                       <DeleteCategoryButton categoryId={category.id} />
                     </div>
@@ -146,6 +154,7 @@ export function CategoriesManager({
       )}
 
       <Pagination
+        t={t}
         page={page}
         totalPages={totalPages}
         buildHref={(target) =>
@@ -156,7 +165,8 @@ export function CategoriesManager({
       <Modal
         open={modal !== null}
         onClose={() => setModal(null)}
-        title={modal?.mode === "edit" ? "Editar categoría" : "Nueva categoría"}
+        title={modal?.mode === "edit" ? t("Editar categoría") : t("Nueva categoría")}
+        closeLabel={t("Cerrar")}
       >
         {modal !== null && (
           <CategoryForm
@@ -183,7 +193,7 @@ export function CategoriesManager({
                   : parents.filter((parent) => parent.id !== modal.category.id)
                 : parents
             }
-            submitLabel={modal.mode === "edit" ? "Guardar cambios" : "Crear categoría"}
+            submitLabel={modal.mode === "edit" ? t("Guardar cambios") : t("Crear categoría")}
             onSuccess={() => setModal(null)}
           />
         )}

@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { LogoHorizontal } from "@/components/brand/Logo";
 import { ADMIN_LINKS, AdminNavLinks, isActiveLink } from "@/components/admin/AdminNavLinks";
 import { cn } from "@/lib/utils";
+import { useAdminT } from "@/components/admin/AdminLocaleProvider";
 
 const TAB_HREFS = ["/admin", "/admin/pedidos", "/admin/productos", "/admin/inventario"];
 const TAB_LINKS = ADMIN_LINKS.filter((link) => TAB_HREFS.includes(link.href));
@@ -29,8 +30,15 @@ function TabIcon({ icon, active }: { icon: string; active: boolean }) {
   );
 }
 
-export function AdminMobileNav({ userCard }: { userCard: React.ReactNode }) {
+export function AdminMobileNav({
+  userCard,
+  languageSwitcher,
+}: {
+  userCard: React.ReactNode;
+  languageSwitcher: React.ReactNode;
+}) {
   const pathname = usePathname();
+  const t = useAdminT();
   // Guardar la ruta en la que se abrió (no un booleano) cierra el panel solo
   // al navegar, incluido el botón "atrás" del teléfono.
   const [openAt, setOpenAt] = useState<string | null>(null);
@@ -52,10 +60,11 @@ export function AdminMobileNav({ userCard }: { userCard: React.ReactNode }) {
 
   return (
     <>
-      <div className="sticky top-0 z-40 flex h-14 items-center bg-inverse px-4 text-inverse-foreground [--logo-accent:var(--inverse-accent)] md:hidden">
-        <Link href="/admin" aria-label="Panel admin" onClick={close}>
+      <div className="sticky top-0 z-40 flex h-14 items-center justify-between bg-inverse px-4 text-inverse-foreground [--logo-accent:var(--inverse-accent)] md:hidden">
+        <Link href="/admin" aria-label={t("Panel admin")} onClick={close}>
           <LogoHorizontal className="h-8 w-auto" title="" />
         </Link>
+        {languageSwitcher}
       </div>
 
       {open && (
@@ -63,7 +72,7 @@ export function AdminMobileNav({ userCard }: { userCard: React.ReactNode }) {
           id="admin-more-panel"
           className="fixed inset-x-0 top-14 bottom-[calc(4rem+env(safe-area-inset-bottom))] z-40 flex animate-fade-up flex-col gap-4 overflow-y-auto overscroll-contain border-t border-inverse-border bg-inverse px-3 py-4 md:hidden"
         >
-          <span className="eyebrow px-3 text-[0.625rem] text-inverse-muted/70">Más secciones</span>
+          <span className="eyebrow px-3 text-[0.625rem] text-inverse-muted/70">{t("Más secciones")}</span>
           <nav className="flex flex-col gap-1">
             <AdminNavLinks links={MORE_LINKS} onNavigate={close} />
           </nav>
@@ -72,7 +81,7 @@ export function AdminMobileNav({ userCard }: { userCard: React.ReactNode }) {
       )}
 
       <nav
-        aria-label="Secciones"
+        aria-label={t("Secciones")}
         className="fixed inset-x-0 bottom-0 z-40 border-t border-inverse-border bg-inverse pb-[env(safe-area-inset-bottom)] text-inverse-foreground md:hidden"
       >
         <ul className="grid h-16 grid-cols-5">
@@ -91,7 +100,7 @@ export function AdminMobileNav({ userCard }: { userCard: React.ReactNode }) {
                   )}
                 >
                   <TabIcon icon={link.icon} active={active} />
-                  {link.label}
+                  {t(link.label)}
                 </Link>
               </li>
             );
@@ -109,7 +118,7 @@ export function AdminMobileNav({ userCard }: { userCard: React.ReactNode }) {
               )}
             >
               <TabIcon icon={open ? "close" : "menu"} active={moreActive} />
-              Más
+              {t("Más")}
             </button>
           </li>
         </ul>
