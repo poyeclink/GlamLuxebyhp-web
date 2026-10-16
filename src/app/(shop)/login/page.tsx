@@ -31,7 +31,7 @@ export default async function LoginPage() {
   return (
     <AuthShell
       eyebrow={copy.eyebrow}
-      image={STOCK_IMAGES.redBlazer}
+      image={STOCK_IMAGES.hjPortrait}
       title={copy.title}
       subtitle={copy.subtitle}
       brandTitle={copy.brandTitle}

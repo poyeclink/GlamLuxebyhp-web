@@ -20,17 +20,18 @@ export const STOCK_IMAGES = {
     alt: "Modelo sentada con las piernas cruzadas y zapatos de tacón negros",
     position: "75% center",
   },
-  tailoring: {
-    src: unsplash("1753162660069-d4145d9a95f7"),
-    alt: "Costura de una prenda en máquina de coser",
+  // Retrato de HJ: va en Nosotros (filosofía) y en el login de clientes.
+  hjPortrait: {
+    src: "/images/hj-picture.jpeg",
+    alt: "Retrato en blanco y negro de HJ, fundadora de Glam Luxe",
   },
-  embroidery: {
-    src: unsplash("1695291826499-494726bb7bf3"),
-    alt: "Detalle de bordado con pedrería en una prenda de alta costura",
+  storyHandbag: {
+    src: "/images/about-image2.jpeg",
+    alt: "Modelo sentada con bolso negro de cadena dorada y zapatos de tacón",
   },
-  blouses: {
-    src: unsplash("1612423284934-2850a4ea6b0f"),
-    alt: "Blusas estampadas en perchas de madera",
+  storyCloset: {
+    src: "/images/about-image3.jpeg",
+    alt: "Vestidor con repisas iluminadas llenas de bolsos y zapatos",
   },
   monochromeCoat: {
     src: unsplash("1587115924362-622c3fa065bd"),
@@ -40,17 +41,13 @@ export const STOCK_IMAGES = {
     src: unsplash("1632823215552-cd0c86965d3e"),
     alt: "Mujer con vestido negro frente a un espejo, en blanco y negro",
   },
-  redBlazer: {
-    src: unsplash("1580478491436-fd6a937acc9e"),
-    alt: "Modelo con blazer rojo y guantes de cuero",
-  },
   sunglassesBlazer: {
     src: unsplash("1605813808456-26c16c0dfb77"),
     alt: "Mujer con blazer oscuro y gafas de sol",
   },
-  scarfWoman: {
-    src: unsplash("1764179690237-6c9a7a48406c"),
-    alt: "Mujer con pañuelo y abrigo claro sosteniendo un bolso",
+  accessoriesSet: {
+    src: "/images/about-image4.jpeg",
+    alt: "Bolso negro acolchado con cadena, zapatos de tacón, gafas de sol y maquillaje sobre fondo oscuro",
   },
   pearlBox: {
     src: unsplash("1515562141207-7a88fb7ce338"),

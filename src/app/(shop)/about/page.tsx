@@ -87,9 +87,9 @@ async function AudiencePanel({
 
 export default async function AboutPage() {
   const c = await tMany({
-    embroideryAlt: STOCK_IMAGES.embroidery.alt,
-    tailoringAlt: STOCK_IMAGES.tailoring.alt,
-    blousesAlt: STOCK_IMAGES.blouses.alt,
+    hjPortraitAlt: STOCK_IMAGES.hjPortrait.alt,
+    storyClosetAlt: STOCK_IMAGES.storyCloset.alt,
+    storyHandbagAlt: STOCK_IMAGES.storyHandbag.alt,
     monochromeCoatAlt: STOCK_IMAGES.monochromeCoat.alt,
     home: "Inicio",
     eyebrow: "Nosotros",
@@ -183,8 +183,8 @@ export default async function AboutPage() {
         <div className="relative">
           <div className="group relative aspect-[4/5] overflow-hidden rounded-[2rem] bg-inverse">
             <Image
-              src={STOCK_IMAGES.embroidery.src}
-              alt={c.embroideryAlt}
+              src={STOCK_IMAGES.hjPortrait.src}
+              alt={c.hjPortraitAlt}
               fill
               sizes="(min-width: 1024px) 40vw, 100vw"
               className="object-cover transition-transform duration-1000 group-hover:scale-105"
@@ -242,8 +242,8 @@ export default async function AboutPage() {
           <div className="relative pb-16 pr-10 sm:pb-20 sm:pr-16">
             <div className="group relative aspect-[4/5] overflow-hidden rounded-3xl bg-inverse">
               <Image
-                src={STOCK_IMAGES.tailoring.src}
-                alt={c.tailoringAlt}
+                src={STOCK_IMAGES.storyCloset.src}
+                alt={c.storyClosetAlt}
                 fill
                 sizes="(min-width: 1024px) 45vw, 100vw"
                 className="object-cover transition-transform duration-1000 group-hover:scale-105"
@@ -252,11 +252,11 @@ export default async function AboutPage() {
             <div className="group absolute bottom-0 right-0 w-1/2 overflow-hidden rounded-2xl border-8 border-accent-soft shadow-[0_30px_60px_-30px_rgba(10,10,11,0.6)]">
               <div className="relative aspect-square">
                 <Image
-                  src={STOCK_IMAGES.blouses.src}
-                  alt={c.blousesAlt}
+                  src={STOCK_IMAGES.storyHandbag.src}
+                  alt={c.storyHandbagAlt}
                   fill
                   sizes="(min-width: 1024px) 22vw, 50vw"
-                  className="object-cover transition-transform duration-1000 group-hover:scale-110"
+                  className="object-cover object-top transition-transform duration-1000 group-hover:scale-110"
                 />
               </div>
             </div>
@@ -358,7 +358,7 @@ export default async function AboutPage() {
             />
           </div>
           <AudiencePanel
-            image={STOCK_IMAGES.scarfWoman}
+            image={STOCK_IMAGES.accessoriesSet}
             text={c.personalText}
             points={[c.personal1, c.personal2, c.personal3, c.personal4]}
           />

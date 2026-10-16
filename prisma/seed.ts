@@ -76,6 +76,7 @@ async function main() {
     { name: "Misceláneos", slug: "miscelaneos" },
     { name: "Ropa", slug: "ropa", children: genders },
     { name: "Niños", slug: "ninos" },
+    { name: "Unisex", slug: "unisex" },
   ];
 
   for (const { children = [], ...root } of categoryTree) {
