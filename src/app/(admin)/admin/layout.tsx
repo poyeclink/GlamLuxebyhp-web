@@ -12,7 +12,7 @@ import { AdminLocaleProvider } from "@/components/admin/AdminLocaleProvider";
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getAdminT();
   return {
-    title: { default: t("Panel administrativo"), template: "%s | Admin · Glam Luxe by HJ" },
+    title: { default: t("Panel administrativo"), template: "%s | Admin · GlamLuxebyHJ" },
     robots: { index: false },
   };
 }

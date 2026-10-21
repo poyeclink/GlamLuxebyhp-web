@@ -188,7 +188,7 @@ export default async function ContactPage() {
         eyebrow={c.eyebrow}
         title={c.title}
         description={c.description}
-        image={STOCK_IMAGES.sunglassesBlazer}
+        image={STOCK_IMAGES.heroContact}
         breadcrumb={{ home: c.home, current: c.eyebrow }}
         overlapBottom
       />

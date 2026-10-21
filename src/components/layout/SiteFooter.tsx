@@ -98,7 +98,7 @@ export async function SiteFooter() {
 
   const [copy, categoryNames, companyLabels, legalLabels] = await Promise.all([
     tMany({
-      ctaEyebrow: "Glam Luxe by HJ",
+      ctaEyebrow: "GlamLuxebyHJ",
       ctaA: "Moda que se nota en los",
       ctaB: "detalles",
       ctaText: "Te acompañamos en cada pedido con atención personal.",
@@ -114,7 +114,7 @@ export async function SiteFooter() {
       rights: "Todos los derechos reservados.",
       adminAccess: "Acceso administración",
       secure: "Pagos seguros",
-      appTitle: "App Glam Luxe",
+      appTitle: "App GlamLuxe",
       appText: "Instálala gratis y compra desde tu pantalla de inicio.",
       appCta: "Descargar",
       appIosTitle: "Instala la app en tu iPhone",

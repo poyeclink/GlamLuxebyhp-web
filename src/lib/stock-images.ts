@@ -23,7 +23,7 @@ export const STOCK_IMAGES = {
   // Retrato de HJ: va en Nosotros (filosofía) y en el login de clientes.
   hjPortrait: {
     src: "/images/hj-picture.jpeg",
-    alt: "Retrato en blanco y negro de HJ, fundadora de Glam Luxe",
+    alt: "Retrato en blanco y negro de HJ, fundadora de GlamLuxe",
   },
   storyHandbag: {
     src: "/images/about-image2.jpeg",
@@ -33,17 +33,18 @@ export const STOCK_IMAGES = {
     src: "/images/about-image3.jpeg",
     alt: "Vestidor con repisas iluminadas llenas de bolsos y zapatos",
   },
-  monochromeCoat: {
-    src: unsplash("1587115924362-622c3fa065bd"),
-    alt: "Retrato en blanco y negro de una mujer con abrigo oscuro",
+  aboutBottom: {
+    src: "/images/about-image-bottom.jpeg",
+    alt: "Tienda con repisas iluminadas llenas de zapatillas",
   },
   mirrorDress: {
     src: unsplash("1632823215552-cd0c86965d3e"),
     alt: "Mujer con vestido negro frente a un espejo, en blanco y negro",
   },
-  sunglassesBlazer: {
-    src: unsplash("1605813808456-26c16c0dfb77"),
-    alt: "Mujer con blazer oscuro y gafas de sol",
+  heroContact: {
+    src: "/images/contact-hero.jpeg",
+    alt: "Zapatos de tacón negros de suela roja sobre un piso de madera",
+    position: "60% center",
   },
   accessoriesSet: {
     src: "/images/about-image4.jpeg",

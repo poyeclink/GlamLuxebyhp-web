@@ -8,7 +8,7 @@ import type { SVGProps } from "react";
 
 type LogoProps = SVGProps<SVGSVGElement> & { title?: string };
 
-function Svg({ title = "Glam Luxe by HJ", children, ...props }: LogoProps & { viewBox: string }) {
+function Svg({ title = "GlamLuxebyHJ", children, ...props }: LogoProps & { viewBox: string }) {
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"

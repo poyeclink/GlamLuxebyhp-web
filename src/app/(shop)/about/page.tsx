@@ -23,7 +23,7 @@ import { STOCK_IMAGES, type StockImage } from "@/lib/stock-images";
 export const metadata: Metadata = {
   title: "Nosotros",
   description:
-    "Conoce Glam Luxe by HJ: ropa, bolsos y accesorios de alta calidad seleccionados pieza por pieza.",
+    "Conoce GlamLuxebyHJ: ropa, bolsos y accesorios de alta calidad seleccionados pieza por pieza.",
   alternates: { canonical: "/about" },
 };
 
@@ -90,12 +90,12 @@ export default async function AboutPage() {
     hjPortraitAlt: STOCK_IMAGES.hjPortrait.alt,
     storyClosetAlt: STOCK_IMAGES.storyCloset.alt,
     storyHandbagAlt: STOCK_IMAGES.storyHandbag.alt,
-    monochromeCoatAlt: STOCK_IMAGES.monochromeCoat.alt,
+    aboutBottomAlt: STOCK_IMAGES.aboutBottom.alt,
     home: "Inicio",
     eyebrow: "Nosotros",
     title: "Moda de alta calidad, elegida con criterio",
     description:
-      "Glam Luxe by HJ nace de una idea simple: que vestir bien no dependa de pagar de más. Seleccionamos ropa, bolsos y accesorios con acabados de alta gama y los ponemos a tu alcance.",
+      "GlamLuxebyHJ nace de una idea simple: que vestir bien no dependa de pagar de más. Seleccionamos ropa, bolsos y accesorios con acabados de alta gama y los ponemos a tu alcance.",
     manifestoEyebrow: "Nuestra filosofía",
     manifestoA: "Creemos que el lujo no está en la etiqueta, sino en los",
     manifestoB: "detalles",
@@ -107,14 +107,14 @@ export default async function AboutPage() {
     pillar2t: "Costuras firmes, forros limpios y cortes que caen bien.",
     pillar3: "Acabados",
     pillar3t: "Cierres, bordados y terminaciones cuidadas al detalle.",
-    signature: "El equipo de Glam Luxe by HJ",
+    signature: "El equipo de GlamLuxebyHJ",
     signatureRole: "Curaduría y selección",
     manifestoText:
       "Por eso cada prenda, bolso y accesorio que llega a nuestra tienda pasa primero por nuestras manos. No buscamos tener más productos, buscamos tener los correctos.",
     storyEyebrow: "Nuestra historia",
     storyTitle: "Una curaduría personal, no un catálogo infinito",
     story1:
-      "Detrás de Glam Luxe hay una mirada exigente: cada pieza que publicamos fue revisada antes por nosotros. Nos fijamos en lo que se nota con el uso —la caída de la tela, las costuras, los herrajes, el forro de un bolso— y no solo en cómo se ve en una foto.",
+      "Detrás de GlamLuxe hay una mirada exigente: cada pieza que publicamos fue revisada antes por nosotros. Nos fijamos en lo que se nota con el uso —la caída de la tela, las costuras, los herrajes, el forro de un bolso— y no solo en cómo se ve en una foto.",
     story2:
       "Preferimos un catálogo cuidado a uno enorme. Si una pieza no cumple nuestro estándar, simplemente no llega a la tienda.",
     storyQuote: "Si no la usaríamos nosotros, no la vendemos.",
@@ -149,7 +149,7 @@ export default async function AboutPage() {
     personal2: "Tallas y disponibilidad visibles en cada producto",
     personal3: "Envío calculado en tu carrito antes de pagar",
     personal4: "Pago seguro con tarjeta",
-    ctaEyebrow: "Glam Luxe by HJ",
+    ctaEyebrow: "GlamLuxebyHJ",
     ctaTitle: "Descubre piezas que se ven —y se sienten— de alta gama",
     ctaShop: "Ir a la tienda",
     ctaContact: "Hablemos",
@@ -367,8 +367,8 @@ export default async function AboutPage() {
 
       <section className="group relative isolate overflow-hidden bg-inverse text-inverse-foreground">
         <Image
-          src={STOCK_IMAGES.monochromeCoat.src}
-          alt={c.monochromeCoatAlt}
+          src={STOCK_IMAGES.aboutBottom.src}
+          alt={c.aboutBottomAlt}
           fill
           sizes="100vw"
           className="-z-20 object-cover opacity-60 transition-transform duration-[2000ms] group-hover:scale-105"

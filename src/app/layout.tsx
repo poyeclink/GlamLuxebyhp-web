@@ -37,7 +37,7 @@ export async function generateMetadata(): Promise<Metadata> {
     },
     description,
     applicationName: SITE_NAME,
-    appleWebApp: { capable: true, title: "Glam Luxe", statusBarStyle: "default" },
+    appleWebApp: { capable: true, title: "GlamLuxe", statusBarStyle: "default" },
     openGraph: {
       type: "website",
       siteName: SITE_NAME,

@@ -8,7 +8,7 @@ import { STOCK_IMAGES } from "@/lib/stock-images";
 export async function generateMetadata(): Promise<Metadata> {
   const [title, description] = await Promise.all([
     t("Políticas y términos"),
-    t("Términos y condiciones, política de privacidad y política de devoluciones de Glam Luxe by HJ."),
+    t("Términos y condiciones, política de privacidad y política de devoluciones de GlamLuxebyHJ."),
   ]);
   return { title, description, alternates: { canonical: "/politicas" } };
 }

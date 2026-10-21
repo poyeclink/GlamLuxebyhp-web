@@ -1,6 +1,6 @@
 # GlamLuxeByHJ — Convenciones del proyecto
 
-E-commerce de ropa, bolsos y accesorios de alta calidad — marca **Glam Luxe by HJ**.
+E-commerce de ropa, bolsos y accesorios de alta calidad — marca **GlamLuxebyHJ**.
 Stack obligatorio: Next.js (App Router) + TypeScript + React + Prisma + Supabase PostgreSQL + Cloudflare R2 + Stripe + Vercel + pnpm.
 
 ## Estado actual
@@ -278,7 +278,7 @@ Stack obligatorio: Next.js (App Router) + TypeScript + React + Prisma + Supabase
 ## SEO y performance
 
 - `src/lib/site.ts`: `SITE_NAME`, `SITE_URL` (`NEXT_PUBLIC_SITE_URL`, usado como `metadataBase`), canales de contacto opcionales (`CONTACT`, `whatsappUrl()`).
-- Metadata: layout raíz con `title.template` (`%s | Glam Luxe by HJ`), Open Graph y `themeColor`; cada página pública exporta `metadata`/`generateMetadata` con `alternates.canonical`. Login/registro `noindex`. `robots.ts` bloquea admin/checkout/perfil/pedidos/carrito; `sitemap.ts` (revalida cada hora) incluye páginas estáticas, categorías y productos activos. `opengraph-image.tsx` renderiza el logo cromado.
+- Metadata: layout raíz con `title.template` (`%s | GlamLuxebyHJ`), Open Graph y `themeColor`; cada página pública exporta `metadata`/`generateMetadata` con `alternates.canonical`. Login/registro `noindex`. `robots.ts` bloquea admin/checkout/perfil/pedidos/carrito; `sitemap.ts` (revalida cada hora) incluye páginas estáticas, categorías y productos activos. `opengraph-image.tsx` renderiza el logo cromado.
 - JSON-LD vía `JsonLd` (`src/components/seo/JsonLd.tsx`, escapa `<`): `OnlineStore` en Home, `Product` en `/producto/[slug]`, `FAQPage` en cada `Faq`. La página de producto envuelve `getProductBySlug` en `cache()` porque `generateMetadata` y la página lo piden en la misma request.
 - Fuentes con `next/font` (self-hosted, `display: swap`); animaciones solo CSS; los logos inline (sin requests extra).
 - **Rendimiento entre páginas** (medido: cada ida y vuelta a Supabase cuesta ~70 ms desde Vercel en su región por defecto y ~130 ms desde desarrollo; casi todo el tiempo de página eran consultas encadenadas, no render):

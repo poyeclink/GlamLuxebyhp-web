@@ -7,7 +7,7 @@ export default async function manifest(): Promise<MetadataRoute.Manifest> {
   return {
     id: "/",
     name: SITE_NAME,
-    short_name: "Glam Luxe",
+    short_name: "GlamLuxe",
     description,
     lang,
     start_url: "/",

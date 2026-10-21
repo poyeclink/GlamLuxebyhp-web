@@ -30,7 +30,7 @@ export async function createCardCheckoutUrl(order: {
         price_data: {
           currency: "usd",
           unit_amount: Math.round(Number(order.total.toString()) * 100),
-          product_data: { name: `Glam Luxe by HJ · Pedido #${order.id.slice(0, 8)}` },
+          product_data: { name: `GlamLuxebyHJ · Pedido #${order.id.slice(0, 8)}` },
         },
       },
     ],

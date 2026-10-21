@@ -64,7 +64,7 @@ const orderNumber = (id: string) => id.slice(0, 8).toUpperCase();
 export async function sendWelcomeEmail(user: { name: string; email: string }, locale: Locale) {
   const c = await localize(
     {
-      subject: "Te damos la bienvenida a Glam Luxe by HJ",
+      subject: "Te damos la bienvenida a GlamLuxebyHJ",
       eyebrow: "Mi cuenta",
       heading: "Tu cuenta está lista",
       hello: "Hola",

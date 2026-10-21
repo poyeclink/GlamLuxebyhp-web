@@ -1,4 +1,4 @@
-export const SITE_NAME = "Glam Luxe by HJ";
+export const SITE_NAME = "GlamLuxebyHJ";
 export const SITE_DESCRIPTION =
   "Ropa, bolsos y accesorios de alta calidad, seleccionados pieza por pieza, con pago seguro y confirmación inmediata.";
 // Sin NEXT_PUBLIC_SITE_URL, en Vercel se usa el dominio de producción que la

@@ -64,7 +64,7 @@ export async function generateMetadata({ searchParams }: PageProps<"/tienda">): 
   const copy = await tMany({
     shop: "Tienda",
     categoryDescription:
-      "Compra {name} de alta calidad en Glam Luxe by HJ.",
+      "Compra {name} de alta calidad en GlamLuxebyHJ.",
     description: "Ropa, bolsos y accesorios de alta calidad, seleccionados pieza por pieza.",
   });
   return category

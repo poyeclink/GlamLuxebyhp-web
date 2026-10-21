@@ -57,7 +57,7 @@ El código ya está listo: el cobro es con **Stripe Checkout** (página de pago 
 ### 4.1 En el panel de Stripe (cuenta de la clienta, modo **live**: interruptor "Test mode" apagado)
 
 - [ ] **Activar la cuenta**: datos del negocio, identidad y la **cuenta bancaria** para recibir los pagos. Hasta terminarlo, Stripe no deja cobrar en modo live.
-- [ ] **Settings → Public details**: nombre público `Glam Luxe by HJ`, correo y teléfono de atención, y el **statement descriptor** (lo que ve el cliente en su estado de cuenta), p. ej. `GLAMLUXE BY HJ`.
+- [ ] **Settings → Public details**: nombre público `GlamLuxebyHJ`, correo y teléfono de atención, y el **statement descriptor** (lo que ve el cliente en su estado de cuenta), p. ej. `GLAMLUXE BY HJ`.
 - [ ] **Settings → Branding**: logo/ícono (`public/brand/glamluxe-isotipo-color-oscuro.svg` exportado a PNG), color de marca `#0A0A0B` y de acento `#1B6FB8`. Es lo que se ve en la página de pago.
 - [ ] **Settings → Payment methods**: deja activas **tarjetas**, **Apple Pay** y **Google Pay** (y Link si se quiere). **No** actives métodos de confirmación diferida (ACH Direct Debit, transferencias bancarias…): el pedido pendiente solo dura 32 minutos y un pago que se confirma días después llegaría a un pedido ya vencido y se reembolsaría solo.
 - [ ] **Developers → API keys**: copia la **Secret key** live (`sk_live_…`). No la pegues en el `.env` local.
