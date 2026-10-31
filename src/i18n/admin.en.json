@@ -304,5 +304,17 @@
   "Completa los datos, sube las fotos y, si aplica, las tallas.": "Fill in the details, upload the photos and, if needed, the sizes.",
   "¿Eliminar este producto? También se borran sus fotos y tallas. Esta acción no se puede deshacer.": "Delete this product? Its photos and sizes are deleted too. This can't be undone.",
   "1 producto con este filtro.": "1 product with this filter.",
-  "{count} productos con este filtro.": "{count} products with this filter."
+  "{count} productos con este filtro.": "{count} products with this filter.",
+  "1 cliente registrado.": "1 registered customer.",
+  "1 compra": "1 purchase",
+  "Buscar por nombre, correo o teléfono...": "Search by name, email or phone...",
+  "Clientes": "Customers",
+  "Compras": "Purchases",
+  "Desde {date}": "Since {date}",
+  "No encontramos clientes para \"{search}\".": "No customers found for \"{search}\".",
+  "Registro": "Signed up",
+  "Todavía no hay clientes registrados.": "There are no registered customers yet.",
+  "Total gastado": "Total spent",
+  "{count} clientes registrados.": "{count} registered customers.",
+  "{count} compras": "{count} purchases"
 }

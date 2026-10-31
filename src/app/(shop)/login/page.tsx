@@ -8,7 +8,8 @@ export async function generateMetadata(): Promise<Metadata> {
   return { title: await t("Iniciar sesión"), robots: { index: false } };
 }
 
-export default async function LoginPage() {
+export default async function LoginPage({ searchParams }: PageProps<"/login">) {
+  const { volver } = await searchParams;
   const copy = await tMany({
     eyebrow: "Mi cuenta",
     title: "Qué bueno verte otra vez",
@@ -37,7 +38,7 @@ export default async function LoginPage() {
       brandTitle={copy.brandTitle}
       brandPoints={[copy.point1, copy.point2, copy.point3]}
     >
-      <LoginForm copy={copy} />
+      <LoginForm copy={copy} next={typeof volver === "string" ? volver : undefined} />
     </AuthShell>
   );
 }

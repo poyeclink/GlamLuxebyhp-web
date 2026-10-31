@@ -27,11 +27,12 @@ export type RegisterFormCopy = {
   login: string;
 };
 
-export function RegisterForm({ copy }: { copy: RegisterFormCopy }) {
+export function RegisterForm({ copy, next }: { copy: RegisterFormCopy; next?: string }) {
   const [state, formAction] = useActionState(registerAction, initialState);
 
   return (
     <form action={formAction} className="flex flex-col gap-5">
+      {next && <input type="hidden" name="next" value={next} />}
       <fieldset className="flex flex-col gap-2">
         <legend className="mb-2 text-sm font-medium text-foreground">{copy.photo}</legend>
         <AvatarInput fallback="" copy={copy} />
@@ -53,7 +54,7 @@ export function RegisterForm({ copy }: { copy: RegisterFormCopy }) {
       </SubmitButton>
       <p className="text-center text-sm text-muted-foreground">
         {copy.hasAccount}{" "}
-        <Link href="/login" className="font-medium text-accent hover:underline">
+        <Link href={next ? `/login?volver=${encodeURIComponent(next)}` : "/login"} className="font-medium text-accent hover:underline">
           {copy.login}
         </Link>
       </p>

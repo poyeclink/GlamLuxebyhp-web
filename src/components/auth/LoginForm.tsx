@@ -22,11 +22,12 @@ export type LoginFormCopy = {
   register: string;
 };
 
-export function LoginForm({ copy }: { copy: LoginFormCopy }) {
+export function LoginForm({ copy, next }: { copy: LoginFormCopy; next?: string }) {
   const [state, formAction] = useActionState(loginAction, initialState);
 
   return (
     <form action={formAction} className="flex flex-col gap-5">
+      {next && <input type="hidden" name="next" value={next} />}
       <TextField label={copy.email} name="email" type="email" autoComplete="email" required />
       <PasswordField
         label={copy.password}
@@ -48,7 +49,7 @@ export function LoginForm({ copy }: { copy: LoginFormCopy }) {
       </SubmitButton>
       <p className="text-center text-sm text-muted-foreground">
         {copy.noAccount}{" "}
-        <Link href="/registro" className="font-medium text-accent hover:underline">
+        <Link href={next ? `/registro?volver=${encodeURIComponent(next)}` : "/registro"} className="font-medium text-accent hover:underline">
           {copy.register}
         </Link>
       </p>

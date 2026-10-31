@@ -8,7 +8,8 @@ export async function generateMetadata(): Promise<Metadata> {
   return { title: await t("Crear cuenta"), robots: { index: false } };
 }
 
-export default async function RegisterPage() {
+export default async function RegisterPage({ searchParams }: PageProps<"/registro">) {
+  const { volver } = await searchParams;
   const copy = await tMany({
     eyebrow: "Nueva cuenta",
     title: "Crea tu cuenta",
@@ -41,7 +42,7 @@ export default async function RegisterPage() {
       brandTitle={copy.brandTitle}
       brandPoints={[copy.point1, copy.point2, copy.point3]}
     >
-      <RegisterForm copy={copy} />
+      <RegisterForm copy={copy} next={typeof volver === "string" ? volver : undefined} />
     </AuthShell>
   );
 }

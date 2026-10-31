@@ -8,6 +8,7 @@ import { useAdminT } from "@/components/admin/AdminLocaleProvider";
 export const ADMIN_LINKS = [
   { href: "/admin", label: "Inicio", icon: "space_dashboard" },
   { href: "/admin/pedidos", label: "Pedidos", icon: "receipt_long" },
+  { href: "/admin/clientes", label: "Clientes", icon: "group" },
   { href: "/admin/categorias", label: "Categorías", icon: "category" },
   { href: "/admin/productos", label: "Productos", icon: "inventory_2" },
   { href: "/admin/inventario", label: "Inventario", icon: "warehouse" },

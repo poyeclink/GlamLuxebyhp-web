@@ -53,6 +53,12 @@ const loginSchema = z.object({
   password: z.string().min(1, "Ingresa tu contraseña."),
 });
 
+// Solo rutas internas: un "//otro-sitio.com" sería una redirección abierta.
+function returnPath(formData: FormData) {
+  const next = formData.get("next");
+  return typeof next === "string" && /^\/(?![/\\])/.test(next) ? next : "/perfil";
+}
+
 export async function registerAction(
   _prevState: AuthActionState,
   formData: FormData,
@@ -74,7 +80,7 @@ export async function registerAction(
     throw error;
   }
 
-  redirect("/perfil");
+  redirect(returnPath(formData));
 }
 
 // La foto es opcional al registrarse: si falla (formato, R2), la cuenta ya
@@ -106,7 +112,7 @@ export async function loginAction(
     throw error;
   }
 
-  redirect("/perfil");
+  redirect(returnPath(formData));
 }
 
 export async function logoutAction() {
